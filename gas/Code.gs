@@ -25,7 +25,7 @@ const APP_CONFIG = {
   venueName: 'キンプトン新宿東京',
   venueUrl: 'https://www.kimptonshinjukuwedding.com/',
   mapUrl: 'https://www.google.com/maps/search/?api=1&query=%E3%82%AD%E3%83%B3%E3%83%97%E3%83%88%E3%83%B3%E6%96%B0%E5%AE%BF%E6%9D%B1%E4%BA%AC',
-  baseInvitationUrl: 'https://Yusuke-Aika-Wedding.github.io/invitation-test3/',
+  baseInvitationUrl: 'https://Yusuke-Aika-Wedding.github.io/invitation/',
   reminderHour: 9,
   thanksHour: 15
 };
@@ -158,11 +158,12 @@ function submitResponse_(params) {
     const record = findGuestRecord_(sheet, guestId);
     if (!record) throw new Error('ゲスト情報が見つかりません。');
     const name = record.values.name || 'ゲスト';
+    const storedGuestId = record.values.url || guestId;
 
     const now = new Date();
     const invitationUrl = getInvitationUrl_();
     sheet.getRange(record.rowNumber, 1, 1, HEADERS.length).setValues([[
-      guestId,
+      storedGuestId,
       name,
       email,
       ceremonyAttendance,
@@ -464,7 +465,10 @@ function normalizeAttendance_(value) {
 }
 
 function normalizeGuestId_(value) {
-  return String(value || '').trim().replace(/^\/+|\/+$/g, '');
+  return String(value || '')
+    .trim()
+    .replace(/^\/+|\/+$/g, '')
+    .toLowerCase();
 }
 
 function getInvitationUrl_() {
