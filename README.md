@@ -4,7 +4,7 @@ GitHub Pages + Google Apps Script + Googleスプレッドシートで動く、�
 
 ## 公開URL
 
-`https://Yusuke-Aika-Wedding.github.io/invitation-test3/`
+`https://Yusuke-Aika-Wedding.github.io/invitation/`
 
 ゲストは初回だけ招待状に記載されたIDを入力します。IDはスプレッドシート「ゲスト一覧」のA列と照合され、認証後は同じブラウザ・同じ端末で再入力する必要がありません。
 
@@ -28,7 +28,7 @@ GitHub Pages + Google Apps Script + Googleスプレッドシートで動く、�
 ## フォルダ構成
 
 ```text
-invitation-test3/
+invitation/
 ├─ index.html                 # 統一招待状ページ・ID入力画面
 ├─ 404.html                   # 統一URLへの戻り先
 ├─ css/style.css              # デザイン
