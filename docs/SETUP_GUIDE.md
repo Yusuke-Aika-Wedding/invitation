@@ -5,8 +5,8 @@
 ## 0. 設定済みの情報
 
 - GitHubユーザー名：`Yusuke-Aika-Wedding`
-- リポジトリ名：`invitation-test3`
-- 公開URL：`https://Yusuke-Aika-Wedding.github.io/invitation-test3/`
+- リポジトリ名：`invitation`
+- 公開URL：`https://Yusuke-Aika-Wedding.github.io/invitation/`
 - スプレッドシートID：`1micDJFsf6ktwZrq_tlIz9TiC4PjbBbv-7dlWgbhMjbs`
 - シート名：`ゲスト一覧`
 - ID列：A列（見出しは `URL` のまま利用）
@@ -14,10 +14,10 @@
 ## 1. GitHubへアップロード
 
 1. ZIPを解凍する。
-2. `invitation-test3` フォルダを開く。
-3. GitHubで `Yusuke-Aika-Wedding / invitation-test3` リポジトリを開く。
+2. `invitation` フォルダを開く。
+3. GitHubで `Yusuke-Aika-Wedding / invitation` リポジトリを開く。
 4. `Add file` → `Upload files` を選ぶ。
-5. `invitation-test3` フォルダの「中身」をすべてドラッグ＆ドロップする。
+5. `invitation` フォルダの「中身」をすべてドラッグ＆ドロップする。
 6. `Commit changes` を押す。
 
 旧版の `sfm549Eys` フォルダがGitHubに残っている場合は削除してください。以後はゲストごとのフォルダを作りません。
@@ -30,7 +30,7 @@
 4. `Branch` を `main`、フォルダを `/root` にする。
 5. `Save` を押す。
 6. 数分後、次のURLを開く。
-   `https://Yusuke-Aika-Wedding.github.io/invitation-test3/`
+   `https://Yusuke-Aika-Wedding.github.io/invitation/`
 
 ## 3. Google Apps Scriptを設定
 
@@ -126,5 +126,6 @@ finalPuzzleOpenIso: '2026-08-11T18:30:00+09:00',
 
 - ID保存はブラウザのLocal Storageを使います。別端末、別ブラウザ、シークレットモードでは再入力が必要です。
 - A列のIDは重複させないでください。
+- ID照合では大文字・小文字を区別しません。入力時の表記ゆれがあっても同じIDとして扱われます。
 - ID認証が必要なため、GAS URL設定前は招待状本文を開けません。
 - 「2人の紹介ページ」と「本当の最後の謎ページ」は、現在は意図的に白紙です。
