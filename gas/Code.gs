@@ -3,10 +3,10 @@
  *
  * GitHub PagesからJSONPで呼び出すGoogle Apps Scriptです。
  * スプレッドシート列：
- * A URL / B ゲスト名 / C メールアドレス / D 挙式出欠 / E 披露宴出欠 / F アレルギー
+ * A ID / B ゲスト名 / C メールアドレス / D 挙式出欠 / E 披露宴出欠 / F アレルギー
  * G 回答日時 / H 確認メール送信日時 / I 1週間前リマインド送信日時
- * J 前日リマインド送信日時 / K 更新日時 / L 招待状URL
- * M メッセージ / N 参加ありがとうメール送信日時
+ * J 前日リマインド送信日時 / K 更新日時 / L メッセージ
+ * M 参加ありがとうメール送信日時
  */
 
 const APP_CONFIG = {
@@ -31,7 +31,7 @@ const APP_CONFIG = {
 };
 
 const HEADERS = [
-  'URL',
+  'ID',
   'ゲスト名',
   'メールアドレス',
   '挙式出欠',
@@ -42,13 +42,12 @@ const HEADERS = [
   '1週間前リマインド送信日時',
   '前日リマインド送信日時',
   '更新日時',
-  '招待状URL',
   'メッセージ',
   '参加ありがとうメール送信日時'
 ];
 
 const COL = {
-  url: 1,
+  id: 1,
   name: 2,
   email: 3,
   ceremony: 4,
@@ -59,18 +58,23 @@ const COL = {
   reminder7SentAt: 9,
   reminder1SentAt: 10,
   updatedAt: 11,
-  invitationUrl: 12,
-  message: 13,
-  thanksSentAt: 14
+  message: 12,
+  thanksSentAt: 13
 };
 
 function setup() {
-  const sheet = getMainSheet_();
-  ensureHeaders_(sheet);
-  fillInvitationUrls_(sheet);
-  formatSheet_(sheet);
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const sheet = getMainSheet_();
+    removeLegacyInvitationUrlColumn_(sheet);
+    ensureHeaders_(sheet);
+    formatSheet_(sheet);
+    SpreadsheetApp.flush();
+  } finally {
+    lock.releaseLock();
+  }
   resetTriggers_();
-  SpreadsheetApp.flush();
   Logger.log('Setup complete. Webアプリとしてデプロイし、URLをGitHub側の js/config.js に貼り付けてください。');
 }
 
@@ -81,7 +85,6 @@ function doGet(e) {
     if (action === 'ping') return output_({ ok: true, message: 'pong' }, params.callback);
     if (action === 'status') return output_(getStatus_(params.guestId), params.callback);
     if (action === 'submit') return output_(submitResponse_(params), params.callback);
-    if (action === 'fillUrls') return output_({ ok: true, updated: fillInvitationUrls_(getMainSheet_()) }, params.callback);
     if (action === 'sendThanksNow') return output_({ ok: true, sent: sendAfterReceptionThanksEmails_(true) }, params.callback);
     return output_({ ok: false, error: 'Unknown action.' }, params.callback);
   } catch (error) {
@@ -113,7 +116,7 @@ function getStatus_(guestIdRaw) {
   const completed = isCompleted_(values);
   return {
     ok: true,
-    guestId: values.url,
+    guestId: values.id,
     displayName: values.name || 'ゲスト',
     completed: completed,
     attending: isAttending_(values.ceremony, values.reception),
@@ -131,6 +134,7 @@ function submitResponse_(params) {
   lock.waitLock(10000);
   try {
     const guestId = normalizeGuestId_(params.guestId);
+    const name = String(params.name || '').trim();
     const email = String(params.email || '').trim();
     const ceremonyAttendance = normalizeAttendance_(params.ceremonyAttendance);
     const receptionAttendance = normalizeAttendance_(params.receptionAttendance);
@@ -139,6 +143,8 @@ function submitResponse_(params) {
     const message = String(params.message || '').trim();
 
     if (!guestId) throw new Error('guestIdがありません。');
+    if (!name) throw new Error('氏名を入力してください。');
+    if (name.length > 100) throw new Error('氏名は100文字以内で入力してください。');
     if (!isValidEmail_(email)) throw new Error('メールアドレスを確認してください。');
     if (!ceremonyAttendance) throw new Error('挙式の出欠を選択してください。');
     if (!receptionAttendance) throw new Error('披露宴の出欠を選択してください。');
@@ -157,8 +163,7 @@ function submitResponse_(params) {
     ensureHeaders_(sheet);
     const record = findGuestRecord_(sheet, guestId);
     if (!record) throw new Error('ゲスト情報が見つかりません。');
-    const name = record.values.name || 'ゲスト';
-    const storedGuestId = record.values.url || guestId;
+    const storedGuestId = record.values.id || guestId;
 
     const now = new Date();
     const invitationUrl = getInvitationUrl_();
@@ -174,7 +179,6 @@ function submitResponse_(params) {
       record.values.reminder7SentAt || '',
       record.values.reminder1SentAt || '',
       now,
-      invitationUrl,
       message,
       record.values.thanksSentAt || ''
     ]]);
@@ -243,7 +247,7 @@ function sendReminderEmailsByDays_(daysBefore, isTest) {
       receptionAttendance: v.reception,
       allergy: v.allergy || '',
       daysBefore: daysBefore,
-      invitationUrl: v.invitationUrl || getInvitationUrl_()
+      invitationUrl: getInvitationUrl_()
     });
 
     if (!isTest) {
@@ -288,7 +292,7 @@ function sendAfterReceptionThanksEmails_(isTest) {
     sendAfterReceptionThanksEmail_({
       to: v.email,
       name: v.name || 'ゲスト',
-      invitationUrl: v.invitationUrl || getInvitationUrl_()
+      invitationUrl: getInvitationUrl_()
     });
 
     if (!isTest) {
@@ -355,7 +359,7 @@ function buildReminderText_(data) {
 }
 
 function buildAfterReceptionThanksText_(data) {
-  return `${data.name} 様\n\n本日は私たちの結婚式にご参加いただき、誠にありがとうございました。\n皆様と大切な時間を過ごすことができ、心より感謝しております。\n\n招待状URL：\n${data.invitationUrl}\n\n本当の最後の謎ページは、披露宴終了後からご覧いただけます。\n\n今後ともどうぞよろしくお願いいたします。\n\nYusuke & Aika`;
+  return `${data.name} 様\n\n本日は私たちの結婚式にご参加いただき、誠にありがとうございました。\n皆様と大切な時間を過ごすことができ、心より感謝しております。\n\n招待状URL：\n${data.invitationUrl}\n\n今後ともどうぞよろしくお願いいたします。\n\nYusuke & Aika`;
 }
 
 function buildHtmlMail_(title, textBody, invitationUrl) {
@@ -389,26 +393,26 @@ function resetTriggers_() {
     .create();
 }
 
-function fillInvitationUrls_(sheet) {
-  sheet = sheet || getMainSheet_();
-  ensureHeaders_(sheet);
-  const lastRow = sheet.getLastRow();
-  if (lastRow < 2) return 0;
-  const tokens = sheet.getRange(2, COL.url, lastRow - 1, 1).getValues();
-  const urls = tokens.map(row => [row[0] ? getInvitationUrl_() : '']);
-  sheet.getRange(2, COL.invitationUrl, urls.length, 1).setValues(urls);
-  return urls.filter(row => row[0]).length;
-}
-
 function getMainSheet_() {
   const ss = SpreadsheetApp.openById(APP_CONFIG.spreadsheetId);
   return APP_CONFIG.sheetName ? ss.getSheetByName(APP_CONFIG.sheetName) : ss.getSheets()[0];
 }
 
 function ensureHeaders_(sheet) {
+  const legacyInvitationUrlColumn = 12;
+  const legacyHeader = String(sheet.getRange(1, legacyInvitationUrlColumn).getValue() || '').trim();
+  if (legacyHeader === '招待状URL') {
+    throw new Error('スプレッドシートが旧形式です。GASエディタからsetupを実行してください。');
+  }
   const current = sheet.getRange(1, 1, 1, HEADERS.length).getValues()[0];
   const needsUpdate = HEADERS.some((header, index) => String(current[index] || '') !== header);
   if (needsUpdate) sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
+}
+
+function removeLegacyInvitationUrlColumn_(sheet) {
+  const legacyInvitationUrlColumn = 12;
+  const header = String(sheet.getRange(1, legacyInvitationUrlColumn).getValue() || '').trim();
+  if (header === '招待状URL') sheet.deleteColumn(legacyInvitationUrlColumn);
 }
 
 function formatSheet_(sheet) {
@@ -422,17 +426,17 @@ function readRecords_(sheet) {
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
   const rows = sheet.getRange(2, 1, lastRow - 1, HEADERS.length).getValues();
-  return rows.map((row, index) => ({ rowNumber: index + 2, values: rowToObject_(row) })).filter(record => record.values.url);
+  return rows.map((row, index) => ({ rowNumber: index + 2, values: rowToObject_(row) })).filter(record => record.values.id);
 }
 
 function findGuestRecord_(sheet, guestId) {
   const target = normalizeGuestId_(guestId);
-  return readRecords_(sheet).find(record => normalizeGuestId_(record.values.url) === target) || null;
+  return readRecords_(sheet).find(record => normalizeGuestId_(record.values.id) === target) || null;
 }
 
 function rowToObject_(row) {
   return {
-    url: String(row[COL.url - 1] || '').trim(),
+    id: String(row[COL.id - 1] || '').trim(),
     name: String(row[COL.name - 1] || '').trim(),
     email: String(row[COL.email - 1] || '').trim(),
     ceremony: String(row[COL.ceremony - 1] || '').trim(),
@@ -443,7 +447,6 @@ function rowToObject_(row) {
     reminder7SentAt: row[COL.reminder7SentAt - 1],
     reminder1SentAt: row[COL.reminder1SentAt - 1],
     updatedAt: row[COL.updatedAt - 1],
-    invitationUrl: String(row[COL.invitationUrl - 1] || '').trim(),
     message: String(row[COL.message - 1] || '').trim(),
     thanksSentAt: row[COL.thanksSentAt - 1]
   };
@@ -467,8 +470,7 @@ function normalizeAttendance_(value) {
 function normalizeGuestId_(value) {
   return String(value || '')
     .trim()
-    .replace(/^\/+|\/+$/g, '')
-    .toLowerCase();
+    .replace(/^\/+|\/+$/g, '');
 }
 
 function getInvitationUrl_() {

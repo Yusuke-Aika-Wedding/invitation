@@ -365,7 +365,6 @@ input[type="text"], input[type="email"], textarea {
   transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
 }
 input:focus, textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(173,122,79,.13); background: #fff; }
-input[readonly] { color: var(--muted); background: rgba(248,242,238,.92); cursor: default; }
 textarea { min-height: 112px; resize: vertical; }
 .radio-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; }
 .radio-field { margin: 0; padding: 18px; border: 1px solid rgba(173, 122, 79, .23); border-radius: 22px; background: rgba(255,250,246,.74); }

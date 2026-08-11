@@ -4,7 +4,6 @@
   const config = window.WEDDING_CONFIG || {};
   const GUEST_ID_STORAGE_KEY = 'yusuke-aika-wedding-guest-id-v1';
   const targetDate = new Date(config.weddingDateIso || '2027-03-21T10:00:00+09:00');
-  const puzzleOpenDate = new Date(config.finalPuzzleOpenIso || '2026-08-11T18:30:00+09:00');
   const els = {};
   let guestId = '';
   let latestStatus = { completed: false, attending: false };
@@ -27,7 +26,6 @@
     setupAllergyFields();
     setupForm();
     createPetals();
-    updateFinalPuzzleAvailability();
   }
 
   function cacheElements() {
@@ -58,10 +56,8 @@
       menuPanel: document.getElementById('menuPanel'),
       menuGuestName: document.getElementById('menuGuestName'),
       changeIdButton: document.getElementById('changeIdButton'),
-      finalPuzzleMenuLink: document.getElementById('finalPuzzleMenuLink'),
       invitationPage: document.getElementById('invitationPage'),
-      profilePage: document.getElementById('profilePage'),
-      finalPuzzlePage: document.getElementById('finalPuzzlePage')
+      profilePage: document.getElementById('profilePage')
     });
   }
 
@@ -189,7 +185,6 @@
       els.overlay.hidden = false;
       els.overlay.classList.remove('is-closing');
     }
-    updateFinalPuzzleAvailability();
     applyRoute();
   }
 
@@ -348,32 +343,16 @@
     els.menuButton.setAttribute('aria-expanded', 'false');
   }
 
-  function isFinalPuzzleOpen() {
-    return Number.isFinite(puzzleOpenDate.getTime()) && Date.now() >= puzzleOpenDate.getTime();
-  }
-
-  function updateFinalPuzzleAvailability() {
-    const isOpen = isFinalPuzzleOpen();
-    if (els.finalPuzzleMenuLink) els.finalPuzzleMenuLink.classList.toggle('is-hidden', !isOpen);
-    if (authenticated && !isOpen && ['#final-puzzle', '#puzzle', '#final'].includes(location.hash.toLowerCase())) {
-      window.history.replaceState(null, '', `${location.pathname}#invitation`);
-      applyRoute();
-    }
-  }
-
   function applyRoute() {
     if (!authenticated) return;
     const routeRaw = (location.hash || '#invitation').replace('#', '').toLowerCase();
-    const requested = routeRaw === 'puzzle' || routeRaw === 'final' ? 'final-puzzle' : routeRaw;
-    const finalAllowed = requested !== 'final-puzzle' || isFinalPuzzleOpen();
-    const active = finalAllowed && ['invitation', 'profile', 'final-puzzle'].includes(requested)
-      ? requested
+    const active = ['invitation', 'profile'].includes(routeRaw)
+      ? routeRaw
       : 'invitation';
 
     Object.entries({
       invitation: els.invitationPage,
-      profile: els.profilePage,
-      'final-puzzle': els.finalPuzzlePage
+      profile: els.profilePage
     }).forEach(([key, page]) => {
       if (page) page.classList.toggle('is-hidden', key !== active);
     });
@@ -412,7 +391,6 @@
       setText(els.hours, pad2(hours));
       setText(els.minutes, pad2(minutes));
       setText(els.seconds, pad2(seconds));
-      updateFinalPuzzleAvailability();
     };
     tick();
     window.setInterval(tick, 1000);
@@ -487,7 +465,10 @@
       try {
         const result = await jsonp('submit', payload);
         if (!result || !result.ok) throw new Error((result && result.error) || '送信に失敗しました。');
-        if (els.nameInput && result.displayName) els.nameInput.value = result.displayName;
+        const displayName = String(result.displayName || payload.name || 'ゲスト').trim();
+        if (els.nameInput) els.nameInput.value = displayName;
+        document.body.dataset.defaultName = displayName;
+        if (els.menuGuestName) els.menuGuestName.textContent = `${displayName} 様`;
         renderMessage({ completed: true, attending: Boolean(result.attending) });
         setStatus('ご回答ありがとうございました。確認メールをご確認ください。', 'success');
         const target = document.getElementById('rsvp');
