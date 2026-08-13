@@ -273,6 +273,14 @@
 
   function setViewportHeight() {
     document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+    syncResponsiveCopy();
+  }
+
+  function syncResponsiveCopy() {
+    if (!els.guestMessageInput) return;
+    els.guestMessageInput.placeholder = window.matchMedia('(max-width: 600px)').matches
+      ? '新郎新婦へのメッセージがあれば\nご入力ください。'
+      : '新郎新婦へのメッセージがあればご入力ください。';
   }
 
   function isGasConfigured() {
@@ -317,7 +325,8 @@
       sentences = [
         [
           { text: '結婚式へのご出欠について、', breakAfter: 'always' },
-          { text: 'ご回答いただき、誠にありがとうございました。' }
+          { text: 'ご回答いただき、', breakAfter: 'mobile' },
+          { text: '誠にありがとうございました。' }
         ],
         [
           { text: '皆様と当日お会いできますことを、', breakAfter: 'always' },
@@ -328,7 +337,8 @@
       sentences = [
         [
           { text: '結婚式へのご出欠について、', breakAfter: 'always' },
-          { text: 'ご回答いただき、誠にありがとうございました。' }
+          { text: 'ご回答いただき、', breakAfter: 'mobile' },
+          { text: '誠にありがとうございました。' }
         ],
         [{ text: 'またお会いできる日を楽しみにしております。' }]
       ];
@@ -638,7 +648,7 @@
       }
 
       setLoading(true);
-      setStatus('送信しています。画面を閉じずにお待ちください。', '');
+      setStatus(['送信しています。', '画面を閉じずにお待ちください。'], '');
       try {
         const result = await jsonp('submit', payload);
         if (!result || !result.ok) throw new Error((result && result.error) || '送信に失敗しました。');
@@ -729,7 +739,20 @@
 
   function setStatus(message, type) {
     if (!els.formStatus) return;
-    els.formStatus.textContent = message || '';
+    if (Array.isArray(message)) {
+      const content = [];
+      message.forEach((part, index) => {
+        if (index > 0) {
+          const lineBreak = document.createElement('br');
+          lineBreak.className = 'mobile-only';
+          content.push(lineBreak);
+        }
+        content.push(document.createTextNode(part));
+      });
+      els.formStatus.replaceChildren(...content);
+    } else {
+      els.formStatus.textContent = message || '';
+    }
     els.formStatus.classList.toggle('is-error', type === 'error');
     els.formStatus.classList.toggle('is-success', type === 'success');
   }
