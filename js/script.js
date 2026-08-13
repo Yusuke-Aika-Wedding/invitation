@@ -296,32 +296,33 @@
     const displayName = getDisplayName();
     if (els.messageGuestName) els.messageGuestName.textContent = `${displayName}様`;
 
-    let lines;
+    let sentences;
     if (!latestStatus.completed) {
-      lines = [
-        'この度、白戸祐輔と大貫愛佳は',
-        '結婚することとなりました。',
-        'つきましては、結婚式へのご出欠について、',
-        'ご入力・ご回答をお願いいたします。',
-        '皆様と当日お会いできますことを、',
-        '心より楽しみにしております。'
+      sentences = [
+        'この度、白戸祐輔と大貫愛佳は結婚することとなりました。',
+        'つきましては、結婚式へのご出欠について、ご入力・ご回答をお願いいたします。',
+        '皆様と当日お会いできますことを、心より楽しみにしております。'
       ];
     } else if (latestStatus.attending) {
-      lines = [
-        '結婚式へのご出欠について、',
-        'ご回答いただき、誠にありがとうございました。',
-        '皆様と当日お会いできますことを、',
-        '心より楽しみにしております！'
+      sentences = [
+        '結婚式へのご出欠について、ご回答いただき、誠にありがとうございました。',
+        '皆様と当日お会いできますことを、心より楽しみにしております！'
       ];
     } else {
-      lines = [
-        '結婚式へのご出欠について、',
-        'ご回答いただき、誠にありがとうございました。',
+      sentences = [
+        '結婚式へのご出欠について、ご回答いただき、誠にありがとうございました。',
         'またお会いできる日を楽しみにしております。'
       ];
     }
 
-    if (els.messageBody) els.messageBody.innerHTML = lines.join('<br>');
+    if (els.messageBody) {
+      els.messageBody.replaceChildren(...sentences.map(sentence => {
+        const line = document.createElement('span');
+        line.className = 'message-sentence';
+        line.textContent = sentence;
+        return line;
+      }));
+    }
     setFormCompleted(latestStatus.completed, latestStatus.attending);
   }
 

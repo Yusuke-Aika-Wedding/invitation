@@ -24,7 +24,7 @@
         <p class="auth-kicker">Private Invitation</p>
         <h1 id="authTitle">Welcome</h1>
         <p class="auth-copy">
-          招待状に記載されたIDを<br class="sp-only">入力してください。
+          招待状に記載されたIDを<br class="mobile-only">入力してください。
         </p>
         <form id="authForm" class="auth-form" novalidate>
           <label for="guestIdEntry">Guest ID</label>
@@ -78,8 +78,8 @@
           <p class="script-label">Wedding Invitation</p>
           <h1>Yusuke &amp; Aika</h1>
           <p class="lead">
-            <span>平素より温かく見守ってくださり、<br class="sp-only">ありがとうございます。</span><br>
-            <span>皆様への感謝を込めて、<br class="sp-only">ささやかながら結婚式を執り行います。</span>
+            <span class="copy-line">平素より温かく見守ってくださり、<br class="mobile-only">ありがとうございます。</span>
+            <span class="copy-line">皆様への感謝を込めて、<br class="mobile-only">ささやかながら結婚式を執り行います。</span>
           </p>
         </div>
       </section>
@@ -132,7 +132,7 @@
       <section id="rsvp" class="section fade-in" aria-labelledby="rsvp-title">
         <p class="section-kicker">RSVP</p>
         <h2 id="rsvp-title">Reply Form</h2>
-        <p class="section-note">恐れ入りますが、挙式・披露宴それぞれの<br class="sp-only">ご出欠をご回答ください。</p>
+        <p class="section-note">恐れ入りますが、挙式・披露宴それぞれの<br class="mobile-only">ご出欠をご回答ください。</p>
         <div class="rsvp-shell">
           <form id="rsvpForm" class="rsvp-form" novalidate>
             <input type="hidden" id="guestId" name="guestId" value="">
@@ -168,7 +168,10 @@
       <div class="page-intro profile-intro fade-in is-visible">
         <p class="page-kicker">Profile</p>
         <h2 id="profile-title" class="page-title">About Us</h2>
-        <p class="profile-lead">私たちのことを、少しだけご紹介します。<br>当日、皆さまとお話しできることを楽しみにしています。</p>
+        <p class="profile-lead">
+          <span class="copy-line">私たちのことを、<br class="mobile-only">少しだけご紹介します。</span>
+          <span class="copy-line">当日、皆さまとお話しできることを<br class="mobile-only">楽しみにしています。</span>
+        </p>
       </div>
 
       <section class="profile-showcase fade-in is-visible" aria-label="新郎新婦のプロフィール">
@@ -186,7 +189,7 @@
           <h3 class="person-name"><span>白戸 祐輔</span><small>Yusuke Shirato</small></h3>
           <dl class="person-facts">
             <div><dt>好きなこと</dt><dd>野球観戦・旅行</dd></div>
-            <div><dt>ひとこと</dt><dd>皆さまとたくさんお話しできることを<br>楽しみにしています！</dd></div>
+            <div><dt>ひとこと</dt><dd>皆さまとたくさんお話しできることを<br class="mobile-only">楽しみにしています！</dd></div>
           </dl>
         </article>
 
@@ -205,14 +208,14 @@
           <h3 class="person-name"><span>大貫 愛佳</span><small>Aika Onuki</small></h3>
           <dl class="person-facts">
             <div><dt>好きなこと</dt><dd>野球観戦・おいしいもの探し</dd></div>
-            <div><dt>ひとこと</dt><dd>笑顔いっぱいの一日を<br>一緒に過ごせたら嬉しいです！</dd></div>
+            <div><dt>ひとこと</dt><dd>笑顔いっぱいの一日を<br class="mobile-only">一緒に過ごせたら嬉しいです！</dd></div>
           </dl>
         </article>
       </section>
 
       <section class="quiz-invitation fade-in is-visible" aria-labelledby="quiz-invitation-title">
         <p class="quiz-invitation-kicker">How well do you know us?</p>
-        <h3 id="quiz-invitation-title">ふたりのこと、<br class="sp-only">どれくらい知っていますか？</h3>
+        <h3 id="quiz-invitation-title">ふたりのこと、<br class="mobile-only">どれくらい知っていますか？</h3>
         <p>たくさんの問題からランダムで5問を出題します。</p>
         <button id="quizStartButton" class="quiz-start-button" type="button">
           <span>新郎新婦クイズに挑戦！</span>
