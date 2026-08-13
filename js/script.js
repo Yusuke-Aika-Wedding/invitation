@@ -9,6 +9,27 @@
   let latestStatus = { completed: false, attending: false };
   let currentSlide = 0;
   let authenticated = false;
+  const QUIZ_QUESTION_COUNT = 5;
+  const QUIZ_QUESTIONS = [
+    { question: '新郎のフルネームは？', options: ['白戸 祐輔', '白戸 悠介', '白井 祐輔'], answer: '白戸 祐輔', explanation: '新郎は白戸祐輔（Yusuke Shirato）です。' },
+    { question: '新婦のフルネームは？', options: ['大貫 愛佳', '大西 愛佳', '大貫 愛花'], answer: '大貫 愛佳', explanation: '新婦は大貫愛佳（Aika Onuki）です。' },
+    { question: 'ふたりに共通する好きなことは？', options: ['野球観戦', '登山', '陶芸'], answer: '野球観戦', explanation: 'ふたりとも野球観戦が好き。プロフィール写真も球場で撮影した一枚です。' },
+    { question: '野球観戦の写真で、ふたりが着ているユニフォームの球団は？', options: ['阪神タイガース', '読売ジャイアンツ', '東京ヤクルトスワローズ'], answer: '阪神タイガース', explanation: 'おそろいで阪神タイガースのユニフォームを着ています。' },
+    { question: '結婚式の日付は？', options: ['2027年3月21日', '2027年2月21日', '2027年3月12日'], answer: '2027年3月21日', explanation: '結婚式は2027年3月21日に執り行います。' },
+    { question: '結婚式当日の曜日は？', options: ['日曜日', '土曜日', '祝日の月曜日'], answer: '日曜日', explanation: '2027年3月21日は日曜日です。' },
+    { question: '挙式のスタート時刻は？', options: ['10:00', '10:30', '11:00'], answer: '10:00', explanation: '挙式は10:00〜10:30を予定しています。' },
+    { question: '披露宴のスタート時刻は？', options: ['11:00', '11:30', '12:00'], answer: '11:00', explanation: '披露宴は11:00〜14:00を予定しています。' },
+    { question: '結婚式の会場はどこ？', options: ['キンプトン新宿東京', 'パレスホテル東京', 'ホテル椿山荘東京'], answer: 'キンプトン新宿東京', explanation: '会場はキンプトン新宿東京です。' },
+    { question: '結婚式場があるエリアは？', options: ['新宿', '丸の内', '横浜'], answer: '新宿', explanation: '会場名の通り、新宿エリアにあります。' },
+    { question: '東京タワーの前で撮影した写真に写っている大きな花束の色は？', options: ['赤', '白', '黄色'], answer: '赤', explanation: '鮮やかな赤いバラの花束が写っています。' },
+    { question: '招待状のメインに書かれているふたりの名前の順番は？', options: ['Yusuke & Aika', 'Aika & Yusuke', 'Y & A Wedding'], answer: 'Yusuke & Aika', explanation: 'サイトでは「Yusuke & Aika」と表記しています。' },
+    { question: '野球観戦の写真で、球場の座席は何色？', options: ['青', '赤', '緑'], answer: '青', explanation: 'ふたりの後ろには青いスタンド席が並んでいます。' },
+    { question: 'プロフィールの顔写真は、どこで撮った写真から切り抜いている？', options: ['野球場', '東京タワー前', '海辺'], answer: '野球場', explanation: '野球観戦中の写真から、ふたりの表情をそれぞれ切り抜いています。' },
+    { question: 'このクイズで1回に出題される問題数は？', options: ['5問', '3問', '10問'], answer: '5問', explanation: '問題リストの中から、毎回ランダムで5問が選ばれます。' },
+    { question: '出欠フォームで回答するのはどの予定？', options: ['挙式と披露宴', '披露宴のみ', '二次会のみ'], answer: '挙式と披露宴', explanation: '挙式・披露宴それぞれについて出欠を回答できます。' },
+    { question: 'トップの写真スライドに用意されている写真は何枚？', options: ['3枚', '2枚', '5枚'], answer: '3枚', explanation: '東京タワー、海辺、野球場の3枚が切り替わります。' },
+    { question: '新郎新婦紹介ページの英語タイトルは？', options: ['About Us', 'Our Story', 'Meet the Family'], answer: 'About Us', explanation: 'プロフィールページのタイトルは「About Us」です。' }
+  ];
 
   document.addEventListener('DOMContentLoaded', init);
   window.addEventListener('resize', setViewportHeight, { passive: true });
@@ -23,6 +44,7 @@
     setupFadeIn();
     setupCountdown();
     setupCarousel();
+    setupQuiz();
     setupAllergyFields();
     setupForm();
     createPetals();
@@ -57,7 +79,23 @@
       menuGuestName: document.getElementById('menuGuestName'),
       changeIdButton: document.getElementById('changeIdButton'),
       invitationPage: document.getElementById('invitationPage'),
-      profilePage: document.getElementById('profilePage')
+      profilePage: document.getElementById('profilePage'),
+      quizStartButton: document.getElementById('quizStartButton'),
+      quizPanel: document.getElementById('quizPanel'),
+      quizPlayView: document.getElementById('quizPlayView'),
+      quizResultView: document.getElementById('quizResultView'),
+      quizCurrent: document.getElementById('quizCurrent'),
+      quizProgressBar: document.getElementById('quizProgressBar'),
+      quizQuestion: document.getElementById('quizQuestion'),
+      quizOptions: document.getElementById('quizOptions'),
+      quizFeedback: document.getElementById('quizFeedback'),
+      quizFeedbackTitle: document.getElementById('quizFeedbackTitle'),
+      quizExplanation: document.getElementById('quizExplanation'),
+      quizNextButton: document.getElementById('quizNextButton'),
+      quizScore: document.getElementById('quizScore'),
+      quizResultTitle: document.getElementById('quizResultTitle'),
+      quizResultMessage: document.getElementById('quizResultMessage'),
+      quizRetryButton: document.getElementById('quizRetryButton')
     });
   }
 
@@ -410,6 +448,118 @@
     window.setInterval(() => show(currentSlide + 1), 5000);
   }
 
+  function setupQuiz() {
+    if (!els.quizStartButton || !els.quizPanel || !els.quizOptions) return;
+
+    const state = { questions: [], index: 0, score: 0, answered: false };
+
+    const renderQuizQuestion = () => {
+      const item = state.questions[state.index];
+      state.answered = false;
+      setText(els.quizCurrent, state.index + 1);
+      els.quizProgressBar.style.width = `${((state.index + 1) / QUIZ_QUESTION_COUNT) * 100}%`;
+      setText(els.quizQuestion, item.question);
+      els.quizOptions.innerHTML = '';
+      els.quizFeedback.classList.add('is-hidden');
+      els.quizFeedback.classList.remove('is-correct', 'is-wrong');
+
+      item.shuffledOptions.forEach((option, optionIndex) => {
+        const button = document.createElement('button');
+        const letter = document.createElement('span');
+        const label = document.createElement('span');
+        const mark = document.createElement('span');
+        button.className = 'quiz-option';
+        button.type = 'button';
+        letter.className = 'quiz-option-letter';
+        label.className = 'quiz-option-text';
+        mark.className = 'quiz-option-mark';
+        letter.textContent = String.fromCharCode(65 + optionIndex);
+        label.textContent = option;
+        mark.setAttribute('aria-hidden', 'true');
+        button.append(letter, label, mark);
+        button.addEventListener('click', () => answerQuizQuestion(option, button));
+        els.quizOptions.appendChild(button);
+      });
+    };
+
+    const startQuiz = () => {
+      state.questions = shuffle(QUIZ_QUESTIONS)
+        .slice(0, QUIZ_QUESTION_COUNT)
+        .map(item => ({ ...item, shuffledOptions: shuffle(item.options) }));
+      state.index = 0;
+      state.score = 0;
+      state.answered = false;
+      els.quizPanel.classList.remove('is-hidden');
+      els.quizPlayView.classList.remove('is-hidden');
+      els.quizResultView.classList.add('is-hidden');
+      renderQuizQuestion();
+      window.requestAnimationFrame(() => {
+        els.quizPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        els.quizPanel.focus({ preventScroll: true });
+      });
+    };
+
+    const answerQuizQuestion = (selectedOption, selectedButton) => {
+      if (state.answered) return;
+      state.answered = true;
+      const item = state.questions[state.index];
+      const isCorrect = selectedOption === item.answer;
+      if (isCorrect) state.score += 1;
+
+      Array.from(els.quizOptions.querySelectorAll('.quiz-option')).forEach(button => {
+        button.disabled = true;
+        const optionText = button.querySelector('.quiz-option-text').textContent;
+        const mark = button.querySelector('.quiz-option-mark');
+        if (optionText === item.answer) {
+          button.classList.add('is-correct');
+          mark.textContent = '✓';
+        } else if (button === selectedButton) {
+          button.classList.add('is-wrong');
+          mark.textContent = '×';
+        }
+      });
+
+      els.quizFeedback.classList.remove('is-hidden');
+      els.quizFeedback.classList.add(isCorrect ? 'is-correct' : 'is-wrong');
+      setText(els.quizFeedbackTitle, isCorrect ? '正解！' : `残念！ 正解は「${item.answer}」`);
+      setText(els.quizExplanation, item.explanation);
+      setText(els.quizNextButton, state.index === QUIZ_QUESTION_COUNT - 1 ? '結果を見る' : '次の問題へ');
+      els.quizNextButton.focus({ preventScroll: true });
+    };
+
+    const showQuizResult = () => {
+      els.quizPlayView.classList.add('is-hidden');
+      els.quizResultView.classList.remove('is-hidden');
+      setText(els.quizScore, state.score);
+
+      let title = 'ナイスチャレンジ！';
+      let message = 'もう一度挑戦すると、違う問題が出るかもしれません。ぜひ再挑戦してみてください。';
+      if (state.score === QUIZ_QUESTION_COUNT) {
+        title = '全問正解！ ふたりマスターです';
+        message = 'さすがの満点です。当日もふたりとの思い出話で盛り上がりましょう！';
+      } else if (state.score >= 3) {
+        title = 'お見事！ ふたり通です';
+        message = 'ふたりのことをよく知っていますね。満点を目指してもう一度どうぞ！';
+      }
+      setText(els.quizResultTitle, title);
+      setText(els.quizResultMessage, message);
+      els.quizPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    els.quizStartButton.addEventListener('click', startQuiz);
+    els.quizRetryButton.addEventListener('click', startQuiz);
+    els.quizNextButton.addEventListener('click', () => {
+      if (!state.answered) return;
+      if (state.index >= QUIZ_QUESTION_COUNT - 1) {
+        showQuizResult();
+        return;
+      }
+      state.index += 1;
+      renderQuizQuestion();
+      els.quizPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
   function setupAllergyFields() {
     document.querySelectorAll('input[name="allergyChoice"]').forEach(radio => {
       radio.addEventListener('change', updateAllergyFields);
@@ -559,4 +709,12 @@
 
   function pad2(value) { return String(value).padStart(2, '0'); }
   function setText(element, value) { if (element) element.textContent = String(value); }
+  function shuffle(items) {
+    const shuffled = Array.from(items);
+    for (let i = shuffled.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }
 })();
