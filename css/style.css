@@ -87,6 +87,7 @@ img { max-width: 100%; }
 .auth-form .primary-button { width: 100%; margin-top: 4px; }
 .auth-form .form-status { margin-top: 2px; }
 .auth-note { margin: 8px auto 0; max-width: 390px; color: var(--muted); font-size: .78rem; line-height: 1.7; }
+.auth-note-break { display: inline; }
 
 .petal-layer { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
 .petal {
@@ -737,6 +738,9 @@ textarea { min-height: 112px; resize: vertical; }
 }
 @media (max-width: 600px) {
   .mobile-only { display: inline; }
+}
+@media (min-width: 601px) and (max-width: 820px) {
+  .auth-note-break { display: none; }
 }
 @media (max-width: 480px) {
   body { letter-spacing: .025em; }
