@@ -332,8 +332,9 @@ img { max-width: 100%; }
 
 .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 28px; }
 .info-card { padding: 26px 18px; text-align: center; border-radius: 26px; background: rgba(255,250,246,.88); border: 1px solid rgba(173, 122, 79, .23); }
-.info-card h3 { margin: 0 0 12px; color: var(--wine-dark); font-size: 1.05rem; letter-spacing: .16em; }
-.info-card p { margin: 0; color: var(--muted); }
+.info-card h3 { margin: 0 0 12px; color: var(--wine-dark); font-size: 1.2rem; letter-spacing: .16em; }
+.info-card p { margin: 0; color: var(--muted); font-size: 1.1rem; }
+.info-card .number-font { color: var(--wine); }
 
 .venue-layout { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 22px; align-items: stretch; margin-top: 30px; }
 .venue-card, .map-card, .movie-card { border-radius: 28px; background: rgba(255,250,246,.90); border: 1px solid rgba(173, 122, 79, .23); overflow: hidden; }
