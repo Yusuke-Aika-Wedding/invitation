@@ -299,27 +299,53 @@
     let sentences;
     if (!latestStatus.completed) {
       sentences = [
-        'この度、白戸祐輔と大貫愛佳は結婚することとなりました。',
-        'つきましては、結婚式へのご出欠について、ご入力・ご回答をお願いいたします。',
-        '皆様と当日お会いできますことを、心より楽しみにしております。'
+        [
+          { text: 'この度、白戸祐輔と大貫愛佳は', breakAfter: 'mobile' },
+          { text: '結婚することとなりました。' }
+        ],
+        [
+          { text: 'つきましては、', breakAfter: 'mobile' },
+          { text: '結婚式へのご出欠について、', breakAfter: 'always' },
+          { text: 'ご入力・ご回答をお願いいたします。' }
+        ],
+        [
+          { text: '皆様と当日お会いできますことを、', breakAfter: 'always' },
+          { text: '心より楽しみにしております。' }
+        ]
       ];
     } else if (latestStatus.attending) {
       sentences = [
-        '結婚式へのご出欠について、ご回答いただき、誠にありがとうございました。',
-        '皆様と当日お会いできますことを、心より楽しみにしております！'
+        [
+          { text: '結婚式へのご出欠について、', breakAfter: 'always' },
+          { text: 'ご回答いただき、誠にありがとうございました。' }
+        ],
+        [
+          { text: '皆様と当日お会いできますことを、', breakAfter: 'always' },
+          { text: '心より楽しみにしております！' }
+        ]
       ];
     } else {
       sentences = [
-        '結婚式へのご出欠について、ご回答いただき、誠にありがとうございました。',
-        'またお会いできる日を楽しみにしております。'
+        [
+          { text: '結婚式へのご出欠について、', breakAfter: 'always' },
+          { text: 'ご回答いただき、誠にありがとうございました。' }
+        ],
+        [{ text: 'またお会いできる日を楽しみにしております。' }]
       ];
     }
 
     if (els.messageBody) {
-      els.messageBody.replaceChildren(...sentences.map(sentence => {
+      els.messageBody.replaceChildren(...sentences.map(parts => {
         const line = document.createElement('span');
         line.className = 'message-sentence';
-        line.textContent = sentence;
+        parts.forEach(part => {
+          line.append(document.createTextNode(part.text));
+          if (part.breakAfter) {
+            const lineBreak = document.createElement('br');
+            if (part.breakAfter === 'mobile') lineBreak.className = 'mobile-only';
+            line.append(lineBreak);
+          }
+        });
         return line;
       }));
     }

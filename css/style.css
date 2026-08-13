@@ -185,7 +185,7 @@ img { max-width: 100%; }
   line-height: 2.16;
   text-wrap: pretty;
 }
-.message-sentence { display: block; text-wrap: balance; }
+.message-sentence { display: block; text-wrap: pretty; }
 .message-signature {
   margin: 22px 0 0;
   font-family: var(--script);
