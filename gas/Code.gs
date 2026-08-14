@@ -22,6 +22,7 @@ const APP_CONFIG = {
   groomFullName: '白戸祐輔',
   brideFullName: '大貫愛佳',
   senderName: 'Yusuke & Aika Wedding',
+  bccEmail: 'yusuke.tigers.0522@gmail.com',
   venueName: 'キンプトン新宿東京',
   venueUrl: 'https://www.kimptonshinjukuwedding.com/',
   mapUrl: 'https://www.google.com/maps/search/?api=1&query=%E3%82%AD%E3%83%B3%E3%83%97%E3%83%88%E3%83%B3%E6%96%B0%E5%AE%BF%E6%9D%B1%E4%BA%AC',
@@ -270,6 +271,47 @@ function testAfterReceptionThanksEmails() {
   return sendAfterReceptionThanksEmails_(true);
 }
 
+/**
+ * 指定ゲストの内容で、1週間前・前日・参加御礼の確認用メールを送信します。
+ * 実行しても各メールの送信日時は更新しません。
+ */
+function sendRequestedEmailPreviews() {
+  return sendEmailPreviewsForGuest_('sfm549Eys', APP_CONFIG.bccEmail);
+}
+
+function sendEmailPreviewsForGuest_(guestIdRaw, recipientRaw) {
+  const guestId = normalizeGuestId_(guestIdRaw);
+  const recipient = String(recipientRaw || '').trim();
+  if (!guestId) throw new Error('guestIdがありません。');
+  if (!isValidEmail_(recipient)) throw new Error('確認用メールアドレスを確認してください。');
+
+  const sheet = getMainSheet_();
+  ensureHeaders_(sheet);
+  const record = findGuestRecord_(sheet, guestId);
+  if (!record) throw new Error('ゲスト情報が見つかりません。');
+  const v = record.values;
+  if (!isCompleted_(v)) throw new Error('指定ゲストの出欠回答が完了していません。');
+
+  const reminderData = {
+    to: recipient,
+    name: v.name || 'ゲスト',
+    ceremonyAttendance: v.ceremony,
+    receptionAttendance: v.reception,
+    allergy: v.allergy || '',
+    invitationUrl: getInvitationUrl_()
+  };
+  sendReminderEmail_(Object.assign({}, reminderData, { daysBefore: 7 }));
+  sendReminderEmail_(Object.assign({}, reminderData, { daysBefore: 1 }));
+  sendAfterReceptionThanksEmail_({
+    to: recipient,
+    name: v.name || 'ゲスト',
+    invitationUrl: getInvitationUrl_()
+  });
+
+  Logger.log(`確認用メール送信数: 3 / guestId=${guestId} / to=${recipient}`);
+  return 3;
+}
+
 function sendAfterReceptionThanksEmails_(isTest) {
   const now = new Date();
   if (!isTest && now.getTime() < new Date(APP_CONFIG.receptionEndIso).getTime()) {
@@ -313,6 +355,7 @@ function sendConfirmationEmail_(data) {
   const htmlBody = buildHtmlMail_(subject, textBody, data.invitationUrl);
   MailApp.sendEmail({
     to: data.to,
+    bcc: APP_CONFIG.bccEmail,
     subject: subject,
     name: APP_CONFIG.senderName,
     body: textBody,
@@ -328,6 +371,7 @@ function sendReminderEmail_(data) {
   const htmlBody = buildHtmlMail_(subject, textBody, data.invitationUrl);
   MailApp.sendEmail({
     to: data.to,
+    bcc: APP_CONFIG.bccEmail,
     subject: subject,
     name: APP_CONFIG.senderName,
     body: textBody,
@@ -341,6 +385,7 @@ function sendAfterReceptionThanksEmail_(data) {
   const htmlBody = buildHtmlMail_(subject, textBody, data.invitationUrl);
   MailApp.sendEmail({
     to: data.to,
+    bcc: APP_CONFIG.bccEmail,
     subject: subject,
     name: APP_CONFIG.senderName,
     body: textBody,

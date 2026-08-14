@@ -67,6 +67,8 @@
 
 招待状URLは各行へ保存せず、GASの `baseInvitationUrl` をメール送信時に使用します。`setup` は旧招待状URL列の移行と、自動メール用トリガーの設定を行います。
 
+確認メール、1週間前リマインド、前日リマインド、参加ありがとうメールは、すべて `APP_CONFIG.bccEmail` に設定したアドレスへBCCでも送信します。
+
 ## 5. GASをウェブアプリとしてデプロイ
 
 1. GAS右上の `デプロイ` → `新しいデプロイ` を押す。
@@ -87,6 +89,8 @@ gasWebAppUrl: 'PASTE_YOUR_GAS_WEB_APP_URL_HERE',
 ```
 
 変更後、GitHubへ再アップロードしてCommitします。
+
+特定ゲストの内容で3種類の自動メールを確認したい場合は、GASエディタから `sendRequestedEmailPreviews` を実行します。確認用メールの送信日時はスプレッドシートへ記録されません。
 
 ## 7. 動作確認
 
