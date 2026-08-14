@@ -397,9 +397,9 @@ img { max-width: 100%; }
 .venue-layout { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 22px; align-items: stretch; margin-top: 30px; }
 .venue-card, .map-card, .movie-card { border-radius: 28px; background: rgba(255,250,246,.90); border: 1px solid rgba(173, 122, 79, .23); overflow: hidden; }
 .venue-card { display: flex; padding: 28px; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-.venue-name { margin: 0 0 10px; font-size: 1.36rem; color: var(--wine-dark); letter-spacing: .1em; }
+.venue-name { margin: 0 0 10px; font-size: clamp(1.52rem, 2.05vw, 1.76rem); color: var(--wine-dark); letter-spacing: .1em; }
 .venue-name a { text-decoration: none; border-bottom: 1px solid rgba(79,20,36,.35); }
-.venue-card p { margin: 8px 0 0; color: var(--muted); font-size: clamp(1.02rem, 1.55vw, 1.14rem); line-height: 1.95; text-wrap: pretty; }
+.venue-card p { margin: 8px 0 0; color: var(--muted); text-wrap: pretty; }
 .map-card iframe { display: block; width: 100%; min-height: 340px; border: 0; }
 .button-link { display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-top: 20px; padding: 12px 20px; color: #fffaf6; background: linear-gradient(135deg, var(--wine), var(--wine-dark)); border-radius: 999px; text-decoration: none; box-shadow: 0 12px 24px rgba(93, 23, 37, .18); }
 .movie-card { margin-top: 22px; padding: 18px; }
@@ -457,15 +457,16 @@ textarea::placeholder { white-space: pre-wrap; }
 .thanks-card { max-width: 720px; margin: 30px auto 0; padding: 28px; text-align: center; border-radius: 26px; background: linear-gradient(180deg, #fff, #fff6f2); border: 1px solid rgba(173, 122, 79, .28); box-shadow: 0 14px 34px rgba(73, 35, 28, .09); }
 .thanks-card strong { display: block; color: var(--wine-dark); font-size: 1.18rem; margin-bottom: 8px; text-wrap: balance; }
 .thanks-card p { text-wrap: pretty; }
-.thanks-gift-link {
-  display: inline-block;
-  margin-top: 12px;
-  color: var(--wine);
-  font-size: .88rem;
-  text-underline-offset: 5px;
-}
-
 .gift-information { padding-bottom: clamp(34px, 5.5vw, 62px); }
+.section .gift-information-title {
+  color: var(--wine-dark);
+  font-family: var(--serif);
+  font-size: clamp(2.25rem, 5vw, 3.45rem);
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: .1em;
+  white-space: nowrap;
+}
 .gift-details {
   max-width: 880px;
   margin: 30px auto 0;
@@ -514,7 +515,9 @@ textarea::placeholder { white-space: pre-wrap; }
 .gift-details[open] .gift-summary-icon::after { transform: translate(-50%, -50%) rotate(0); }
 .gift-details-body { padding: 4px 24px 26px; border-top: 1px solid rgba(181,139,93,.18); }
 .gift-introduction { margin: 22px auto 0; color: var(--muted); text-align: center; line-height: 2; text-wrap: pretty; }
-.gift-introduction span { color: var(--wine-dark); font-weight: 600; }
+.gift-copy-line, .gift-copy-note { display: block; }
+.gift-copy-note { color: var(--wine-dark); font-weight: 600; }
+.gift-copy-line > span, .gift-copy-note > span { display: inline; }
 .gift-method-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 24px; }
 .gift-method-card {
   position: relative;
@@ -528,6 +531,7 @@ textarea::placeholder { white-space: pre-wrap; }
 .gift-method-number { display: block; color: var(--gold); font-size: .78rem; letter-spacing: .16em; }
 .gift-method-card h3 { margin: 7px 0 0; color: var(--wine-dark); font-size: 1.08rem; letter-spacing: .1em; }
 .gift-method-card p { margin: 10px 0 0; color: var(--muted); font-size: .88rem; line-height: 1.85; text-wrap: pretty; }
+.gift-method-card p span { display: inline; }
 
 .sub-page { min-height: calc(var(--vh, 1vh) * 100 - 56px); padding: 64px 0 28px; }
 .page-intro { margin: 0 auto 26px; padding: clamp(30px, 5vw, 54px); border-radius: 34px; text-align: center; background: rgba(255,255,255,.78); border: 1px solid var(--line); box-shadow: var(--shadow); }
@@ -789,7 +793,6 @@ textarea::placeholder { white-space: pre-wrap; }
   .info-card { min-height: 0; padding: 26px 18px 28px; }
   .info-card h3::after { margin: 13px auto 15px; }
   .venue-card { padding: 22px; }
-  .venue-card p { font-size: 1.02rem; }
   .map-card iframe { min-height: 280px; }
   .message-overlay { padding: 18px; background-position: center center; }
   .message-card { border-radius: 28px; }
@@ -821,7 +824,10 @@ textarea::placeholder { white-space: pre-wrap; }
   .tap-guide { margin-top: 14px; padding: 6px 14px; font-size: .7rem; }
   .gift-details summary { min-height: 82px; padding: 17px 18px; }
   .gift-details-body { padding: 2px 16px 20px; }
+  .section .gift-information-title { font-size: clamp(1.9rem, 9vw, 2.55rem); letter-spacing: .06em; }
   .gift-introduction { font-size: .88rem; line-height: 1.9; }
+  .gift-copy-line > span, .gift-copy-note > span, .gift-method-card p span { display: block; }
+  .gift-copy-line + .gift-copy-line, .gift-copy-note { margin-top: 4px; }
   .gift-method-grid { grid-template-columns: 1fr; gap: 11px; margin-top: 20px; }
   .gift-method-card { min-height: 0; padding: 20px 18px; }
 }

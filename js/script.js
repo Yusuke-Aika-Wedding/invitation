@@ -379,7 +379,7 @@
     section.setAttribute('aria-labelledby', 'gift-information-title');
     section.innerHTML = `
       <p class="section-kicker">For Guests</p>
-      <h2 id="gift-information-title">ご祝儀について</h2>
+      <h2 id="gift-information-title" class="gift-information-title">ご祝儀について</h2>
       <details class="gift-details">
         <summary>
           <span class="gift-summary-copy">
@@ -390,30 +390,30 @@
         </summary>
         <div class="gift-details-body">
           <p class="gift-introduction">
-            当日は現金のほか、事前の送金もお選びいただけます。<br>
-            ご都合のよい方法をご利用ください。<br>
-            <span>事前のご送金は必須ではございません。</span>
+            <span class="gift-copy-line"><span>当日は現金のほか、</span><span>事前の送金もお選びいただけます。</span></span>
+            <span class="gift-copy-line">ご都合のよい方法をご利用ください。</span>
+            <strong class="gift-copy-note"><span>事前のご送金は</span><span>必須ではございません。</span></strong>
           </p>
           <div class="gift-method-grid">
             <article class="gift-method-card">
               <span class="gift-method-number number-font">01</span>
               <h3>ことら送金</h3>
-              <p>ことら送金を利用し、指定のゆうちょ銀行口座へお送りいただけます。</p>
+              <p><span>ことら送金を利用し、</span><span>指定のゆうちょ銀行口座へ</span><span>お送りいただけます。</span></p>
             </article>
             <article class="gift-method-card">
               <span class="gift-method-number number-font">02</span>
               <h3>銀行振込</h3>
-              <p>指定の楽天銀行口座へお振り込みいただけます。</p>
+              <p><span>指定の楽天銀行口座へ</span><span>お振り込みいただけます。</span></p>
             </article>
             <article class="gift-method-card">
               <span class="gift-method-number number-font">03</span>
               <h3>PayPay</h3>
-              <p>PayPayからお送りいただけます。</p>
+              <p><span>PayPayから</span><span>お送りいただけます。</span></p>
             </article>
             <article class="gift-method-card">
               <span class="gift-method-number number-font">04</span>
               <h3>当日に現金</h3>
-              <p>結婚式当日、受付にて現金でお預かりいたします。</p>
+              <p><span>結婚式当日、受付にて</span><span>現金でお預かりいたします。</span></p>
             </article>
           </div>
         </div>
@@ -436,15 +436,6 @@
         text.textContent = attending
           ? '当日お会いできますことを、心より楽しみにしております。'
           : 'またお会いできる日を楽しみにしております。';
-      }
-      const currentLink = els.thanks.querySelector('.thanks-gift-link');
-      if (currentLink) currentLink.remove();
-      if (completed && attending) {
-        const giftLink = document.createElement('a');
-        giftLink.className = 'thanks-gift-link';
-        giftLink.href = '#giftInformation';
-        giftLink.textContent = 'ご祝儀については、ページ最下部よりご確認いただけます。';
-        els.thanks.appendChild(giftLink);
       }
     }
   }
