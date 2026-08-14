@@ -419,7 +419,7 @@
       <div class="gift-complete-card" aria-live="polite">
         <span class="gift-complete-mark" aria-hidden="true">✓</span>
         <div>
-          <strong>${isCash ? '当日に現金でのお渡しを承りました' : '送金のご連絡ありがとうございました'}</strong>
+          <strong>${isCash ? '当日の現金でのお預かりを承りました' : '送金のご連絡ありがとうございました'}</strong>
           <p><span>${isCash ? '結婚式当日に受付でお預かりいたします。' : '送金済みとして承りました。'}</span><span>送金先情報は今後表示されません。</span></p>
         </div>
       </div>
@@ -463,7 +463,7 @@
               <span class="gift-method-number number-font">04</span>
               <h3>当日に現金</h3>
               <p><span>結婚式当日、受付にて</span><span>現金でお預かりいたします。</span></p>
-              <button class="gift-show-button gift-cash-button" type="button" data-gift-cash>当日に現金でお渡しする</button>
+              <button class="gift-show-button gift-cash-button" type="button" data-gift-cash>当日に現金を持参する</button>
             </article>
           </div>
         </div>
@@ -550,7 +550,7 @@
     resetGiftModalContent();
     els.giftModal.hidden = false;
     document.body.classList.add('gift-modal-open');
-    if (els.giftModalTitle) els.giftModalTitle.textContent = '当日に現金でお渡しする';
+    if (els.giftModalTitle) els.giftModalTitle.textContent = '当日に現金を持参する';
     if (els.giftModalDescription) {
       els.giftModalDescription.textContent = 'この方法を選ぶと、今後この招待状では送金先情報を表示できません。';
     }
@@ -564,7 +564,7 @@
     const isCash = type === 'cash';
     if (els.giftModalActions) els.giftModalActions.classList.add('is-hidden');
     if (els.giftConfirmTitle) {
-      els.giftConfirmTitle.textContent = isCash ? '当日に現金でお渡ししますか？' : '本当に送金しましたか？';
+      els.giftConfirmTitle.textContent = isCash ? '当日に現金をご持参いただきますか？' : '本当に送金しましたか？';
     }
     if (els.giftConfirmMessage) {
       els.giftConfirmMessage.textContent = isCash
@@ -575,7 +575,7 @@
       els.giftConfirmCancel.textContent = isCash ? 'まだ決めていません' : 'まだ送金していません';
     }
     if (els.giftConfirmSubmit) {
-      els.giftConfirmSubmit.textContent = isCash ? 'はい、現金で渡します' : 'はい、送金しました';
+      els.giftConfirmSubmit.textContent = isCash ? 'はい、当日持参します' : 'はい、送金しました';
     }
     if (els.giftConfirmPanel) els.giftConfirmPanel.classList.remove('is-hidden');
     if (els.giftConfirmSubmit) els.giftConfirmSubmit.focus();
@@ -650,7 +650,7 @@
     }
     clearGiftAccountInformation();
     if (els.giftModalTitle) {
-      els.giftModalTitle.textContent = isCash ? '現金でのお渡しとして記録しています' : '送金済みとして記録しています';
+      els.giftModalTitle.textContent = isCash ? '現金のご持参として記録しています' : '送金済みとして記録しています';
     }
     if (els.giftModalDescription) els.giftModalDescription.textContent = '画面を閉じずにお待ちください。';
     setGiftModalStatus('', '');

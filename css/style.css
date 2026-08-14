@@ -655,6 +655,7 @@ textarea::placeholder { white-space: pre-wrap; }
   cursor: pointer;
 }
 .gift-modal-note { margin: 18px 0 0; padding: 13px 15px; color: var(--muted); border-radius: 14px; background: rgba(181,139,93,.10); font-size: .78rem; line-height: 1.75; }
+.gift-modal-note:empty { display: none; }
 .gift-modal-status { min-height: 1.5em; margin: 15px 0 0; color: var(--muted); text-align: center; font-size: .82rem; }
 .gift-modal-status.is-error { color: #a83a3a; }
 .gift-modal-actions { margin-top: 22px; text-align: center; }
