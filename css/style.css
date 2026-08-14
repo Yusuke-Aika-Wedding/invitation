@@ -808,6 +808,7 @@ textarea::placeholder { white-space: pre-wrap; }
 }
 @media (max-width: 600px) {
   .mobile-only { display: inline; }
+  .venue-card p.venue-arrival-note { white-space: nowrap; }
   .message-overlay {
     padding: max(8px, env(safe-area-inset-top)) 10px max(8px, env(safe-area-inset-bottom));
   }
