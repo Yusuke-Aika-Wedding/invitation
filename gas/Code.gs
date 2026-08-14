@@ -363,7 +363,12 @@ function buildAfterReceptionThanksText_(data) {
 }
 
 function buildHtmlMail_(title, textBody, invitationUrl) {
-  const escaped = escapeHtml_(textBody).replace(/\n/g, '<br>');
+  const venueUrl = escapeHtml_(APP_CONFIG.venueUrl);
+  const venueMapGap = `${venueUrl}\n\nGoogle Map：`;
+  const venueMapSpacer = `${venueUrl}<span style="display:block;height:1.8em;line-height:1.8em;">&nbsp;</span>Google Map：`;
+  const escaped = escapeHtml_(textBody)
+    .replace(venueMapGap, venueMapSpacer)
+    .replace(/\n/g, '<br>');
   return `
     <div style="margin:0;padding:28px;background:#fff8f3;color:#392724;font-family:serif;line-height:1.8;">
       <div style="max-width:640px;margin:auto;padding:28px;border:1px solid #e3c7af;border-radius:24px;background:#fffdfb;">
