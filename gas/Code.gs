@@ -65,6 +65,7 @@ const COL = {
 };
 
 function setup() {
+  assertDedicatedExecutionAccount_();
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
@@ -398,18 +399,24 @@ function sendAfterReceptionThanksEmail_(data) {
 }
 
 function sendWeddingEmail_(data) {
-  const senderEmail = String(APP_CONFIG.senderEmail || '').trim();
-  const aliases = GmailApp.getAliases().map(alias => String(alias).toLowerCase());
-  if (!aliases.includes(senderEmail.toLowerCase())) {
-    throw new Error(`送信元 ${senderEmail} がGmailの送信エイリアスに設定されていません。`);
-  }
-
-  GmailApp.sendEmail(data.to, data.subject, data.body, {
+  assertDedicatedExecutionAccount_();
+  MailApp.sendEmail({
+    to: data.to,
     bcc: APP_CONFIG.bccEmail,
-    from: senderEmail,
+    subject: data.subject,
     name: APP_CONFIG.senderName,
+    body: data.body,
     htmlBody: data.htmlBody
   });
+}
+
+function assertDedicatedExecutionAccount_() {
+  const expectedEmail = String(APP_CONFIG.senderEmail || '').trim().toLowerCase();
+  const effectiveEmail = String(Session.getEffectiveUser().getEmail() || '').trim().toLowerCase();
+  if (effectiveEmail !== expectedEmail) {
+    const actual = effectiveEmail || '取得できませんでした';
+    throw new Error(`GASの実行アカウントが正しくありません。期待値: ${expectedEmail} / 実行中: ${actual}`);
+  }
 }
 
 function buildConfirmationText_(data) {
