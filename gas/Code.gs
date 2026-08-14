@@ -24,6 +24,7 @@ const APP_CONFIG = {
   senderName: 'Yusuke & Aika Wedding',
   senderEmail: 'yusuke.aika.wedding@gmail.com',
   bccEmail: 'yusuke.aika.wedding@gmail.com',
+  previewRecipientEmail: 'yusuke.tigers.0522@gmail.com',
   venueName: 'キンプトン新宿東京',
   venueUrl: 'https://www.kimptonshinjukuwedding.com/',
   mapUrl: 'https://www.google.com/maps/search/?api=1&query=%E3%82%AD%E3%83%B3%E3%83%97%E3%83%88%E3%83%B3%E6%96%B0%E5%AE%BF%E6%9D%B1%E4%BA%AC',
@@ -278,7 +279,7 @@ function testAfterReceptionThanksEmails() {
  * 実行しても各メールの送信日時は更新しません。
  */
 function sendRequestedEmailPreviews() {
-  return sendEmailPreviewsForGuest_('sfm549Eys', APP_CONFIG.bccEmail);
+  return sendEmailPreviewsForGuest_('sfm549Eys', APP_CONFIG.previewRecipientEmail);
 }
 
 function sendEmailPreviewsForGuest_(guestIdRaw, recipientRaw) {

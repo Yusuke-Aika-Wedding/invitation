@@ -121,9 +121,9 @@ gasWebAppUrl: 'PASTE_YOUR_GAS_WEB_APP_URL_HERE',
 
 旧GASのURLを使い続けると旧アカウントで処理されるため、`js/config.js` のURL更新は必須です。新URLで動作確認が完了した後、旧アカウントのGASプロジェクトを開き、リマインド・参加御礼の時間主導トリガーを削除してください。旧トリガーを残すと、新旧両方のアカウントからメールが送信される可能性があります。
 
-特定ゲストの内容で、回答確認・1週間前・前日・参加御礼の4種類の自動メールを確認したい場合は、GASエディタから `sendRequestedEmailPreviews` を実行します。確認用メールの送信日時はスプレッドシートへ記録されません。
+特定ゲストの内容で、回答確認・1週間前・前日・参加御礼の4種類の自動メールを確認したい場合は、GASエディタから `sendRequestedEmailPreviews` を実行します。ID `sfm549Eys` の内容が `APP_CONFIG.previewRecipientEmail`（`yusuke.tigers.0522@gmail.com`）へ送信され、確認用メールの送信日時はスプレッドシートへ記録されません。
 
-確認メールの送信元・宛先・BCCがすべて `yusuke.aika.wedding@gmail.com` になっていることを確認してください。
+確認メールの送信元が `yusuke.aika.wedding@gmail.com`、宛先が `yusuke.tigers.0522@gmail.com`、BCCが `yusuke.aika.wedding@gmail.com` になっていることを確認してください。
 
 ## 7. 動作確認
 
