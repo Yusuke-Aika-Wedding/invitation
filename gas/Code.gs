@@ -22,7 +22,8 @@ const APP_CONFIG = {
   groomFullName: '白戸祐輔',
   brideFullName: '大貫愛佳',
   senderName: 'Yusuke & Aika Wedding',
-  bccEmail: 'yusuke.tigers.0522@gmail.com',
+  senderEmail: 'yusuke.aika.wedding@gmail.com',
+  bccEmail: 'yusuke.aika.wedding@gmail.com',
   venueName: 'キンプトン新宿東京',
   venueUrl: 'https://www.kimptonshinjukuwedding.com/',
   mapUrl: 'https://www.google.com/maps/search/?api=1&query=%E3%82%AD%E3%83%B3%E3%83%97%E3%83%88%E3%83%B3%E6%96%B0%E5%AE%BF%E6%9D%B1%E4%BA%AC',
@@ -362,11 +363,9 @@ function sendConfirmationEmail_(data) {
   const subject = '【ご回答確認】Yusuke & Aika Wedding Invitation';
   const textBody = buildConfirmationText_(data);
   const htmlBody = buildHtmlMail_(subject, textBody, data.invitationUrl);
-  MailApp.sendEmail({
+  sendWeddingEmail_({
     to: data.to,
-    bcc: APP_CONFIG.bccEmail,
     subject: subject,
-    name: APP_CONFIG.senderName,
     body: textBody,
     htmlBody: htmlBody
   });
@@ -378,11 +377,9 @@ function sendReminderEmail_(data) {
     : '【前日リマインド】Yusuke & Aika Wedding';
   const textBody = buildReminderText_(data);
   const htmlBody = buildHtmlMail_(subject, textBody, data.invitationUrl);
-  MailApp.sendEmail({
+  sendWeddingEmail_({
     to: data.to,
-    bcc: APP_CONFIG.bccEmail,
     subject: subject,
-    name: APP_CONFIG.senderName,
     body: textBody,
     htmlBody: htmlBody
   });
@@ -392,13 +389,26 @@ function sendAfterReceptionThanksEmail_(data) {
   const subject = '【御礼】本日はありがとうございました';
   const textBody = buildAfterReceptionThanksText_(data);
   const htmlBody = buildHtmlMail_(subject, textBody, data.invitationUrl);
-  MailApp.sendEmail({
+  sendWeddingEmail_({
     to: data.to,
-    bcc: APP_CONFIG.bccEmail,
     subject: subject,
-    name: APP_CONFIG.senderName,
     body: textBody,
     htmlBody: htmlBody
+  });
+}
+
+function sendWeddingEmail_(data) {
+  const senderEmail = String(APP_CONFIG.senderEmail || '').trim();
+  const aliases = GmailApp.getAliases().map(alias => String(alias).toLowerCase());
+  if (!aliases.includes(senderEmail.toLowerCase())) {
+    throw new Error(`送信元 ${senderEmail} がGmailの送信エイリアスに設定されていません。`);
+  }
+
+  GmailApp.sendEmail(data.to, data.subject, data.body, {
+    bcc: APP_CONFIG.bccEmail,
+    from: senderEmail,
+    name: APP_CONFIG.senderName,
+    htmlBody: data.htmlBody
   });
 }
 
@@ -414,7 +424,7 @@ function buildReminderText_(data) {
 }
 
 function buildAfterReceptionThanksText_(data) {
-  return `${data.name} 様\n\n本日は私たちの結婚式にご参加いただき、\n誠にありがとうございました。\n皆様と大切な時間を過ごすことができ、\n心より感謝しております。\n\n【会場】${APP_CONFIG.venueName}\n${APP_CONFIG.venueUrl}\n\nGoogle Map：${APP_CONFIG.mapUrl}\n\n招待状URL：\n${data.invitationUrl}\n\n今後ともどうぞよろしくお願いいたします。\n\nYusuke & Aika`;
+  return `${data.name} 様\n\n本日は私たちの結婚式にご参加いただき、\n誠にありがとうございました。\n皆様と大切な時間を過ごすことができ、\n心より感謝しております。\n\n招待状URL：\n${data.invitationUrl}\n\n今後ともどうぞよろしくお願いいたします。\n\nYusuke & Aika`;
 }
 
 function buildHtmlMail_(title, textBody, invitationUrl) {
