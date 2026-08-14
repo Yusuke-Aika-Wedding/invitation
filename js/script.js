@@ -254,6 +254,7 @@
     if (els.form) els.form.reset();
     updateAllergyFields();
     setFormCompleted(false, false);
+    renderGiftInformation(false);
     setAuthStatus('', '');
     window.history.replaceState(null, '', location.pathname);
     window.setTimeout(() => { if (els.guestIdEntry) els.guestIdEntry.focus(); }, 50);
@@ -303,7 +304,7 @@
     };
 
     const displayName = getDisplayName();
-    if (els.messageGuestName) els.messageGuestName.textContent = `${displayName}様`;
+    if (els.messageGuestName) els.messageGuestName.textContent = `${displayName} 様`;
 
     let sentences;
     if (!latestStatus.completed) {
@@ -360,7 +361,67 @@
         return line;
       }));
     }
+    renderGiftInformation(latestStatus.completed && latestStatus.attending);
     setFormCompleted(latestStatus.completed, latestStatus.attending);
+  }
+
+  function renderGiftInformation(show) {
+    const existingSection = document.getElementById('giftInformation');
+    if (!show) {
+      if (existingSection) existingSection.remove();
+      return;
+    }
+    if (existingSection || !els.invitationPage) return;
+
+    const section = document.createElement('section');
+    section.id = 'giftInformation';
+    section.className = 'section gift-information fade-in is-visible';
+    section.setAttribute('aria-labelledby', 'gift-information-title');
+    section.innerHTML = `
+      <p class="section-kicker">For Guests</p>
+      <h2 id="gift-information-title">ご祝儀について</h2>
+      <details class="gift-details">
+        <summary>
+          <span class="gift-summary-copy">
+            <strong>ご祝儀のお預かり方法</strong>
+            <small>タップして詳細を見る</small>
+          </span>
+          <span class="gift-summary-icon" aria-hidden="true"></span>
+        </summary>
+        <div class="gift-details-body">
+          <p class="gift-introduction">
+            当日は現金のほか、事前の送金もお選びいただけます。<br>
+            ご都合のよい方法をご利用ください。<br>
+            <span>事前のご送金は必須ではございません。</span>
+          </p>
+          <div class="gift-method-grid">
+            <article class="gift-method-card">
+              <span class="gift-method-number number-font">01</span>
+              <h3>ことら送金</h3>
+              <p>ことら送金を利用し、指定のゆうちょ銀行口座へお送りいただけます。</p>
+            </article>
+            <article class="gift-method-card">
+              <span class="gift-method-number number-font">02</span>
+              <h3>銀行振込</h3>
+              <p>指定の楽天銀行口座へお振り込みいただけます。</p>
+            </article>
+            <article class="gift-method-card">
+              <span class="gift-method-number number-font">03</span>
+              <h3>PayPay</h3>
+              <p>PayPayからお送りいただけます。</p>
+            </article>
+            <article class="gift-method-card">
+              <span class="gift-method-number number-font">04</span>
+              <h3>当日に現金</h3>
+              <p>結婚式当日、受付にて現金でお預かりいたします。</p>
+            </article>
+          </div>
+        </div>
+      </details>
+    `;
+
+    const footer = els.invitationPage.querySelector('.footer');
+    els.invitationPage.insertBefore(section, footer || null);
   }
 
   function setFormCompleted(completed, attending) {
@@ -375,6 +436,15 @@
         text.textContent = attending
           ? '当日お会いできますことを、心より楽しみにしております。'
           : 'またお会いできる日を楽しみにしております。';
+      }
+      const currentLink = els.thanks.querySelector('.thanks-gift-link');
+      if (currentLink) currentLink.remove();
+      if (completed && attending) {
+        const giftLink = document.createElement('a');
+        giftLink.className = 'thanks-gift-link';
+        giftLink.href = '#giftInformation';
+        giftLink.textContent = 'ご祝儀については、ページ最下部よりご確認いただけます。';
+        els.thanks.appendChild(giftLink);
       }
     }
   }
@@ -402,6 +472,7 @@
       els.menuPanel.classList.toggle('is-open', open);
       els.menuButton.classList.toggle('is-open', open);
       els.menuButton.setAttribute('aria-expanded', String(open));
+      els.menuButton.setAttribute('aria-label', open ? 'メニューを閉じる' : 'メニューを開く');
     });
     els.menuPanel.querySelectorAll('a').forEach(link => link.addEventListener('click', closeMenu));
     if (els.changeIdButton) els.changeIdButton.addEventListener('click', resetToAuth);
@@ -418,6 +489,7 @@
     els.menuPanel.classList.remove('is-open');
     els.menuButton.classList.remove('is-open');
     els.menuButton.setAttribute('aria-expanded', 'false');
+    els.menuButton.setAttribute('aria-label', 'メニューを開く');
   }
 
   function applyRoute() {

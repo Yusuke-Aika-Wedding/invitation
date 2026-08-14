@@ -221,21 +221,30 @@ img { max-width: 100%; }
   place-items: center;
   padding: 0;
   cursor: pointer;
+  transition: border-color .25s ease, background .25s ease, box-shadow .25s ease;
 }
-.hamburger span, .hamburger::before, .hamburger::after {
-  content: "";
+.hamburger:hover { border-color: rgba(181,139,93,.46); background: rgba(255,252,249,.94); }
+.hamburger:focus-visible { outline: 3px solid rgba(181,139,93,.38); outline-offset: 3px; }
+.hamburger-mark {
+  position: relative;
   display: block;
-  width: 21px;
+  width: 24px;
+  height: 16px;
+}
+.hamburger-mark span {
+  position: absolute;
+  right: 0;
+  display: block;
   height: 1.5px;
   border-radius: 999px;
-  background: var(--wine-dark);
-  transition: transform .25s ease, opacity .25s ease;
+  background: linear-gradient(90deg, var(--gold), var(--wine-dark));
+  transform-origin: center;
+  transition: width .25s ease, transform .25s ease;
 }
-.hamburger::before { transform: translateY(-7px); }
-.hamburger::after { transform: translateY(7px); }
-.hamburger.is-open span { opacity: 0; }
-.hamburger.is-open::before { transform: translateY(1.5px) rotate(42deg); }
-.hamburger.is-open::after { transform: translateY(-1.5px) rotate(-42deg); }
+.hamburger-mark span:first-child { top: 3px; width: 24px; }
+.hamburger-mark span:last-child { right: 3px; bottom: 3px; width: 17px; }
+.hamburger.is-open .hamburger-mark span:first-child { transform: translateY(4.25px) rotate(42deg); }
+.hamburger.is-open .hamburger-mark span:last-child { right: 0; width: 24px; transform: translateY(-4.25px) rotate(-42deg); }
 .menu-panel {
   position: absolute;
   top: 64px;
@@ -390,7 +399,7 @@ img { max-width: 100%; }
 .venue-card { display: flex; padding: 28px; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
 .venue-name { margin: 0 0 10px; font-size: 1.36rem; color: var(--wine-dark); letter-spacing: .1em; }
 .venue-name a { text-decoration: none; border-bottom: 1px solid rgba(79,20,36,.35); }
-.venue-card p { margin: 8px 0 0; color: var(--muted); text-wrap: pretty; }
+.venue-card p { margin: 8px 0 0; color: var(--muted); font-size: clamp(1.02rem, 1.55vw, 1.14rem); line-height: 1.95; text-wrap: pretty; }
 .map-card iframe { display: block; width: 100%; min-height: 340px; border: 0; }
 .button-link { display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-top: 20px; padding: 12px 20px; color: #fffaf6; background: linear-gradient(135deg, var(--wine), var(--wine-dark)); border-radius: 999px; text-decoration: none; box-shadow: 0 12px 24px rgba(93, 23, 37, .18); }
 .movie-card { margin-top: 22px; padding: 18px; }
@@ -448,6 +457,77 @@ textarea::placeholder { white-space: pre-wrap; }
 .thanks-card { max-width: 720px; margin: 30px auto 0; padding: 28px; text-align: center; border-radius: 26px; background: linear-gradient(180deg, #fff, #fff6f2); border: 1px solid rgba(173, 122, 79, .28); box-shadow: 0 14px 34px rgba(73, 35, 28, .09); }
 .thanks-card strong { display: block; color: var(--wine-dark); font-size: 1.18rem; margin-bottom: 8px; text-wrap: balance; }
 .thanks-card p { text-wrap: pretty; }
+.thanks-gift-link {
+  display: inline-block;
+  margin-top: 12px;
+  color: var(--wine);
+  font-size: .88rem;
+  text-underline-offset: 5px;
+}
+
+.gift-information { padding-bottom: clamp(34px, 5.5vw, 62px); }
+.gift-details {
+  max-width: 880px;
+  margin: 30px auto 0;
+  border: 1px solid rgba(173,122,79,.28);
+  border-radius: 26px;
+  background: rgba(255,250,246,.82);
+  box-shadow: 0 14px 34px rgba(73,35,28,.07);
+  overflow: hidden;
+}
+.gift-details summary {
+  display: flex;
+  min-height: 92px;
+  padding: 20px 24px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  color: var(--wine-dark);
+  list-style: none;
+  cursor: pointer;
+}
+.gift-details summary::-webkit-details-marker { display: none; }
+.gift-details summary:focus-visible { outline: 3px solid rgba(181,139,93,.38); outline-offset: -5px; }
+.gift-summary-copy { display: flex; flex-direction: column; gap: 2px; }
+.gift-summary-copy strong { font-size: clamp(1.02rem, 2vw, 1.2rem); letter-spacing: .1em; }
+.gift-summary-copy small { color: var(--muted); font-size: .72rem; letter-spacing: .08em; }
+.gift-summary-icon {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border: 1px solid rgba(122,29,51,.26);
+  border-radius: 50%;
+}
+.gift-summary-icon::before, .gift-summary-icon::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 1px;
+  background: var(--wine);
+  transform: translate(-50%, -50%);
+  transition: transform .22s ease;
+}
+.gift-summary-icon::after { transform: translate(-50%, -50%) rotate(90deg); }
+.gift-details[open] .gift-summary-icon::after { transform: translate(-50%, -50%) rotate(0); }
+.gift-details-body { padding: 4px 24px 26px; border-top: 1px solid rgba(181,139,93,.18); }
+.gift-introduction { margin: 22px auto 0; color: var(--muted); text-align: center; line-height: 2; text-wrap: pretty; }
+.gift-introduction span { color: var(--wine-dark); font-weight: 600; }
+.gift-method-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 24px; }
+.gift-method-card {
+  position: relative;
+  min-height: 172px;
+  padding: 24px 22px;
+  overflow: hidden;
+  border: 1px solid rgba(173,122,79,.22);
+  border-radius: 22px;
+  background: linear-gradient(145deg, rgba(255,255,255,.98), rgba(255,246,241,.94));
+}
+.gift-method-number { display: block; color: var(--gold); font-size: .78rem; letter-spacing: .16em; }
+.gift-method-card h3 { margin: 7px 0 0; color: var(--wine-dark); font-size: 1.08rem; letter-spacing: .1em; }
+.gift-method-card p { margin: 10px 0 0; color: var(--muted); font-size: .88rem; line-height: 1.85; text-wrap: pretty; }
 
 .sub-page { min-height: calc(var(--vh, 1vh) * 100 - 56px); padding: 64px 0 28px; }
 .page-intro { margin: 0 auto 26px; padding: clamp(30px, 5vw, 54px); border-radius: 34px; text-align: center; background: rgba(255,255,255,.78); border: 1px solid var(--line); box-shadow: var(--shadow); }
@@ -709,6 +789,7 @@ textarea::placeholder { white-space: pre-wrap; }
   .info-card { min-height: 0; padding: 26px 18px 28px; }
   .info-card h3::after { margin: 13px auto 15px; }
   .venue-card { padding: 22px; }
+  .venue-card p { font-size: 1.02rem; }
   .map-card iframe { min-height: 280px; }
   .message-overlay { padding: 18px; background-position: center center; }
   .message-card { border-radius: 28px; }
@@ -720,6 +801,7 @@ textarea::placeholder { white-space: pre-wrap; }
   .profile-divider span { width: 74px; height: 1px; background: linear-gradient(90deg, transparent, rgba(181,139,93,.7), transparent); }
   .person-facts { max-width: 460px; margin-right: auto; margin-left: auto; }
   .quiz-panel { padding: 30px 20px; }
+  .gift-details { margin-top: 24px; border-radius: 22px; }
 }
 @media (max-width: 600px) {
   .mobile-only { display: inline; }
@@ -737,6 +819,11 @@ textarea::placeholder { white-space: pre-wrap; }
   .message-text { font-size: clamp(.84rem, 3.6vw, .94rem); line-height: 1.68; }
   .message-signature { margin-top: 12px; font-size: clamp(2rem, 10vw, 2.75rem); }
   .tap-guide { margin-top: 14px; padding: 6px 14px; font-size: .7rem; }
+  .gift-details summary { min-height: 82px; padding: 17px 18px; }
+  .gift-details-body { padding: 2px 16px 20px; }
+  .gift-introduction { font-size: .88rem; line-height: 1.9; }
+  .gift-method-grid { grid-template-columns: 1fr; gap: 11px; margin-top: 20px; }
+  .gift-method-card { min-height: 0; padding: 20px 18px; }
 }
 @media (min-width: 601px) and (max-width: 820px) {
   .auth-note-break { display: none; }

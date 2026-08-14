@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&amp;family=Noto+Serif+JP:wght@400;500;600;700&amp;family=Old+Standard+TT:wght@400;700&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20260814-invitation-fixes">
+  <link rel="stylesheet" href="css/style.css?v=20260814-attendee-gift-info">
 </head>
 <body class="auth-locked">
   <div class="petal-layer" aria-hidden="true"></div>
@@ -38,7 +38,9 @@
   </section>
 
   <header class="top-menu" aria-label="ページメニュー">
-    <button id="menuButton" class="hamburger" type="button" aria-label="メニューを開く" aria-controls="menuPanel" aria-expanded="false"><span></span></button>
+    <button id="menuButton" class="hamburger" type="button" aria-label="メニューを開く" aria-controls="menuPanel" aria-expanded="false">
+      <span class="hamburger-mark" aria-hidden="true"><span></span><span></span></span>
+    </button>
     <nav id="menuPanel" class="menu-panel" aria-label="メインメニュー">
       <a href="#invitation" data-nav="invitation"><span>Invitation</span>招待状ページ</a>
       <a href="#profile" data-nav="profile"><span>Profile</span>2人の紹介ページ</a>
@@ -54,7 +56,7 @@
     <div class="message-shade" aria-hidden="true"></div>
     <article class="message-card" aria-live="polite">
       <p class="script-label">Dear Guest</p>
-      <h2 id="messageGuestName" class="message-name">ゲスト様</h2>
+      <h2 id="messageGuestName" class="message-name">ゲスト 様</h2>
       <p id="messageBody" class="message-text"></p>
       <p class="message-signature">Yusuke &amp; Aika</p>
       <div class="tap-guide">Tap to open</div>
@@ -255,6 +257,6 @@
   </main>
 
   <script src="js/config.js"></script>
-  <script src="js/script.js?v=20260814-invitation-fixes"></script>
+  <script src="js/script.js?v=20260814-attendee-gift-info"></script>
 </body>
 </html>
