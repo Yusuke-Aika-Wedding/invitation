@@ -419,8 +419,12 @@
       <div class="gift-complete-card" aria-live="polite">
         <span class="gift-complete-mark" aria-hidden="true">✓</span>
         <div>
-          <strong>${isCash ? '当日の現金でのお預かりを承りました' : '送金のご連絡ありがとうございました'}</strong>
-          <p><span>${isCash ? '結婚式当日に受付でお預かりいたします。' : '送金済みとして承りました。'}</span><span>送金先情報は今後表示されません。</span></p>
+          <strong>${isCash
+            ? '<span class="gift-complete-title-line">当日の現金での</span><span class="gift-complete-title-line">お預かりを承りました</span>'
+            : '送金のご連絡ありがとうございました'}</strong>
+          <p>${isCash
+            ? '<span>結婚式当日に</span><span>受付でお預かりいたします。</span><span>送金先情報は今後</span><span>表示されません。</span>'
+            : '<span>送金済みとして承りました。</span><span>送金先情報は今後表示されません。</span>'}</p>
         </div>
       </div>
     ` : `
@@ -550,7 +554,7 @@
     resetGiftModalContent();
     els.giftModal.hidden = false;
     document.body.classList.add('gift-modal-open');
-    if (els.giftModalTitle) els.giftModalTitle.textContent = '当日に現金を持参する';
+    setGiftModalTitle('当日に現金を持参する');
     if (els.giftModalDescription) {
       els.giftModalDescription.textContent = 'この方法を選ぶと、今後この招待状では送金先情報を表示できません。';
     }
@@ -583,7 +587,7 @@
 
   function renderGiftAccountInformation(information) {
     const fields = Array.isArray(information.fields) ? information.fields : [];
-    if (els.giftModalTitle) els.giftModalTitle.textContent = String(information.title || '送金先情報');
+    setGiftModalTitle(String(information.title || '送金先情報'));
     if (els.giftModalDescription) els.giftModalDescription.textContent = String(information.description || '以下の送金先をご確認ください。');
     if (els.giftModalNote) els.giftModalNote.textContent = String(information.note || '送金前に受取人名をご確認ください。');
     if (els.giftAccountFields) {
@@ -649,8 +653,10 @@
       els.giftConfirmSubmit.textContent = '記録しています…';
     }
     clearGiftAccountInformation();
-    if (els.giftModalTitle) {
-      els.giftModalTitle.textContent = isCash ? '現金のご持参として記録しています' : '送金済みとして記録しています';
+    if (isCash) {
+      setGiftModalTitle(['現金のご持参として', '記録しています'], { cashRecording: true });
+    } else {
+      setGiftModalTitle('送金済みとして記録しています');
     }
     if (els.giftModalDescription) els.giftModalDescription.textContent = '画面を閉じずにお待ちください。';
     setGiftModalStatus('', '');
@@ -671,7 +677,7 @@
         els.giftConfirmSubmit.disabled = false;
         els.giftConfirmSubmit.textContent = 'もう一度記録する';
       }
-      if (els.giftModalTitle) els.giftModalTitle.textContent = 'ご祝儀のお渡し方法を記録できませんでした';
+      setGiftModalTitle('ご祝儀のお渡し方法を記録できませんでした');
       if (els.giftModalDescription) els.giftModalDescription.textContent = '通信状況をご確認のうえ、もう一度お試しください。';
       if (els.giftConfirmPanel) els.giftConfirmPanel.classList.remove('is-hidden');
       setGiftModalStatus(error.message || '時間をおいて、もう一度お試しください。', 'error');
@@ -691,7 +697,7 @@
   function resetGiftModalContent() {
     pendingGiftConfirmation = '';
     clearGiftAccountInformation();
-    if (els.giftModalTitle) els.giftModalTitle.textContent = '送金先情報';
+    setGiftModalTitle('送金先情報');
     if (els.giftModalDescription) els.giftModalDescription.textContent = '送金先情報を確認しています。';
     if (els.giftModalNote) els.giftModalNote.textContent = '';
     if (els.giftModalActions) els.giftModalActions.classList.add('is-hidden');
@@ -718,6 +724,22 @@
     if (!els.giftModalStatus) return;
     els.giftModalStatus.textContent = message || '';
     els.giftModalStatus.classList.toggle('is-error', type === 'error');
+  }
+
+  function setGiftModalTitle(content, options = {}) {
+    if (!els.giftModalTitle) return;
+    const parts = Array.isArray(content) ? content : [content];
+    els.giftModalTitle.classList.toggle('is-cash-recording', options.cashRecording === true);
+    if (parts.length === 1) {
+      els.giftModalTitle.textContent = String(parts[0] || '');
+      return;
+    }
+    els.giftModalTitle.replaceChildren(...parts.map(part => {
+      const line = document.createElement('span');
+      line.className = 'gift-recording-line';
+      line.textContent = String(part || '');
+      return line;
+    }));
   }
 
   function normalizeGiftStatus(value, lockedFallback = false) {
