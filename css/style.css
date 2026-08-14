@@ -533,7 +533,7 @@ textarea::placeholder { white-space: pre-wrap; }
 .gift-method-number { display: block; color: var(--gold); font-size: .78rem; letter-spacing: .16em; }
 .gift-method-card h3 { margin: 7px 0 0; color: var(--wine-dark); font-size: 1.08rem; letter-spacing: .1em; }
 .gift-method-card p { margin: 10px 0 0; flex: 1; color: var(--muted); font-size: .88rem; line-height: 1.85; text-wrap: pretty; }
-.gift-method-card p span { display: inline; }
+.gift-method-card p span { display: block; }
 .gift-show-button {
   width: 100%;
   min-height: 44px;

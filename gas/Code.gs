@@ -69,9 +69,16 @@ const COL = {
 };
 
 const GIFT_STATUS = {
-  unpaid: '未入金',
-  paid: '入金済み',
-  repaid: '再入金'
+  unsent: '未送金',
+  sent: '送金済み',
+  resent: '再送金',
+  cash: '現金'
+};
+
+const LEGACY_GIFT_STATUS = {
+  '未入金': GIFT_STATUS.unsent,
+  '入金済み': GIFT_STATUS.sent,
+  '再入金': GIFT_STATUS.resent
 };
 
 // 正式な送金先はGASのスクリプト プロパティ「GIFT_INFO_JSON」へ保存します。
@@ -130,6 +137,7 @@ function doGet(e) {
     if (action === 'submit') return output_(submitResponse_(params), params.callback);
     if (action === 'giftInfo') return output_(getGiftInformation_(params.guestId, params.method), params.callback);
     if (action === 'confirmGiftSent') return output_(confirmGiftSent_(params.guestId), params.callback);
+    if (action === 'confirmGiftCash') return output_(confirmGiftCash_(params.guestId), params.callback);
     if (action === 'sendThanksNow') return output_({ ok: true, sent: sendAfterReceptionThanksEmails_(true) }, params.callback);
     return output_({ ok: false, error: 'Unknown action.' }, params.callback);
   } catch (error) {
@@ -159,13 +167,15 @@ function getStatus_(guestIdRaw) {
 
   const values = record.values;
   const completed = isCompleted_(values);
+  const giftStatus = normalizeGiftStatus_(values.giftStatus);
   return {
     ok: true,
     guestId: values.id,
     displayName: values.name || 'ゲスト',
     completed: completed,
     attending: isAttending_(values.ceremony, values.reception),
-    giftSent: isGiftSettled_(values.giftStatus),
+    giftSent: isGiftLocked_(giftStatus),
+    giftStatus: giftStatus,
     email: values.email || '',
     ceremonyAttendance: values.ceremony || '',
     receptionAttendance: values.reception || '',
@@ -244,11 +254,13 @@ function submitResponse_(params) {
     sheet.getRange(record.rowNumber, COL.confirmationSentAt).setValue(afterMail);
     sheet.getRange(record.rowNumber, COL.updatedAt).setValue(afterMail);
 
+    const giftStatus = normalizeGiftStatus_(record.values.giftStatus);
     return {
       ok: true,
       completed: true,
       attending: isAttending_(ceremonyAttendance, receptionAttendance),
-      giftSent: isGiftSettled_(record.values.giftStatus),
+      giftSent: isGiftLocked_(giftStatus),
+      giftStatus: giftStatus,
       displayName: name
     };
   } finally {
@@ -282,8 +294,19 @@ function getGiftInformation_(guestIdRaw, methodRaw) {
 }
 
 function confirmGiftSent_(guestIdRaw) {
+  return recordGiftChoice_(guestIdRaw, GIFT_STATUS.sent);
+}
+
+function confirmGiftCash_(guestIdRaw) {
+  return recordGiftChoice_(guestIdRaw, GIFT_STATUS.cash);
+}
+
+function recordGiftChoice_(guestIdRaw, requestedStatus) {
   const guestId = normalizeGuestId_(guestIdRaw);
   if (!guestId) throw new Error('guestIdがありません。');
+  if (![GIFT_STATUS.sent, GIFT_STATUS.cash].includes(requestedStatus)) {
+    throw new Error('ご祝儀のお渡し方法を確認してください。');
+  }
 
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
@@ -296,15 +319,17 @@ function confirmGiftSent_(guestIdRaw) {
       throw new Error('送金情報の確認対象ではありません。');
     }
 
-    if (!isGiftSettled_(record.values.giftStatus)) {
+    let giftStatus = normalizeGiftStatus_(record.values.giftStatus);
+    if (!isGiftLocked_(giftStatus)) {
       const now = new Date();
-      sheet.getRange(record.rowNumber, COL.giftStatus).setValue(GIFT_STATUS.paid);
+      giftStatus = requestedStatus;
+      sheet.getRange(record.rowNumber, COL.giftStatus).setValue(giftStatus);
       sheet.getRange(record.rowNumber, COL.updatedAt).setValue(now);
       SpreadsheetApp.flush();
     }
 
-    // 入金確認メールは今後実装します。現時点ではステータス更新だけを行います。
-    return { ok: true, giftSent: true };
+    // 送金確認メールは今後実装します。現時点ではステータス更新だけを行います。
+    return { ok: true, giftSent: true, giftStatus: giftStatus };
   } finally {
     lock.releaseLock();
   }
@@ -314,8 +339,8 @@ function assertGiftInformationAvailable_(values) {
   if (!isCompleted_(values) || !isAttending_(values.ceremony, values.reception)) {
     throw new Error('送金情報の確認対象ではありません。');
   }
-  if (isGiftSettled_(values.giftStatus)) {
-    throw new Error('送金済みのため、送金先情報は表示できません。');
+  if (isGiftLocked_(values.giftStatus)) {
+    throw new Error('ご祝儀のお渡し方法が確定済みのため、送金先情報は表示できません。');
   }
 }
 
@@ -701,25 +726,29 @@ function removeLegacyInvitationUrlColumn_(sheet) {
 
 function ensureGiftStatusColumn_(sheet) {
   const validation = SpreadsheetApp.newDataValidation()
-    .requireValueInList([GIFT_STATUS.paid, GIFT_STATUS.repaid, GIFT_STATUS.unpaid], true)
+    .requireValueInList([GIFT_STATUS.sent, GIFT_STATUS.resent, GIFT_STATUS.unsent, GIFT_STATUS.cash], true)
     .setAllowInvalid(false)
     .build();
   const availableRows = Math.max(sheet.getMaxRows() - 1, 1);
   sheet.getRange(2, COL.giftStatus, availableRows, 1).setDataValidation(validation);
 
   const lastRow = sheet.getLastRow();
-  if (lastRow < 2) return;
-  const rowCount = lastRow - 1;
-  const ids = sheet.getRange(2, COL.id, rowCount, 1).getValues();
-  const statuses = sheet.getRange(2, COL.giftStatus, rowCount, 1).getValues();
-  let changed = false;
-  statuses.forEach((row, index) => {
-    if (String(ids[index][0] || '').trim() && !String(row[0] || '').trim()) {
-      row[0] = GIFT_STATUS.unpaid;
-      changed = true;
-    }
-  });
-  if (changed) sheet.getRange(2, COL.giftStatus, rowCount, 1).setValues(statuses);
+  if (lastRow >= 2) {
+    const rowCount = lastRow - 1;
+    const ids = sheet.getRange(2, COL.id, rowCount, 1).getValues();
+    const statuses = sheet.getRange(2, COL.giftStatus, rowCount, 1).getValues();
+    let changed = false;
+    statuses.forEach((row, index) => {
+      if (!String(ids[index][0] || '').trim()) return;
+      const normalized = normalizeGiftStatus_(row[0]);
+      if (String(row[0] || '').trim() !== normalized) {
+        row[0] = normalized;
+        changed = true;
+      }
+    });
+    if (changed) sheet.getRange(2, COL.giftStatus, rowCount, 1).setValues(statuses);
+  }
+
 }
 
 function formatSheet_(sheet) {
@@ -771,13 +800,16 @@ function isAttending_(ceremony, reception) {
 
 function normalizeGiftStatus_(value) {
   const status = String(value || '').trim();
-  if ([GIFT_STATUS.paid, GIFT_STATUS.repaid, GIFT_STATUS.unpaid].includes(status)) return status;
-  return GIFT_STATUS.unpaid;
+  const normalized = LEGACY_GIFT_STATUS[status] || status;
+  if ([GIFT_STATUS.sent, GIFT_STATUS.resent, GIFT_STATUS.unsent, GIFT_STATUS.cash].includes(normalized)) {
+    return normalized;
+  }
+  return GIFT_STATUS.unsent;
 }
 
-function isGiftSettled_(value) {
+function isGiftLocked_(value) {
   const status = normalizeGiftStatus_(value);
-  return status === GIFT_STATUS.paid || status === GIFT_STATUS.repaid;
+  return status === GIFT_STATUS.sent || status === GIFT_STATUS.resent || status === GIFT_STATUS.cash;
 }
 
 function normalizeAttendance_(value) {

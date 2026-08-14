@@ -3,14 +3,21 @@
 
   const config = window.WEDDING_CONFIG || {};
   const GUEST_ID_STORAGE_KEY = 'yusuke-aika-wedding-guest-id-v1';
+  const GIFT_STATUS = Object.freeze({
+    unsent: '未送金',
+    sent: '送金済み',
+    resent: '再送金',
+    cash: '現金'
+  });
   const targetDate = new Date(config.weddingDateIso || '2027-03-21T10:00:00+09:00');
   const els = {};
   let guestId = '';
-  let latestStatus = { completed: false, attending: false, giftSent: false };
+  let latestStatus = { completed: false, attending: false, giftSent: false, giftStatus: GIFT_STATUS.unsent };
   let currentSlide = 0;
   let authenticated = false;
   let lastGiftTrigger = null;
   let giftRequestSequence = 0;
+  let pendingGiftConfirmation = '';
   const QUIZ_QUESTION_COUNT = 5;
   const QUIZ_QUESTIONS = [
     { question: '新郎のフルネームは？', options: ['白戸 祐輔', '白戸 悠介', '白井 祐輔'], answer: '白戸 祐輔', explanation: '新郎は白戸祐輔（Yusuke Shirato）です。' },
@@ -111,6 +118,8 @@
       giftModalActions: document.getElementById('giftModalActions'),
       giftSentButton: document.getElementById('giftSentButton'),
       giftConfirmPanel: document.getElementById('giftConfirmPanel'),
+      giftConfirmTitle: document.getElementById('giftConfirmTitle'),
+      giftConfirmMessage: document.getElementById('giftConfirmMessage'),
       giftConfirmCancel: document.getElementById('giftConfirmCancel'),
       giftConfirmSubmit: document.getElementById('giftConfirmSubmit')
     });
@@ -161,10 +170,12 @@
       if (!result || !result.ok) throw new Error((result && result.error) || 'IDを確認できませんでした。');
 
       guestId = normalizeGuestId(result.guestId || candidate);
+      const giftStatus = normalizeGiftStatus(result.giftStatus, Boolean(result.giftSent));
       latestStatus = {
         completed: Boolean(result.completed),
         attending: Boolean(result.attending),
-        giftSent: Boolean(result.giftSent)
+        giftSent: isGiftLocked(giftStatus),
+        giftStatus: giftStatus
       };
       try {
         localStorage.setItem(GUEST_ID_STORAGE_KEY, guestId);
@@ -252,7 +263,7 @@
   function resetToAuth() {
     authenticated = false;
     guestId = '';
-    latestStatus = { completed: false, attending: false, giftSent: false };
+    latestStatus = { completed: false, attending: false, giftSent: false, giftStatus: GIFT_STATUS.unsent };
     try {
       localStorage.removeItem(GUEST_ID_STORAGE_KEY);
     } catch (_) {
@@ -316,10 +327,12 @@
   }
 
   function renderMessage(status) {
+    const giftStatus = normalizeGiftStatus(status && status.giftStatus, Boolean(status && status.giftSent));
     latestStatus = {
       completed: Boolean(status && status.completed),
       attending: Boolean(status && status.attending),
-      giftSent: Boolean(status && status.giftSent)
+      giftSent: isGiftLocked(giftStatus),
+      giftStatus: giftStatus
     };
 
     const displayName = getDisplayName();
@@ -380,11 +393,11 @@
         return line;
       }));
     }
-    renderGiftInformation(latestStatus.completed && latestStatus.attending, latestStatus.giftSent);
+    renderGiftInformation(latestStatus.completed && latestStatus.attending, latestStatus.giftStatus);
     setFormCompleted(latestStatus.completed, latestStatus.attending);
   }
 
-  function renderGiftInformation(show, giftSent = false) {
+  function renderGiftInformation(show, giftStatus = GIFT_STATUS.unsent) {
     const existingSection = document.getElementById('giftInformation');
     if (!show) {
       if (existingSection) existingSection.remove();
@@ -397,14 +410,17 @@
     section.id = 'giftInformation';
     section.className = 'section gift-information fade-in is-visible';
     section.setAttribute('aria-labelledby', 'gift-information-title');
-    section.innerHTML = giftSent ? `
+    const normalizedGiftStatus = normalizeGiftStatus(giftStatus);
+    const giftLocked = isGiftLocked(normalizedGiftStatus);
+    const isCash = normalizedGiftStatus === GIFT_STATUS.cash;
+    section.innerHTML = giftLocked ? `
       <p class="section-kicker">For Guests</p>
       <h2 id="gift-information-title" class="gift-information-title">ご祝儀について</h2>
       <div class="gift-complete-card" aria-live="polite">
         <span class="gift-complete-mark" aria-hidden="true">✓</span>
         <div>
-          <strong>送金のご連絡ありがとうございました</strong>
-          <p><span>送金済みとして承りました。</span><span>送金先情報は今後表示されません。</span></p>
+          <strong>${isCash ? '当日に現金でのお渡しを承りました' : '送金のご連絡ありがとうございました'}</strong>
+          <p><span>${isCash ? '結婚式当日に受付でお預かりいたします。' : '送金済みとして承りました。'}</span><span>送金先情報は今後表示されません。</span></p>
         </div>
       </div>
     ` : `
@@ -447,6 +463,7 @@
               <span class="gift-method-number number-font">04</span>
               <h3>当日に現金</h3>
               <p><span>結婚式当日、受付にて</span><span>現金でお預かりいたします。</span></p>
+              <button class="gift-show-button gift-cash-button" type="button" data-gift-cash>当日に現金でお渡しする</button>
             </article>
           </div>
         </div>
@@ -461,6 +478,11 @@
     if (!els.giftModal || !els.invitationPage) return;
 
     els.invitationPage.addEventListener('click', event => {
+      const cashButton = event.target.closest('[data-gift-cash]');
+      if (cashButton && els.invitationPage.contains(cashButton)) {
+        openCashConfirmation(cashButton);
+        return;
+      }
       const button = event.target.closest('[data-gift-method]');
       if (!button || !els.invitationPage.contains(button)) return;
       openGiftModal(button.dataset.giftMethod || '', button);
@@ -471,19 +493,22 @@
     });
     if (els.giftSentButton) {
       els.giftSentButton.addEventListener('click', () => {
-        if (els.giftModalActions) els.giftModalActions.classList.add('is-hidden');
-        if (els.giftConfirmPanel) els.giftConfirmPanel.classList.remove('is-hidden');
-        if (els.giftConfirmSubmit) els.giftConfirmSubmit.focus();
+        showGiftConfirmation('sent');
       });
     }
     if (els.giftConfirmCancel) {
       els.giftConfirmCancel.addEventListener('click', () => {
+        if (pendingGiftConfirmation === 'cash') {
+          closeGiftModal();
+          return;
+        }
         if (els.giftConfirmPanel) els.giftConfirmPanel.classList.add('is-hidden');
         if (els.giftModalActions) els.giftModalActions.classList.remove('is-hidden');
+        pendingGiftConfirmation = '';
         if (els.giftSentButton) els.giftSentButton.focus();
       });
     }
-    if (els.giftConfirmSubmit) els.giftConfirmSubmit.addEventListener('click', confirmGiftSent);
+    if (els.giftConfirmSubmit) els.giftConfirmSubmit.addEventListener('click', confirmGiftChoice);
     if (els.giftAccountFields) {
       els.giftAccountFields.addEventListener('click', event => {
         const button = event.target.closest('[data-copy-value]');
@@ -517,6 +542,43 @@
       if (els.giftModalDescription) els.giftModalDescription.textContent = '送金先情報を表示できませんでした。';
       setGiftModalStatus(error.message || '時間をおいて、もう一度お試しください。', 'error');
     }
+  }
+
+  function openCashConfirmation(trigger) {
+    if (!guestId || !authenticated || latestStatus.giftSent) return;
+    lastGiftTrigger = trigger || null;
+    resetGiftModalContent();
+    els.giftModal.hidden = false;
+    document.body.classList.add('gift-modal-open');
+    if (els.giftModalTitle) els.giftModalTitle.textContent = '当日に現金でお渡しする';
+    if (els.giftModalDescription) {
+      els.giftModalDescription.textContent = 'この方法を選ぶと、今後この招待状では送金先情報を表示できません。';
+    }
+    setGiftModalStatus('', '');
+    if (els.giftModalCard) els.giftModalCard.focus();
+    showGiftConfirmation('cash');
+  }
+
+  function showGiftConfirmation(type) {
+    pendingGiftConfirmation = type;
+    const isCash = type === 'cash';
+    if (els.giftModalActions) els.giftModalActions.classList.add('is-hidden');
+    if (els.giftConfirmTitle) {
+      els.giftConfirmTitle.textContent = isCash ? '当日に現金でお渡ししますか？' : '本当に送金しましたか？';
+    }
+    if (els.giftConfirmMessage) {
+      els.giftConfirmMessage.textContent = isCash
+        ? '「現金」として記録すると、今後この招待状では送金先情報を表示できません。'
+        : '「送金済み」として記録すると、今後この招待状では送金先情報を表示できません。';
+    }
+    if (els.giftConfirmCancel) {
+      els.giftConfirmCancel.textContent = isCash ? 'まだ決めていません' : 'まだ送金していません';
+    }
+    if (els.giftConfirmSubmit) {
+      els.giftConfirmSubmit.textContent = isCash ? 'はい、現金で渡します' : 'はい、送金しました';
+    }
+    if (els.giftConfirmPanel) els.giftConfirmPanel.classList.remove('is-hidden');
+    if (els.giftConfirmSubmit) els.giftConfirmSubmit.focus();
   }
 
   function renderGiftAccountInformation(information) {
@@ -577,25 +639,31 @@
     }
   }
 
-  async function confirmGiftSent() {
+  async function confirmGiftChoice() {
     if (!guestId || !authenticated || latestStatus.giftSent) return;
+    const isCash = pendingGiftConfirmation === 'cash';
+    const action = isCash ? 'confirmGiftCash' : 'confirmGiftSent';
+    const expectedStatus = isCash ? GIFT_STATUS.cash : GIFT_STATUS.sent;
     if (els.giftConfirmSubmit) {
       els.giftConfirmSubmit.disabled = true;
       els.giftConfirmSubmit.textContent = '記録しています…';
     }
     clearGiftAccountInformation();
-    if (els.giftModalTitle) els.giftModalTitle.textContent = '送金済みとして記録しています';
+    if (els.giftModalTitle) {
+      els.giftModalTitle.textContent = isCash ? '現金でのお渡しとして記録しています' : '送金済みとして記録しています';
+    }
     if (els.giftModalDescription) els.giftModalDescription.textContent = '画面を閉じずにお待ちください。';
     setGiftModalStatus('', '');
 
     try {
-      const result = await jsonp('confirmGiftSent', { guestId: guestId });
+      const result = await jsonp(action, { guestId: guestId });
       if (!result || !result.ok || !result.giftSent) {
-        throw new Error((result && result.error) || '送金済みとして記録できませんでした。');
+        throw new Error((result && result.error) || 'ご祝儀のお渡し方法を記録できませんでした。');
       }
-      latestStatus.giftSent = true;
+      latestStatus.giftStatus = normalizeGiftStatus(result.giftStatus || expectedStatus, true);
+      latestStatus.giftSent = isGiftLocked(latestStatus.giftStatus);
       closeGiftModal({ restoreFocus: false });
-      renderGiftInformation(true, true);
+      renderGiftInformation(true, latestStatus.giftStatus);
       const completeCard = document.querySelector('.gift-complete-card');
       if (completeCard) completeCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } catch (error) {
@@ -603,7 +671,7 @@
         els.giftConfirmSubmit.disabled = false;
         els.giftConfirmSubmit.textContent = 'もう一度記録する';
       }
-      if (els.giftModalTitle) els.giftModalTitle.textContent = '送金済みとして記録できませんでした';
+      if (els.giftModalTitle) els.giftModalTitle.textContent = 'ご祝儀のお渡し方法を記録できませんでした';
       if (els.giftModalDescription) els.giftModalDescription.textContent = '通信状況をご確認のうえ、もう一度お試しください。';
       if (els.giftConfirmPanel) els.giftConfirmPanel.classList.remove('is-hidden');
       setGiftModalStatus(error.message || '時間をおいて、もう一度お試しください。', 'error');
@@ -621,12 +689,18 @@
   }
 
   function resetGiftModalContent() {
+    pendingGiftConfirmation = '';
     clearGiftAccountInformation();
     if (els.giftModalTitle) els.giftModalTitle.textContent = '送金先情報';
     if (els.giftModalDescription) els.giftModalDescription.textContent = '送金先情報を確認しています。';
     if (els.giftModalNote) els.giftModalNote.textContent = '';
     if (els.giftModalActions) els.giftModalActions.classList.add('is-hidden');
     if (els.giftConfirmPanel) els.giftConfirmPanel.classList.add('is-hidden');
+    if (els.giftConfirmTitle) els.giftConfirmTitle.textContent = '本当に送金しましたか？';
+    if (els.giftConfirmMessage) {
+      els.giftConfirmMessage.textContent = '「送金済み」として記録すると、今後この招待状では送金先情報を表示できません。';
+    }
+    if (els.giftConfirmCancel) els.giftConfirmCancel.textContent = 'まだ送金していません';
     if (els.giftConfirmSubmit) {
       els.giftConfirmSubmit.disabled = false;
       els.giftConfirmSubmit.textContent = 'はい、送金しました';
@@ -644,6 +718,23 @@
     if (!els.giftModalStatus) return;
     els.giftModalStatus.textContent = message || '';
     els.giftModalStatus.classList.toggle('is-error', type === 'error');
+  }
+
+  function normalizeGiftStatus(value, lockedFallback = false) {
+    const status = String(value || '').trim();
+    const aliases = {
+      '未入金': GIFT_STATUS.unsent,
+      '入金済み': GIFT_STATUS.sent,
+      '再入金': GIFT_STATUS.resent
+    };
+    const normalized = aliases[status] || status;
+    if (Object.values(GIFT_STATUS).includes(normalized)) return normalized;
+    return lockedFallback ? GIFT_STATUS.sent : GIFT_STATUS.unsent;
+  }
+
+  function isGiftLocked(value) {
+    const status = normalizeGiftStatus(value);
+    return status === GIFT_STATUS.sent || status === GIFT_STATUS.resent || status === GIFT_STATUS.cash;
   }
 
   function setFormCompleted(completed, attending) {
@@ -946,7 +1037,8 @@
         renderMessage({
           completed: true,
           attending: Boolean(result.attending),
-          giftSent: Boolean(result.giftSent)
+          giftSent: Boolean(result.giftSent),
+          giftStatus: result.giftStatus
         });
         setStatus('ご回答ありがとうございました。確認メールをご確認ください。', 'success');
         const target = document.getElementById('rsvp');
