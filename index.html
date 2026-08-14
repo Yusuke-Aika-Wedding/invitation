@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&amp;family=Noto+Serif+JP:wght@400;500;600;700&amp;family=Old+Standard+TT:wght@400;700&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20260814-gift-linebreaks">
+  <link rel="stylesheet" href="css/style.css?v=20260814-gift-confirmation-guide">
 </head>
 <body class="auth-locked">
   <div class="petal-layer" aria-hidden="true"></div>
@@ -267,20 +267,61 @@
       <p id="giftModalNote" class="gift-modal-note"></p>
       <p id="giftModalStatus" class="gift-modal-status" aria-live="polite"></p>
       <div id="giftModalActions" class="gift-modal-actions is-hidden">
-        <button id="giftSentButton" class="gift-sent-button" type="button">送金しました</button>
+        <button id="giftSentButton" class="gift-sent-button" type="button">送金完了を連絡する</button>
       </div>
       <div id="giftConfirmPanel" class="gift-confirm-panel is-hidden" role="group" aria-labelledby="giftConfirmTitle">
-        <strong id="giftConfirmTitle">本当に送金しましたか？</strong>
-        <p id="giftConfirmMessage">「送金済み」として記録すると、今後この招待状では送金先情報を表示できません。</p>
+        <strong id="giftConfirmTitle">送金は完了していますか？</strong>
+        <p id="giftConfirmMessage">銀行アプリなどの送金履歴が「完了」になっていることをご確認ください。</p>
+        <div id="giftDeclarationFields" class="gift-declaration-fields">
+          <label for="giftSenderName">
+            <span>送金元のお名前</span>
+            <small>ゲスト名と異なる場合のみ</small>
+          </label>
+          <input id="giftSenderName" type="text" maxlength="100" autocomplete="name" placeholder="例：ご家族のお名前">
+          <label for="giftDeclarationNote">
+            <span>送金についてのメモ</span>
+            <small>任意・200文字以内</small>
+          </label>
+          <textarea id="giftDeclarationNote" maxlength="200" rows="3" placeholder="例：出席する家族3人分送金しました。"></textarea>
+        </div>
         <div class="gift-confirm-actions">
           <button id="giftConfirmCancel" class="gift-secondary-button" type="button">まだ送金していません</button>
-          <button id="giftConfirmSubmit" class="gift-confirm-button" type="button">はい、送金しました</button>
+          <button id="giftConfirmSubmit" class="gift-confirm-button" type="button">送金完了を連絡する</button>
         </div>
       </div>
     </section>
   </div>
 
+  <div id="cotraGuideModal" class="cotra-guide-modal" hidden>
+    <div class="cotra-guide-backdrop" data-cotra-close aria-hidden="true"></div>
+    <section class="cotra-guide-card" role="dialog" aria-modal="true" aria-labelledby="cotraGuideTitle" aria-describedby="cotraGuideIntroduction" tabindex="-1">
+      <button id="cotraGuideClose" class="cotra-guide-close" type="button" aria-label="ことら送金ガイドを閉じる">×</button>
+      <p class="cotra-guide-kicker">Cotra Guide</p>
+      <h2 id="cotraGuideTitle">ことら送金ガイド</h2>
+      <p id="cotraGuideIntroduction" class="cotra-guide-introduction">
+        <span>知りたい内容を選ぶと、</span><span>順番にご案内します。</span>
+      </p>
+      <div id="cotraGuideMenu" class="cotra-guide-menu" role="group" aria-label="ことら送金について知りたい内容">
+        <button type="button" data-cotra-topic="about">ことら送金について知りたい</button>
+        <button type="button" data-cotra-topic="supported">対応する銀行・アプリを確認したい</button>
+        <button type="button" data-cotra-topic="steps">送金手順を知りたい</button>
+        <button type="button" data-cotra-topic="missing">ことら送金が見つからない</button>
+        <button type="button" data-cotra-topic="error">エラーになった・完了しない</button>
+        <button type="button" data-cotra-topic="alternatives">別の方法で送りたい</button>
+        <button type="button" data-cotra-topic="mistake">間違えて送金した</button>
+      </div>
+      <article id="cotraGuideAnswer" class="cotra-guide-answer" aria-live="polite" hidden></article>
+      <div id="cotraGuideNavigation" class="cotra-guide-navigation" hidden>
+        <button id="cotraGuideBack" type="button">← 質問一覧に戻る</button>
+      </div>
+      <p class="cotra-guide-security">
+        <strong>安全のために</strong>
+        <span>暗証番号・パスワード・ワンタイムパスワードは、</span><span>この招待状には入力しないでください。</span>
+      </p>
+    </section>
+  </div>
+
   <script src="js/config.js"></script>
-  <script src="js/script.js?v=20260814-cash-with-de"></script>
+  <script src="js/script.js?v=20260814-gift-confirmation-guide"></script>
 </body>
 </html>
