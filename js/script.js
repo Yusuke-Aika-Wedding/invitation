@@ -467,7 +467,7 @@
               <span class="gift-method-number number-font">04</span>
               <h3>当日に現金</h3>
               <p><span>結婚式当日、受付にて</span><span>現金でお預かりいたします。</span></p>
-              <button class="gift-show-button gift-cash-button" type="button" data-gift-cash>当日に現金を持参する</button>
+              <button class="gift-show-button gift-cash-button" type="button" data-gift-cash>当日に現金で持参する</button>
             </article>
           </div>
         </div>
@@ -554,7 +554,7 @@
     resetGiftModalContent();
     els.giftModal.hidden = false;
     document.body.classList.add('gift-modal-open');
-    setGiftModalTitle('当日に現金を持参する');
+    setGiftModalTitle('当日に現金で持参する');
     if (els.giftModalDescription) {
       els.giftModalDescription.textContent = 'この方法を選ぶと、今後この招待状では送金先情報を表示できません。';
     }
