@@ -6,7 +6,7 @@
  * A ID / B ゲスト名 / C メールアドレス / D 挙式出欠 / E 披露宴出欠 / F アレルギー
  * G 回答日時 / H 確認メール送信日時 / I 1週間前リマインド送信日時
  * J 前日リマインド送信日時 / K 更新日時 / L メッセージ
- * M 参加ありがとうメール送信日時
+ * M 参加ありがとうメール送信日時 / N ご祝儀
  */
 
 const APP_CONFIG = {
@@ -47,7 +47,8 @@ const HEADERS = [
   '前日リマインド送信日時',
   '更新日時',
   'メッセージ',
-  '参加ありがとうメール送信日時'
+  '参加ありがとうメール送信日時',
+  'ご祝儀'
 ];
 
 const COL = {
@@ -63,7 +64,43 @@ const COL = {
   reminder1SentAt: 10,
   updatedAt: 11,
   message: 12,
-  thanksSentAt: 13
+  thanksSentAt: 13,
+  giftStatus: 14
+};
+
+const GIFT_STATUS = {
+  unpaid: '未入金',
+  paid: '入金済み',
+  repaid: '再入金'
+};
+
+// 正式な送金先はGASのスクリプト プロパティ「GIFT_INFO_JSON」へ保存します。
+// 未設定の間は、以下のプレースホルダーだけをゲスト画面へ返します。
+const PLACEHOLDER_GIFT_INFORMATION = {
+  yucho: {
+    bankName: 'ゆうちょ銀行',
+    bankCode: '9900',
+    branchName: '〇〇八',
+    branchCode: '0XX',
+    accountType: '普通',
+    accountNumber: 'XXXXXXX',
+    holderKana: 'XXXXXXXX',
+    symbol: 'XXXXX',
+    number: 'XXXXXXXX'
+  },
+  rakuten: {
+    bankName: '楽天銀行',
+    bankCode: '0036',
+    branchName: '〇〇支店',
+    branchCode: 'XXX',
+    accountType: '普通',
+    accountNumber: 'XXXXXXX',
+    holderKana: 'XXXXXXXX'
+  },
+  paypay: {
+    paypayId: 'xxxxxxxx',
+    displayName: 'XXXXXXXX'
+  }
 };
 
 function setup() {
@@ -74,6 +111,7 @@ function setup() {
     const sheet = getMainSheet_();
     removeLegacyInvitationUrlColumn_(sheet);
     ensureHeaders_(sheet);
+    ensureGiftStatusColumn_(sheet);
     formatSheet_(sheet);
     SpreadsheetApp.flush();
   } finally {
@@ -90,6 +128,8 @@ function doGet(e) {
     if (action === 'ping') return output_({ ok: true, message: 'pong' }, params.callback);
     if (action === 'status') return output_(getStatus_(params.guestId), params.callback);
     if (action === 'submit') return output_(submitResponse_(params), params.callback);
+    if (action === 'giftInfo') return output_(getGiftInformation_(params.guestId, params.method), params.callback);
+    if (action === 'confirmGiftSent') return output_(confirmGiftSent_(params.guestId), params.callback);
     if (action === 'sendThanksNow') return output_({ ok: true, sent: sendAfterReceptionThanksEmails_(true) }, params.callback);
     return output_({ ok: false, error: 'Unknown action.' }, params.callback);
   } catch (error) {
@@ -125,6 +165,7 @@ function getStatus_(guestIdRaw) {
     displayName: values.name || 'ゲスト',
     completed: completed,
     attending: isAttending_(values.ceremony, values.reception),
+    giftSent: isGiftSettled_(values.giftStatus),
     email: values.email || '',
     ceremonyAttendance: values.ceremony || '',
     receptionAttendance: values.reception || '',
@@ -185,7 +226,8 @@ function submitResponse_(params) {
       record.values.reminder1SentAt || '',
       now,
       message,
-      record.values.thanksSentAt || ''
+      record.values.thanksSentAt || '',
+      normalizeGiftStatus_(record.values.giftStatus)
     ]]);
 
     sendConfirmationEmail_({
@@ -206,11 +248,150 @@ function submitResponse_(params) {
       ok: true,
       completed: true,
       attending: isAttending_(ceremonyAttendance, receptionAttendance),
+      giftSent: isGiftSettled_(record.values.giftStatus),
       displayName: name
     };
   } finally {
     lock.releaseLock();
   }
+}
+
+function getGiftInformation_(guestIdRaw, methodRaw) {
+  const guestId = normalizeGuestId_(guestIdRaw);
+  const method = String(methodRaw || '').trim().toLowerCase();
+  if (!guestId) throw new Error('guestIdがありません。');
+  if (!['yucho', 'rakuten', 'paypay'].includes(method)) throw new Error('送金方法を確認してください。');
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const sheet = getMainSheet_();
+    ensureHeaders_(sheet);
+    const record = findGuestRecord_(sheet, guestId);
+    if (!record) throw new Error('ゲスト情報が見つかりません。');
+    assertGiftInformationAvailable_(record.values);
+
+    return {
+      ok: true,
+      method: method,
+      information: buildGiftInformationResponse_(method)
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function confirmGiftSent_(guestIdRaw) {
+  const guestId = normalizeGuestId_(guestIdRaw);
+  if (!guestId) throw new Error('guestIdがありません。');
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const sheet = getMainSheet_();
+    ensureHeaders_(sheet);
+    const record = findGuestRecord_(sheet, guestId);
+    if (!record) throw new Error('ゲスト情報が見つかりません。');
+    if (!isCompleted_(record.values) || !isAttending_(record.values.ceremony, record.values.reception)) {
+      throw new Error('送金情報の確認対象ではありません。');
+    }
+
+    if (!isGiftSettled_(record.values.giftStatus)) {
+      const now = new Date();
+      sheet.getRange(record.rowNumber, COL.giftStatus).setValue(GIFT_STATUS.paid);
+      sheet.getRange(record.rowNumber, COL.updatedAt).setValue(now);
+      SpreadsheetApp.flush();
+    }
+
+    // 入金確認メールは今後実装します。現時点ではステータス更新だけを行います。
+    return { ok: true, giftSent: true };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function assertGiftInformationAvailable_(values) {
+  if (!isCompleted_(values) || !isAttending_(values.ceremony, values.reception)) {
+    throw new Error('送金情報の確認対象ではありません。');
+  }
+  if (isGiftSettled_(values.giftStatus)) {
+    throw new Error('送金済みのため、送金先情報は表示できません。');
+  }
+}
+
+function buildGiftInformationResponse_(method) {
+  const config = getGiftInformationConfig_();
+  if (method === 'yucho') {
+    return {
+      title: 'ことら送金（ゆうちょ銀行）',
+      description: 'ことら送金では、振込用の店名・預金種目・口座番号をご指定ください。',
+      fields: [
+        giftField_('金融機関名', config.yucho.bankName),
+        giftField_('金融機関コード', config.yucho.bankCode),
+        giftField_('店名', config.yucho.branchName),
+        giftField_('店番', config.yucho.branchCode),
+        giftField_('預金種目', config.yucho.accountType),
+        giftField_('口座番号', config.yucho.accountNumber),
+        giftField_('口座名義', config.yucho.holderKana),
+        giftField_('記号（ゆうちょ間）', config.yucho.symbol),
+        giftField_('番号（ゆうちょ間）', config.yucho.number)
+      ],
+      note: 'ことら送金は1件10万円以下です。送金前に表示された受取人名を必ずご確認ください。'
+    };
+  }
+  if (method === 'rakuten') {
+    return {
+      title: '銀行振込（楽天銀行）',
+      description: '銀行アプリやATMで、以下の振込先をご指定ください。',
+      fields: [
+        giftField_('金融機関名', config.rakuten.bankName),
+        giftField_('銀行コード', config.rakuten.bankCode),
+        giftField_('支店名', config.rakuten.branchName),
+        giftField_('支店番号', config.rakuten.branchCode),
+        giftField_('預金科目', config.rakuten.accountType),
+        giftField_('口座番号', config.rakuten.accountNumber),
+        giftField_('口座名義', config.rakuten.holderKana)
+      ],
+      note: '送金前に表示された受取人名を必ずご確認ください。振込手数料はご利用の金融機関により異なります。'
+    };
+  }
+  return {
+    title: 'PayPay',
+    description: 'PayPayアプリの「送る」から、以下のPayPay IDを検索してください。',
+    fields: [
+      giftField_('PayPay ID', config.paypay.paypayId),
+      giftField_('表示名', config.paypay.displayName)
+    ],
+    note: '送金前に、PayPayアプリに表示された名前を必ずご確認ください。'
+  };
+}
+
+function getGiftInformationConfig_() {
+  const raw = PropertiesService.getScriptProperties().getProperty('GIFT_INFO_JSON');
+  if (!raw) return PLACEHOLDER_GIFT_INFORMATION;
+  try {
+    const stored = JSON.parse(raw);
+    return {
+      yucho: mergeGiftMethodConfig_(PLACEHOLDER_GIFT_INFORMATION.yucho, stored.yucho),
+      rakuten: mergeGiftMethodConfig_(PLACEHOLDER_GIFT_INFORMATION.rakuten, stored.rakuten),
+      paypay: mergeGiftMethodConfig_(PLACEHOLDER_GIFT_INFORMATION.paypay, stored.paypay)
+    };
+  } catch (error) {
+    throw new Error('送金先情報の設定形式に誤りがあります。新郎新婦へお問い合わせください。');
+  }
+}
+
+function mergeGiftMethodConfig_(fallback, stored) {
+  const source = stored && typeof stored === 'object' ? stored : {};
+  return Object.keys(fallback).reduce((result, key) => {
+    const value = String(source[key] || '').trim();
+    result[key] = value || fallback[key];
+    return result;
+  }, {});
+}
+
+function giftField_(label, value) {
+  return { label: label, value: String(value || '') };
 }
 
 function sendReminderEmails() {
@@ -518,10 +699,34 @@ function removeLegacyInvitationUrlColumn_(sheet) {
   if (header === '招待状URL') sheet.deleteColumn(legacyInvitationUrlColumn);
 }
 
+function ensureGiftStatusColumn_(sheet) {
+  const validation = SpreadsheetApp.newDataValidation()
+    .requireValueInList([GIFT_STATUS.paid, GIFT_STATUS.repaid, GIFT_STATUS.unpaid], true)
+    .setAllowInvalid(false)
+    .build();
+  const availableRows = Math.max(sheet.getMaxRows() - 1, 1);
+  sheet.getRange(2, COL.giftStatus, availableRows, 1).setDataValidation(validation);
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+  const rowCount = lastRow - 1;
+  const ids = sheet.getRange(2, COL.id, rowCount, 1).getValues();
+  const statuses = sheet.getRange(2, COL.giftStatus, rowCount, 1).getValues();
+  let changed = false;
+  statuses.forEach((row, index) => {
+    if (String(ids[index][0] || '').trim() && !String(row[0] || '').trim()) {
+      row[0] = GIFT_STATUS.unpaid;
+      changed = true;
+    }
+  });
+  if (changed) sheet.getRange(2, COL.giftStatus, rowCount, 1).setValues(statuses);
+}
+
 function formatSheet_(sheet) {
   sheet.setFrozenRows(1);
   sheet.getRange(1, 1, 1, HEADERS.length).setFontWeight('bold').setBackground('#f8e9df');
   sheet.autoResizeColumns(1, HEADERS.length);
+  sheet.setColumnWidth(COL.giftStatus, 110);
   sheet.getRange(1, 1, Math.max(sheet.getLastRow(), 1), HEADERS.length).setVerticalAlignment('middle');
 }
 
@@ -551,7 +756,8 @@ function rowToObject_(row) {
     reminder1SentAt: row[COL.reminder1SentAt - 1],
     updatedAt: row[COL.updatedAt - 1],
     message: String(row[COL.message - 1] || '').trim(),
-    thanksSentAt: row[COL.thanksSentAt - 1]
+    thanksSentAt: row[COL.thanksSentAt - 1],
+    giftStatus: normalizeGiftStatus_(row[COL.giftStatus - 1])
   };
 }
 
@@ -561,6 +767,17 @@ function isCompleted_(values) {
 
 function isAttending_(ceremony, reception) {
   return normalizeAttendance_(ceremony) === '出席' || normalizeAttendance_(reception) === '出席';
+}
+
+function normalizeGiftStatus_(value) {
+  const status = String(value || '').trim();
+  if ([GIFT_STATUS.paid, GIFT_STATUS.repaid, GIFT_STATUS.unpaid].includes(status)) return status;
+  return GIFT_STATUS.unpaid;
+}
+
+function isGiftSettled_(value) {
+  const status = normalizeGiftStatus_(value);
+  return status === GIFT_STATUS.paid || status === GIFT_STATUS.repaid;
 }
 
 function normalizeAttendance_(value) {

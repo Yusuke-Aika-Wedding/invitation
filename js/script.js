@@ -6,9 +6,11 @@
   const targetDate = new Date(config.weddingDateIso || '2027-03-21T10:00:00+09:00');
   const els = {};
   let guestId = '';
-  let latestStatus = { completed: false, attending: false };
+  let latestStatus = { completed: false, attending: false, giftSent: false };
   let currentSlide = 0;
   let authenticated = false;
+  let lastGiftTrigger = null;
+  let giftRequestSequence = 0;
   const QUIZ_QUESTION_COUNT = 5;
   const QUIZ_QUESTIONS = [
     { question: '新郎のフルネームは？', options: ['白戸 祐輔', '白戸 悠介', '白井 祐輔'], answer: '白戸 祐輔', explanation: '新郎は白戸祐輔（Yusuke Shirato）です。' },
@@ -47,6 +49,7 @@
     setupQuiz();
     setupAllergyFields();
     setupForm();
+    setupGiftInformation();
     createPetals();
   }
 
@@ -96,7 +99,20 @@
       quizScore: document.getElementById('quizScore'),
       quizResultTitle: document.getElementById('quizResultTitle'),
       quizResultMessage: document.getElementById('quizResultMessage'),
-      quizRetryButton: document.getElementById('quizRetryButton')
+      quizRetryButton: document.getElementById('quizRetryButton'),
+      giftModal: document.getElementById('giftModal'),
+      giftModalCard: document.querySelector('.gift-modal-card'),
+      giftModalClose: document.getElementById('giftModalClose'),
+      giftModalTitle: document.getElementById('giftModalTitle'),
+      giftModalDescription: document.getElementById('giftModalDescription'),
+      giftAccountFields: document.getElementById('giftAccountFields'),
+      giftModalNote: document.getElementById('giftModalNote'),
+      giftModalStatus: document.getElementById('giftModalStatus'),
+      giftModalActions: document.getElementById('giftModalActions'),
+      giftSentButton: document.getElementById('giftSentButton'),
+      giftConfirmPanel: document.getElementById('giftConfirmPanel'),
+      giftConfirmCancel: document.getElementById('giftConfirmCancel'),
+      giftConfirmSubmit: document.getElementById('giftConfirmSubmit')
     });
   }
 
@@ -147,7 +163,8 @@
       guestId = normalizeGuestId(result.guestId || candidate);
       latestStatus = {
         completed: Boolean(result.completed),
-        attending: Boolean(result.attending)
+        attending: Boolean(result.attending),
+        giftSent: Boolean(result.giftSent)
       };
       try {
         localStorage.setItem(GUEST_ID_STORAGE_KEY, guestId);
@@ -235,7 +252,7 @@
   function resetToAuth() {
     authenticated = false;
     guestId = '';
-    latestStatus = { completed: false, attending: false };
+    latestStatus = { completed: false, attending: false, giftSent: false };
     try {
       localStorage.removeItem(GUEST_ID_STORAGE_KEY);
     } catch (_) {
@@ -255,6 +272,7 @@
     updateAllergyFields();
     setFormCompleted(false, false);
     renderGiftInformation(false);
+    closeGiftModal({ restoreFocus: false });
     setAuthStatus('', '');
     window.history.replaceState(null, '', location.pathname);
     window.setTimeout(() => { if (els.guestIdEntry) els.guestIdEntry.focus(); }, 50);
@@ -300,7 +318,8 @@
   function renderMessage(status) {
     latestStatus = {
       completed: Boolean(status && status.completed),
-      attending: Boolean(status && status.attending)
+      attending: Boolean(status && status.attending),
+      giftSent: Boolean(status && status.giftSent)
     };
 
     const displayName = getDisplayName();
@@ -361,23 +380,34 @@
         return line;
       }));
     }
-    renderGiftInformation(latestStatus.completed && latestStatus.attending);
+    renderGiftInformation(latestStatus.completed && latestStatus.attending, latestStatus.giftSent);
     setFormCompleted(latestStatus.completed, latestStatus.attending);
   }
 
-  function renderGiftInformation(show) {
+  function renderGiftInformation(show, giftSent = false) {
     const existingSection = document.getElementById('giftInformation');
     if (!show) {
       if (existingSection) existingSection.remove();
       return;
     }
-    if (existingSection || !els.invitationPage) return;
+    if (!els.invitationPage) return;
+    if (existingSection) existingSection.remove();
 
     const section = document.createElement('section');
     section.id = 'giftInformation';
     section.className = 'section gift-information fade-in is-visible';
     section.setAttribute('aria-labelledby', 'gift-information-title');
-    section.innerHTML = `
+    section.innerHTML = giftSent ? `
+      <p class="section-kicker">For Guests</p>
+      <h2 id="gift-information-title" class="gift-information-title">ご祝儀について</h2>
+      <div class="gift-complete-card" aria-live="polite">
+        <span class="gift-complete-mark" aria-hidden="true">✓</span>
+        <div>
+          <strong>送金のご連絡ありがとうございました</strong>
+          <p><span>送金済みとして承りました。</span><span>送金先情報は今後表示されません。</span></p>
+        </div>
+      </div>
+    ` : `
       <p class="section-kicker">For Guests</p>
       <h2 id="gift-information-title" class="gift-information-title">ご祝儀について</h2>
       <details class="gift-details">
@@ -399,16 +429,19 @@
               <span class="gift-method-number number-font">01</span>
               <h3>ことら送金</h3>
               <p><span>ことら送金を利用し、</span><span>指定のゆうちょ銀行口座へ</span><span>お送りいただけます。</span></p>
+              <button class="gift-show-button" type="button" data-gift-method="yucho">送金先を表示する</button>
             </article>
             <article class="gift-method-card">
               <span class="gift-method-number number-font">02</span>
               <h3>銀行振込</h3>
               <p><span>指定の楽天銀行口座へ</span><span>お振り込みいただけます。</span></p>
+              <button class="gift-show-button" type="button" data-gift-method="rakuten">送金先を表示する</button>
             </article>
             <article class="gift-method-card">
               <span class="gift-method-number number-font">03</span>
               <h3>PayPay</h3>
               <p><span>PayPayから</span><span>お送りいただけます。</span></p>
+              <button class="gift-show-button" type="button" data-gift-method="paypay">送金先を表示する</button>
             </article>
             <article class="gift-method-card">
               <span class="gift-method-number number-font">04</span>
@@ -422,6 +455,195 @@
 
     const footer = els.invitationPage.querySelector('.footer');
     els.invitationPage.insertBefore(section, footer || null);
+  }
+
+  function setupGiftInformation() {
+    if (!els.giftModal || !els.invitationPage) return;
+
+    els.invitationPage.addEventListener('click', event => {
+      const button = event.target.closest('[data-gift-method]');
+      if (!button || !els.invitationPage.contains(button)) return;
+      openGiftModal(button.dataset.giftMethod || '', button);
+    });
+    if (els.giftModalClose) els.giftModalClose.addEventListener('click', () => closeGiftModal());
+    els.giftModal.querySelectorAll('[data-gift-close]').forEach(element => {
+      element.addEventListener('click', () => closeGiftModal());
+    });
+    if (els.giftSentButton) {
+      els.giftSentButton.addEventListener('click', () => {
+        if (els.giftModalActions) els.giftModalActions.classList.add('is-hidden');
+        if (els.giftConfirmPanel) els.giftConfirmPanel.classList.remove('is-hidden');
+        if (els.giftConfirmSubmit) els.giftConfirmSubmit.focus();
+      });
+    }
+    if (els.giftConfirmCancel) {
+      els.giftConfirmCancel.addEventListener('click', () => {
+        if (els.giftConfirmPanel) els.giftConfirmPanel.classList.add('is-hidden');
+        if (els.giftModalActions) els.giftModalActions.classList.remove('is-hidden');
+        if (els.giftSentButton) els.giftSentButton.focus();
+      });
+    }
+    if (els.giftConfirmSubmit) els.giftConfirmSubmit.addEventListener('click', confirmGiftSent);
+    if (els.giftAccountFields) {
+      els.giftAccountFields.addEventListener('click', event => {
+        const button = event.target.closest('[data-copy-value]');
+        if (!button) return;
+        copyGiftValue(button.dataset.copyValue || '', button);
+      });
+    }
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !els.giftModal.hidden) closeGiftModal();
+    });
+  }
+
+  async function openGiftModal(method, trigger) {
+    if (!guestId || !authenticated || latestStatus.giftSent) return;
+    const requestId = ++giftRequestSequence;
+    lastGiftTrigger = trigger || null;
+    resetGiftModalContent();
+    els.giftModal.hidden = false;
+    document.body.classList.add('gift-modal-open');
+    if (els.giftModalCard) els.giftModalCard.focus();
+
+    try {
+      const result = await jsonp('giftInfo', { guestId: guestId, method: method });
+      if (requestId !== giftRequestSequence || els.giftModal.hidden) return;
+      if (!result || !result.ok) throw new Error((result && result.error) || '送金先情報を取得できませんでした。');
+      if (latestStatus.giftSent) throw new Error('送金済みのため、送金先情報は表示できません。');
+      renderGiftAccountInformation(result.information || {});
+    } catch (error) {
+      if (requestId !== giftRequestSequence || els.giftModal.hidden) return;
+      clearGiftAccountInformation();
+      if (els.giftModalDescription) els.giftModalDescription.textContent = '送金先情報を表示できませんでした。';
+      setGiftModalStatus(error.message || '時間をおいて、もう一度お試しください。', 'error');
+    }
+  }
+
+  function renderGiftAccountInformation(information) {
+    const fields = Array.isArray(information.fields) ? information.fields : [];
+    if (els.giftModalTitle) els.giftModalTitle.textContent = String(information.title || '送金先情報');
+    if (els.giftModalDescription) els.giftModalDescription.textContent = String(information.description || '以下の送金先をご確認ください。');
+    if (els.giftModalNote) els.giftModalNote.textContent = String(information.note || '送金前に受取人名をご確認ください。');
+    if (els.giftAccountFields) {
+      els.giftAccountFields.replaceChildren(...fields.map(field => {
+        const row = document.createElement('div');
+        row.className = 'gift-account-row';
+
+        const label = document.createElement('span');
+        label.className = 'gift-account-label';
+        label.textContent = String(field.label || '項目');
+
+        const valueWrap = document.createElement('span');
+        valueWrap.className = 'gift-account-value-wrap';
+        const value = document.createElement('strong');
+        value.className = 'gift-account-value number-font';
+        value.textContent = String(field.value || '—');
+        const copyButton = document.createElement('button');
+        copyButton.className = 'gift-copy-button';
+        copyButton.type = 'button';
+        copyButton.textContent = 'コピー';
+        copyButton.dataset.copyValue = String(field.value || '');
+        copyButton.setAttribute('aria-label', `${label.textContent}をコピー`);
+        valueWrap.append(value, copyButton);
+        row.append(label, valueWrap);
+        return row;
+      }));
+    }
+    setGiftModalStatus('', '');
+    if (els.giftModalActions) els.giftModalActions.classList.remove('is-hidden');
+  }
+
+  async function copyGiftValue(value, button) {
+    if (!value) return;
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(value);
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = value;
+        textArea.setAttribute('readonly', '');
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = '0';
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        textArea.remove();
+      }
+      const previous = button.textContent;
+      button.textContent = 'コピーしました';
+      window.setTimeout(() => { if (button.isConnected) button.textContent = previous; }, 1600);
+    } catch (_) {
+      setGiftModalStatus('コピーできませんでした。長押ししてコピーしてください。', 'error');
+    }
+  }
+
+  async function confirmGiftSent() {
+    if (!guestId || !authenticated || latestStatus.giftSent) return;
+    if (els.giftConfirmSubmit) {
+      els.giftConfirmSubmit.disabled = true;
+      els.giftConfirmSubmit.textContent = '記録しています…';
+    }
+    clearGiftAccountInformation();
+    if (els.giftModalTitle) els.giftModalTitle.textContent = '送金済みとして記録しています';
+    if (els.giftModalDescription) els.giftModalDescription.textContent = '画面を閉じずにお待ちください。';
+    setGiftModalStatus('', '');
+
+    try {
+      const result = await jsonp('confirmGiftSent', { guestId: guestId });
+      if (!result || !result.ok || !result.giftSent) {
+        throw new Error((result && result.error) || '送金済みとして記録できませんでした。');
+      }
+      latestStatus.giftSent = true;
+      closeGiftModal({ restoreFocus: false });
+      renderGiftInformation(true, true);
+      const completeCard = document.querySelector('.gift-complete-card');
+      if (completeCard) completeCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } catch (error) {
+      if (els.giftConfirmSubmit) {
+        els.giftConfirmSubmit.disabled = false;
+        els.giftConfirmSubmit.textContent = 'もう一度記録する';
+      }
+      if (els.giftModalTitle) els.giftModalTitle.textContent = '送金済みとして記録できませんでした';
+      if (els.giftModalDescription) els.giftModalDescription.textContent = '通信状況をご確認のうえ、もう一度お試しください。';
+      if (els.giftConfirmPanel) els.giftConfirmPanel.classList.remove('is-hidden');
+      setGiftModalStatus(error.message || '時間をおいて、もう一度お試しください。', 'error');
+    }
+  }
+
+  function closeGiftModal(options = {}) {
+    if (!els.giftModal) return;
+    giftRequestSequence++;
+    els.giftModal.hidden = true;
+    document.body.classList.remove('gift-modal-open');
+    resetGiftModalContent();
+    if (options.restoreFocus !== false && lastGiftTrigger && lastGiftTrigger.isConnected) lastGiftTrigger.focus();
+    lastGiftTrigger = null;
+  }
+
+  function resetGiftModalContent() {
+    clearGiftAccountInformation();
+    if (els.giftModalTitle) els.giftModalTitle.textContent = '送金先情報';
+    if (els.giftModalDescription) els.giftModalDescription.textContent = '送金先情報を確認しています。';
+    if (els.giftModalNote) els.giftModalNote.textContent = '';
+    if (els.giftModalActions) els.giftModalActions.classList.add('is-hidden');
+    if (els.giftConfirmPanel) els.giftConfirmPanel.classList.add('is-hidden');
+    if (els.giftConfirmSubmit) {
+      els.giftConfirmSubmit.disabled = false;
+      els.giftConfirmSubmit.textContent = 'はい、送金しました';
+    }
+    setGiftModalStatus('読み込んでいます…', '');
+  }
+
+  function clearGiftAccountInformation() {
+    if (els.giftAccountFields) els.giftAccountFields.replaceChildren();
+    if (els.giftModalNote) els.giftModalNote.textContent = '';
+    if (els.giftModalActions) els.giftModalActions.classList.add('is-hidden');
+  }
+
+  function setGiftModalStatus(message, type) {
+    if (!els.giftModalStatus) return;
+    els.giftModalStatus.textContent = message || '';
+    els.giftModalStatus.classList.toggle('is-error', type === 'error');
   }
 
   function setFormCompleted(completed, attending) {
@@ -721,7 +943,11 @@
         if (els.nameInput) els.nameInput.value = displayName;
         document.body.dataset.defaultName = displayName;
         if (els.menuGuestName) els.menuGuestName.textContent = `${displayName} 様`;
-        renderMessage({ completed: true, attending: Boolean(result.attending) });
+        renderMessage({
+          completed: true,
+          attending: Boolean(result.attending),
+          giftSent: Boolean(result.giftSent)
+        });
         setStatus('ご回答ありがとうございました。確認メールをご確認ください。', 'success');
         const target = document.getElementById('rsvp');
         if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });

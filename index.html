@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&amp;family=Noto+Serif+JP:wght@400;500;600;700&amp;family=Old+Standard+TT:wght@400;700&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20260814-access-line-break">
+  <link rel="stylesheet" href="css/style.css?v=20260814-gift-transfer-assist">
 </head>
 <body class="auth-locked">
   <div class="petal-layer" aria-hidden="true"></div>
@@ -256,7 +256,31 @@
 
   </main>
 
+  <div id="giftModal" class="gift-modal" hidden>
+    <div class="gift-modal-backdrop" data-gift-close aria-hidden="true"></div>
+    <section class="gift-modal-card" role="dialog" aria-modal="true" aria-labelledby="giftModalTitle" aria-describedby="giftModalDescription" tabindex="-1">
+      <button id="giftModalClose" class="gift-modal-close" type="button" aria-label="送金先情報を閉じる">×</button>
+      <p class="gift-modal-kicker">Gift Information</p>
+      <h2 id="giftModalTitle">送金先情報</h2>
+      <p id="giftModalDescription" class="gift-modal-description">送金先情報を確認しています。</p>
+      <div id="giftAccountFields" class="gift-account-fields" aria-live="polite"></div>
+      <p id="giftModalNote" class="gift-modal-note"></p>
+      <p id="giftModalStatus" class="gift-modal-status" aria-live="polite"></p>
+      <div id="giftModalActions" class="gift-modal-actions is-hidden">
+        <button id="giftSentButton" class="gift-sent-button" type="button">送金しました</button>
+      </div>
+      <div id="giftConfirmPanel" class="gift-confirm-panel is-hidden" role="group" aria-labelledby="giftConfirmTitle">
+        <strong id="giftConfirmTitle">本当に送金しましたか？</strong>
+        <p>送金済みにすると、今後この招待状では送金先情報を表示できません。</p>
+        <div class="gift-confirm-actions">
+          <button id="giftConfirmCancel" class="gift-secondary-button" type="button">まだ送金していません</button>
+          <button id="giftConfirmSubmit" class="gift-confirm-button" type="button">はい、送金しました</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
   <script src="js/config.js"></script>
-  <script src="js/script.js?v=20260814-gift-type-layout"></script>
+  <script src="js/script.js?v=20260814-gift-transfer-assist"></script>
 </body>
 </html>
