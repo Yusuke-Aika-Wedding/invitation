@@ -61,6 +61,7 @@
       messageGuestName: document.getElementById('messageGuestName'),
       messageBody: document.getElementById('messageBody'),
       form: document.getElementById('rsvpForm'),
+      rsvpInstruction: document.getElementById('rsvpInstruction'),
       thanks: document.getElementById('thanksMessage'),
       formStatus: document.getElementById('formStatus'),
       submitButton: document.getElementById('submitButton'),
@@ -364,6 +365,7 @@
 
   function setFormCompleted(completed, attending) {
     if (els.form) els.form.classList.toggle('is-hidden', Boolean(completed));
+    if (els.rsvpInstruction) els.rsvpInstruction.classList.toggle('is-hidden', Boolean(completed));
     if (els.thanks) {
       els.thanks.classList.toggle('is-hidden', !completed);
       const title = els.thanks.querySelector('strong');

@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&amp;family=Noto+Serif+JP:wght@400;500;600;700&amp;family=Old+Standard+TT:wght@400;700&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20260814-mobile-copy">
+  <link rel="stylesheet" href="css/style.css?v=20260814-invitation-fixes">
 </head>
 <body class="auth-locked">
   <div class="petal-layer" aria-hidden="true"></div>
@@ -100,7 +100,7 @@
         <p class="section-kicker">Information</p>
         <h2 id="details-title">Wedding Day</h2>
         <div class="info-grid">
-          <article class="info-card"><h3>Date</h3><p class="info-value"><span class="number-font">2027.03.21</span><span class="info-subvalue">日曜日</span></p></article>
+          <article class="info-card"><h3>Date</h3><p class="info-value"><span class="number-font">2027.03.21</span><span class="info-subvalue">Sunday</span></p></article>
           <article class="info-card"><h3>Ceremony</h3><p class="info-value"><span class="number-font">10:00〜10:30</span></p></article>
           <article class="info-card"><h3>Reception</h3><p class="info-value"><span class="number-font">11:00〜14:00</span></p></article>
         </div>
@@ -132,7 +132,7 @@
       <section id="rsvp" class="section fade-in" aria-labelledby="rsvp-title">
         <p class="section-kicker">RSVP</p>
         <h2 id="rsvp-title">Reply Form</h2>
-        <p class="section-note">恐れ入りますが、挙式・披露宴それぞれの<br class="mobile-only">ご出欠をご回答ください。</p>
+        <p id="rsvpInstruction" class="section-note">恐れ入りますが、挙式・披露宴それぞれの<br class="mobile-only">ご出欠をご回答ください。</p>
         <div class="rsvp-shell">
           <form id="rsvpForm" class="rsvp-form" novalidate>
             <input type="hidden" id="guestId" name="guestId" value="">
@@ -214,7 +214,6 @@
       <section class="quiz-invitation fade-in is-visible" aria-labelledby="quiz-invitation-title">
         <p class="quiz-invitation-kicker">How well do you know us?</p>
         <h3 id="quiz-invitation-title">ふたりのこと、<br class="mobile-only">どれくらい知っていますか？</h3>
-        <p>たくさんの問題からランダムで5問を出題します。</p>
         <button id="quizStartButton" class="quiz-start-button" type="button">
           <span>新郎新婦クイズに挑戦！</span>
           <small>START THE QUIZ</small>
@@ -256,6 +255,6 @@
   </main>
 
   <script src="js/config.js"></script>
-  <script src="js/script.js?v=20260814-mobile-copy"></script>
+  <script src="js/script.js?v=20260814-invitation-fixes"></script>
 </body>
 </html>
