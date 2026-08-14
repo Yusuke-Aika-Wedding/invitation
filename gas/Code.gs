@@ -272,7 +272,7 @@ function testAfterReceptionThanksEmails() {
 }
 
 /**
- * 指定ゲストの内容で、1週間前・前日・参加御礼の確認用メールを送信します。
+ * 指定ゲストの内容で、回答確認・1週間前・前日・参加御礼の確認用メールを送信します。
  * 実行しても各メールの送信日時は更新しません。
  */
 function sendRequestedEmailPreviews() {
@@ -300,6 +300,15 @@ function sendEmailPreviewsForGuest_(guestIdRaw, recipientRaw) {
     allergy: v.allergy || '',
     invitationUrl: getInvitationUrl_()
   };
+  sendConfirmationEmail_({
+    to: recipient,
+    name: v.name || 'ゲスト',
+    ceremonyAttendance: v.ceremony,
+    receptionAttendance: v.reception,
+    allergy: v.allergy || '',
+    message: v.message || '',
+    invitationUrl: getInvitationUrl_()
+  });
   sendReminderEmail_(Object.assign({}, reminderData, { daysBefore: 7 }));
   sendReminderEmail_(Object.assign({}, reminderData, { daysBefore: 1 }));
   sendAfterReceptionThanksEmail_({
@@ -308,8 +317,8 @@ function sendEmailPreviewsForGuest_(guestIdRaw, recipientRaw) {
     invitationUrl: getInvitationUrl_()
   });
 
-  Logger.log(`確認用メール送信数: 3 / guestId=${guestId} / to=${recipient}`);
-  return 3;
+  Logger.log(`確認用メール送信数: 4 / guestId=${guestId} / to=${recipient}`);
+  return 4;
 }
 
 function sendAfterReceptionThanksEmails_(isTest) {
@@ -394,34 +403,50 @@ function sendAfterReceptionThanksEmail_(data) {
 }
 
 function buildConfirmationText_(data) {
-  const messageLine = data.message ? `\n【メッセージ】\n${data.message}\n` : '';
-  return `${data.name} 様\n\n結婚式へのご出欠について、ご回答いただき誠にありがとうございます。\n以下の内容で承りました。\n\n【挙式】${data.ceremonyAttendance}\n【披露宴】${data.receptionAttendance}\n【アレルギー】${data.allergy || 'なし'}${messageLine}\n【日時】${APP_CONFIG.weddingDateLabel}\n挙式 ${APP_CONFIG.ceremonyTimeLabel}\n披露宴 ${APP_CONFIG.receptionTimeLabel}\n\n【会場】${APP_CONFIG.venueName}\n${APP_CONFIG.venueUrl}\n\nGoogle Map：${APP_CONFIG.mapUrl}\n\n招待状URL：\n${data.invitationUrl}\n\n当日お会いできますことを、心より楽しみにしております。\n\nYusuke & Aika`;
+  const messageParagraph = data.message ? `\n\n【メッセージ】\n${data.message}` : '';
+  return `${data.name} 様\n\n結婚式へのご出欠について、\nご回答いただき誠にありがとうございます。\n以下の内容で承りました。\n\n【挙式】${data.ceremonyAttendance}\n【披露宴】${data.receptionAttendance}\n【アレルギー】${data.allergy || 'なし'}${messageParagraph}\n\n【日時】${APP_CONFIG.weddingDateLabel}\n挙式 ${APP_CONFIG.ceremonyTimeLabel}\n披露宴 ${APP_CONFIG.receptionTimeLabel}\n\n【会場】${APP_CONFIG.venueName}\n${APP_CONFIG.venueUrl}\n\nGoogle Map：${APP_CONFIG.mapUrl}\n\n招待状URL：\n${data.invitationUrl}\n\n当日お会いできますことを、\n心より楽しみにしております。\n\nYusuke & Aika`;
 }
 
 function buildReminderText_(data) {
   const timing = data.daysBefore === 7 ? '1週間前' : '前日';
-  return `${data.name} 様\n\n結婚式${timing}のリマインドです。\n当日はお気をつけてお越しください。\n\n【日時】${APP_CONFIG.weddingDateLabel}\n挙式 ${APP_CONFIG.ceremonyTimeLabel}\n披露宴 ${APP_CONFIG.receptionTimeLabel}\n\n【会場】${APP_CONFIG.venueName}\n${APP_CONFIG.venueUrl}\nGoogle Map：${APP_CONFIG.mapUrl}\n\n【ご回答内容】\n挙式：${data.ceremonyAttendance}\n披露宴：${data.receptionAttendance}\nアレルギー：${data.allergy || 'なし'}\n\n招待状URL：\n${data.invitationUrl}\n\n皆様と当日お会いできますことを、心より楽しみにしております。\n\nYusuke & Aika`;
+  const meetingDay = data.daysBefore === 1 ? '明日' : '当日';
+  return `${data.name} 様\n\n結婚式${timing}のリマインドです。\n当日はお気をつけてお越しください。\n\n【日時】${APP_CONFIG.weddingDateLabel}\n挙式 ${APP_CONFIG.ceremonyTimeLabel}\n披露宴 ${APP_CONFIG.receptionTimeLabel}\n\n【会場】${APP_CONFIG.venueName}\n${APP_CONFIG.venueUrl}\n\nGoogle Map：${APP_CONFIG.mapUrl}\n\n【ご回答内容】\n挙式：${data.ceremonyAttendance}\n披露宴：${data.receptionAttendance}\nアレルギー：${data.allergy || 'なし'}\n\n招待状URL：\n${data.invitationUrl}\n\n皆様と${meetingDay}お会いできますことを、\n心より楽しみにしております。\n\nYusuke & Aika`;
 }
 
 function buildAfterReceptionThanksText_(data) {
-  return `${data.name} 様\n\n本日は私たちの結婚式にご参加いただき、誠にありがとうございました。\n皆様と大切な時間を過ごすことができ、心より感謝しております。\n\n招待状URL：\n${data.invitationUrl}\n\n今後ともどうぞよろしくお願いいたします。\n\nYusuke & Aika`;
+  return `${data.name} 様\n\n本日は私たちの結婚式にご参加いただき、\n誠にありがとうございました。\n皆様と大切な時間を過ごすことができ、\n心より感謝しております。\n\n【会場】${APP_CONFIG.venueName}\n${APP_CONFIG.venueUrl}\n\nGoogle Map：${APP_CONFIG.mapUrl}\n\n招待状URL：\n${data.invitationUrl}\n\n今後ともどうぞよろしくお願いいたします。\n\nYusuke & Aika`;
 }
 
 function buildHtmlMail_(title, textBody, invitationUrl) {
-  const venueUrl = escapeHtml_(APP_CONFIG.venueUrl);
-  const venueMapGap = `${venueUrl}\n\nGoogle Map：`;
-  const venueMapSpacer = `${venueUrl}<span style="display:block;height:1.8em;line-height:1.8em;">&nbsp;</span>Google Map：`;
-  const escaped = escapeHtml_(textBody)
-    .replace(venueMapGap, venueMapSpacer)
-    .replace(/\n/g, '<br>');
+  const titleHtml = buildHtmlMailTitle_(title);
+  const bodyHtml = buildHtmlMailParagraphs_(textBody);
   return `
-    <div style="margin:0;padding:28px;background:#fff8f3;color:#392724;font-family:serif;line-height:1.8;">
-      <div style="max-width:640px;margin:auto;padding:28px;border:1px solid #e3c7af;border-radius:24px;background:#fffdfb;">
-        <h1 style="margin:0 0 18px;color:#7a1d33;font-size:24px;">${escapeHtml_(title)}</h1>
-        <p style="margin:0;">${escaped}</p>
-        <p style="margin:24px 0 0;"><a href="${escapeHtml_(invitationUrl)}" style="display:inline-block;padding:12px 20px;border-radius:999px;background:#7a1d33;color:#fff;text-decoration:none;">招待状を開く</a></p>
+    <div style="margin:0;padding:12px 8px;background:#fff8f3;color:#392724;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue','Hiragino Kaku Gothic ProN','Yu Gothic',sans-serif;font-size:16px;line-height:1.75;-webkit-text-size-adjust:100%;">
+      <div style="max-width:600px;margin:0 auto;padding:24px 18px;border:1px solid #e3c7af;border-radius:20px;background:#fffdfb;">
+        <h1 style="margin:0 0 20px;color:#7a1d33;font-size:20px;line-height:1.5;font-weight:700;word-break:keep-all;">${titleHtml}</h1>
+        <div style="margin:0;overflow-wrap:anywhere;word-break:break-word;">${bodyHtml}</div>
+        <p style="margin:24px 0 0;"><a href="${escapeHtml_(invitationUrl)}" style="display:inline-block;padding:12px 20px;border-radius:999px;background:#7a1d33;color:#fff;font-size:16px;font-weight:700;line-height:1.5;text-decoration:none;">招待状を開く</a></p>
       </div>
     </div>`;
+}
+
+function buildHtmlMailTitle_(title) {
+  const match = String(title || '').match(/^(【[^】]+】)\s*(.*)$/);
+  if (!match || !match[2]) return escapeHtml_(title);
+  return `${escapeHtml_(match[1])}<span style="display:block;">${escapeHtml_(match[2])}</span>`;
+}
+
+function buildHtmlMailParagraphs_(textBody) {
+  return String(textBody || '')
+    .replace(/\r\n?/g, '\n')
+    .split(/\n{2,}/)
+    .filter(paragraph => paragraph !== '')
+    .map((paragraph, index) => {
+      const margin = index === 0 ? '0' : '18px 0 0';
+      const lines = escapeHtml_(paragraph).replace(/\n/g, '<br>');
+      return `<p style="margin:${margin};">${lines}</p>`;
+    })
+    .join('');
 }
 
 function resetTriggers_() {
