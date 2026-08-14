@@ -30,7 +30,8 @@ const APP_CONFIG = {
   mapUrl: 'https://www.google.com/maps/search/?api=1&query=%E3%82%AD%E3%83%B3%E3%83%97%E3%83%88%E3%83%B3%E6%96%B0%E5%AE%BF%E6%9D%B1%E4%BA%AC',
   baseInvitationUrl: 'https://Yusuke-Aika-Wedding.github.io/invitation/',
   reminderHour: 9,
-  thanksHour: 15
+  thanksHour: 15,
+  batchEmailIntervalMs: 1000
 };
 
 const HEADERS = [
@@ -244,6 +245,7 @@ function sendReminderEmailsByDays_(daysBefore, isTest) {
     if (!isAttending_(v.ceremony, v.reception)) return;
     if (!isTest && v[sentKey]) return;
 
+    if (sentCount > 0) waitBatchEmailInterval_();
     sendReminderEmail_({
       to: v.email,
       name: v.name || 'ゲスト',
@@ -312,8 +314,11 @@ function sendEmailPreviewsForGuest_(guestIdRaw, recipientRaw) {
     message: v.message || '',
     invitationUrl: getInvitationUrl_()
   });
+  waitBatchEmailInterval_();
   sendReminderEmail_(Object.assign({}, reminderData, { daysBefore: 7 }));
+  waitBatchEmailInterval_();
   sendReminderEmail_(Object.assign({}, reminderData, { daysBefore: 1 }));
+  waitBatchEmailInterval_();
   sendAfterReceptionThanksEmail_({
     to: recipient,
     name: v.name || 'ゲスト',
@@ -343,6 +348,7 @@ function sendAfterReceptionThanksEmails_(isTest) {
     if (!isAttending_(v.ceremony, v.reception)) return;
     if (!isTest && v.thanksSentAt) return;
 
+    if (sentCount > 0) waitBatchEmailInterval_();
     sendAfterReceptionThanksEmail_({
       to: v.email,
       name: v.name || 'ゲスト',
@@ -409,6 +415,10 @@ function sendWeddingEmail_(data) {
     body: data.body,
     htmlBody: data.htmlBody
   });
+}
+
+function waitBatchEmailInterval_() {
+  Utilities.sleep(APP_CONFIG.batchEmailIntervalMs);
 }
 
 function assertDedicatedExecutionAccount_() {
