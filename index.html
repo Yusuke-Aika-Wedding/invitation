@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&amp;family=Noto+Serif+JP:wght@400;500;600;700&amp;family=Old+Standard+TT:wght@400;700&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20260814-gift-confirmation-guide">
+  <link rel="stylesheet" href="css/style.css?v=20260820-swipe-surprise-quiz">
 </head>
 <body class="auth-locked">
   <div class="petal-layer" aria-hidden="true"></div>
@@ -66,10 +66,10 @@
   <main class="site-shell">
     <div id="invitationPage" class="page-view" data-page="invitation">
       <section class="hero fade-in">
-        <div class="hero-slider" aria-label="新郎新婦の写真スライド">
-          <div class="hero-slide is-active"><img src="assets/gallery-2.jpg" alt="東京タワーと新郎新婦" loading="eager"></div>
-          <div class="hero-slide"><img src="assets/gallery-3.jpg" alt="海辺で撮影した新郎新婦" loading="lazy"></div>
-          <div class="hero-slide"><img src="assets/gallery-4.jpg" alt="野球場で撮影した新郎新婦" loading="lazy"></div>
+        <div class="hero-slider" aria-label="新郎新婦の写真スライド（左右にスワイプできます）">
+          <div class="hero-slide is-active"><img src="assets/gallery-2.jpg" alt="東京タワーと新郎新婦" loading="eager" draggable="false"></div>
+          <div class="hero-slide"><img src="assets/gallery-3.jpg" alt="海辺で撮影した新郎新婦" loading="lazy" draggable="false"></div>
+          <div class="hero-slide"><img src="assets/gallery-4.jpg" alt="野球場で撮影した新郎新婦" loading="lazy" draggable="false"></div>
           <div class="slider-dots" aria-label="写真切り替え">
             <button class="slide-dot is-active" type="button" aria-label="写真1"></button>
             <button class="slide-dot" type="button" aria-label="写真2"></button>
@@ -182,9 +182,13 @@
 
         <article class="person-card person-card-groom">
           <div class="profile-photo-wrap">
-            <div class="profile-photo" role="img" aria-label="野球観戦を楽しむ新郎・祐輔の顔写真">
+            <div class="profile-photo" role="img" aria-label="野球観戦を楽しむ新郎・祐輔の顔写真" data-profile-photo>
               <img src="assets/gallery-4.jpg" alt="" loading="eager">
             </div>
+            <p id="profileSpeechBubble" class="profile-speech-bubble" role="status" aria-live="polite" aria-hidden="true">
+              <span class="profile-speech-name" aria-hidden="true">Yusuke</span>
+              <span>触らないでよ！</span>
+            </p>
           </div>
           <p class="person-role">Groom</p>
           <h3 class="person-name"><span>白戸 祐輔</span><small>Yusuke Shirato</small></h3>
@@ -200,7 +204,7 @@
 
         <article class="person-card person-card-bride">
           <div class="profile-photo-wrap">
-            <div class="profile-photo" role="img" aria-label="野球観戦を楽しむ新婦・愛佳の顔写真">
+            <div class="profile-photo" role="img" aria-label="野球観戦を楽しむ新婦・愛佳の顔写真" data-profile-photo>
               <img src="assets/gallery-4.jpg" alt="" loading="eager">
             </div>
           </div>
@@ -232,7 +236,7 @@
             <p class="quiz-count"><span id="quizCurrent" class="number-font">1</span><span>/</span><span class="number-font">5</span></p>
           </div>
           <div class="quiz-progress" aria-hidden="true"><span id="quizProgressBar"></span></div>
-          <p class="quiz-demo-note">現在はテスト問題です</p>
+          <p class="quiz-demo-note">全12問からランダムで5問出題</p>
           <p id="quizQuestion" class="quiz-question"></p>
           <div id="quizOptions" class="quiz-options" role="group" aria-label="回答の選択肢"></div>
           <div id="quizFeedback" class="quiz-feedback is-hidden" aria-live="polite">
@@ -322,6 +326,6 @@
   </div>
 
   <script src="js/config.js"></script>
-  <script src="js/script.js?v=20260814-gift-confirmation-guide"></script>
+  <script src="js/script.js?v=20260820-swipe-surprise-quiz"></script>
 </body>
 </html>

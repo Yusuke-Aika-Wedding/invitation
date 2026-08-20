@@ -23,24 +23,18 @@
   let lastCotraGuideTrigger = null;
   const QUIZ_QUESTION_COUNT = 5;
   const QUIZ_QUESTIONS = [
-    { question: '新郎のフルネームは？', options: ['白戸 祐輔', '白戸 悠介', '白井 祐輔'], answer: '白戸 祐輔', explanation: '新郎は白戸祐輔（Yusuke Shirato）です。' },
-    { question: '新婦のフルネームは？', options: ['大貫 愛佳', '大西 愛佳', '大貫 愛花'], answer: '大貫 愛佳', explanation: '新婦は大貫愛佳（Aika Onuki）です。' },
-    { question: 'ふたりに共通する好きなことは？', options: ['野球観戦', '登山', '陶芸'], answer: '野球観戦', explanation: 'ふたりとも野球観戦が好き。プロフィール写真も球場で撮影した一枚です。' },
-    { question: '野球観戦の写真で、ふたりが着ているユニフォームの球団は？', options: ['阪神タイガース', '読売ジャイアンツ', '東京ヤクルトスワローズ'], answer: '阪神タイガース', explanation: 'おそろいで阪神タイガースのユニフォームを着ています。' },
-    { question: '結婚式の日付は？', options: ['2027年3月21日', '2027年2月21日', '2027年3月12日'], answer: '2027年3月21日', explanation: '結婚式は2027年3月21日に執り行います。' },
-    { question: '結婚式当日の曜日は？', options: ['日曜日', '土曜日', '祝日の月曜日'], answer: '日曜日', explanation: '2027年3月21日は日曜日です。' },
-    { question: '挙式のスタート時刻は？', options: ['10:00', '10:30', '11:00'], answer: '10:00', explanation: '挙式は10:00〜10:30を予定しています。' },
-    { question: '披露宴のスタート時刻は？', options: ['11:00', '11:30', '12:00'], answer: '11:00', explanation: '披露宴は11:00〜14:00を予定しています。' },
-    { question: '結婚式の会場はどこ？', options: ['キンプトン新宿東京', 'パレスホテル東京', 'ホテル椿山荘東京'], answer: 'キンプトン新宿東京', explanation: '会場はキンプトン新宿東京です。' },
-    { question: '結婚式場があるエリアは？', options: ['新宿', '丸の内', '横浜'], answer: '新宿', explanation: '会場名の通り、新宿エリアにあります。' },
-    { question: '東京タワーの前で撮影した写真に写っている大きな花束の色は？', options: ['赤', '白', '黄色'], answer: '赤', explanation: '鮮やかな赤いバラの花束が写っています。' },
-    { question: '招待状のメインに書かれているふたりの名前の順番は？', options: ['Yusuke & Aika', 'Aika & Yusuke', 'Y & A Wedding'], answer: 'Yusuke & Aika', explanation: 'サイトでは「Yusuke & Aika」と表記しています。' },
-    { question: '野球観戦の写真で、球場の座席は何色？', options: ['青', '赤', '緑'], answer: '青', explanation: 'ふたりの後ろには青いスタンド席が並んでいます。' },
-    { question: 'プロフィールの顔写真は、どこで撮った写真から切り抜いている？', options: ['野球場', '東京タワー前', '海辺'], answer: '野球場', explanation: '野球観戦中の写真から、ふたりの表情をそれぞれ切り抜いています。' },
-    { question: 'このクイズで1回に出題される問題数は？', options: ['5問', '3問', '10問'], answer: '5問', explanation: '問題リストの中から、毎回ランダムで5問が選ばれます。' },
-    { question: '出欠フォームで回答するのはどの予定？', options: ['挙式と披露宴', '披露宴のみ', '二次会のみ'], answer: '挙式と披露宴', explanation: '挙式・披露宴それぞれについて出欠を回答できます。' },
-    { question: 'トップの写真スライドに用意されている写真は何枚？', options: ['3枚', '2枚', '5枚'], answer: '3枚', explanation: '東京タワー、海辺、野球場の3枚が切り替わります。' },
-    { question: '新郎新婦紹介ページの英語タイトルは？', options: ['About Us', 'Our Story', 'Meet the Family'], answer: 'About Us', explanation: 'プロフィールページのタイトルは「About Us」です。' }
+    { question: '新郎の血液型は？', options: ['A型', 'B型', 'C型', 'D型'], answer: 'A型', explanation: 'A型っぽいってよく言われてきました。' },
+    { question: '新郎の実家で昔飼っていたのは？', options: ['犬', '猫'], answer: '犬', explanation: '犬・猫どちらも好きですよ！' },
+    { question: '新郎・新婦が好きなプロ野球球団は？', options: ['阪神タイガース', '読売ジャイアンツ', '横浜DeNAベイスターズ', 'ヤクルトスワローズ', '広島カープ', '中日ドラゴンズ'], answer: '阪神タイガース', explanation: '他球団ファンの方、すみません！' },
+    { question: '新郎の誕生月は？', options: ['2月', '3月', '5月', '7月', '11月'], answer: '5月', explanation: '2,3,5,7,11. どんな数字の並びか分かりますよね！？' },
+    { question: '新婦の誕生月は？', options: ['2月', '3月', '5月', '7月', '11月'], answer: '11月', explanation: '2,3,5,7,11. どんな数字の並びか分かりますよね！？' },
+    { question: '新郎が1番好きな寿司ネタは？', options: ['マグロ', 'サーモン', 'たこ', 'いか', 'たまご'], answer: 'サーモン', explanation: 'サーモン1択！' },
+    { question: '新郎が1番好きなおにぎりの具は？', options: ['鮭', 'ツナマヨ', 'こんぶ', 'おかか'], answer: 'ツナマヨ', explanation: '鮭も好きですね。' },
+    { question: '新郎が1番得意な教科は？', options: ['国語', '数学', '英語', '理科', '社会'], answer: '数学', explanation: 'もちろん！' },
+    { question: '新郎が1番苦手な教科は？', options: ['音楽', '美術', '書道'], answer: '美術', explanation: '絵だけは勘弁...' },
+    { question: '新郎・新婦の出身高校は？', options: ['越谷東高校', '越谷南高校', '越谷西高校', '越谷北高校'], answer: '越谷北高校', explanation: '同級生も出席してくれます！' },
+    { question: '新郎が高校時代に所属していた部活動は？', options: ['野球部', 'サッカー部', 'テニス部', 'バスケ部'], answer: '野球部', explanation: '小中高ずっと野球してました...' },
+    { question: '新郎が1番好きな食べ物は？', options: ['カレー', 'ハンバーグ', 'オムライス', '鶏の唐揚げ'], answer: '鶏の唐揚げ', explanation: '得意料理です！' }
   ];
 
   document.addEventListener('DOMContentLoaded', init);
@@ -56,6 +50,7 @@
     setupFadeIn();
     setupCountdown();
     setupCarousel();
+    setupProfileSurprise();
     setupQuiz();
     setupAllergyFields();
     setupForm();
@@ -95,6 +90,7 @@
       changeIdButton: document.getElementById('changeIdButton'),
       invitationPage: document.getElementById('invitationPage'),
       profilePage: document.getElementById('profilePage'),
+      profileSpeechBubble: document.getElementById('profileSpeechBubble'),
       quizStartButton: document.getElementById('quizStartButton'),
       quizPanel: document.getElementById('quizPanel'),
       quizPlayView: document.getElementById('quizPlayView'),
@@ -1102,15 +1098,88 @@
   function setupCarousel() {
     const slides = Array.from(document.querySelectorAll('.hero-slide'));
     const dots = Array.from(document.querySelectorAll('.slide-dot'));
+    const slider = document.querySelector('.hero-slider');
     if (slides.length <= 1) return;
+    let autoplayTimer = null;
+    let swipeStart = null;
     const show = index => {
       currentSlide = ((index % slides.length) + slides.length) % slides.length;
       slides.forEach((slide, i) => slide.classList.toggle('is-active', i === currentSlide));
-      dots.forEach((dot, i) => dot.classList.toggle('is-active', i === currentSlide));
+      dots.forEach((dot, i) => {
+        const active = i === currentSlide;
+        dot.classList.toggle('is-active', active);
+        dot.setAttribute('aria-current', active ? 'true' : 'false');
+      });
     };
-    dots.forEach((dot, i) => dot.addEventListener('click', () => show(i)));
+    const restartAutoplay = () => {
+      window.clearInterval(autoplayTimer);
+      autoplayTimer = window.setInterval(() => show(currentSlide + 1), 5000);
+    };
+    dots.forEach((dot, i) => dot.addEventListener('click', () => {
+      show(i);
+      restartAutoplay();
+    }));
+    if (slider) {
+      slider.addEventListener('pointerdown', event => {
+        if (!event.isPrimary) return;
+        swipeStart = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+        if (slider.setPointerCapture) slider.setPointerCapture(event.pointerId);
+      });
+      slider.addEventListener('pointerup', event => {
+        if (!swipeStart || swipeStart.pointerId !== event.pointerId) return;
+        const distanceX = event.clientX - swipeStart.x;
+        const distanceY = event.clientY - swipeStart.y;
+        swipeStart = null;
+        if (slider.releasePointerCapture && slider.hasPointerCapture(event.pointerId)) {
+          slider.releasePointerCapture(event.pointerId);
+        }
+        if (Math.abs(distanceX) < 45 || Math.abs(distanceX) <= Math.abs(distanceY) * 1.2) return;
+        show(currentSlide + (distanceX < 0 ? 1 : -1));
+        restartAutoplay();
+      });
+      slider.addEventListener('pointercancel', () => { swipeStart = null; });
+    }
     show(0);
-    window.setInterval(() => show(currentSlide + 1), 5000);
+    restartAutoplay();
+  }
+
+  function setupProfileSurprise() {
+    const photos = Array.from(document.querySelectorAll('[data-profile-photo]'));
+    if (!photos.length || !els.profileSpeechBubble) return;
+    let lastTap = null;
+    let speechTimer = null;
+
+    const showSpeechBubble = photo => {
+      const targetWrap = photo.closest('.profile-photo-wrap');
+      if (targetWrap) targetWrap.appendChild(els.profileSpeechBubble);
+      window.clearTimeout(speechTimer);
+      els.profileSpeechBubble.classList.add('is-visible');
+      els.profileSpeechBubble.setAttribute('aria-hidden', 'false');
+      speechTimer = window.setTimeout(() => {
+        els.profileSpeechBubble.classList.remove('is-visible');
+        els.profileSpeechBubble.setAttribute('aria-hidden', 'true');
+      }, 3000);
+    };
+
+    photos.forEach(photo => {
+      photo.addEventListener('dblclick', event => {
+        event.preventDefault();
+        showSpeechBubble(photo);
+      });
+      photo.addEventListener('pointerup', event => {
+        if (event.pointerType === 'mouse') return;
+        const now = window.performance.now();
+        const isDoubleTap = lastTap
+          && lastTap.target === photo
+          && now - lastTap.time <= 360
+          && Math.hypot(event.clientX - lastTap.x, event.clientY - lastTap.y) <= 36;
+        lastTap = { target: photo, time: now, x: event.clientX, y: event.clientY };
+        if (!isDoubleTap) return;
+        event.preventDefault();
+        lastTap = null;
+        showSpeechBubble(photo);
+      });
+    });
   }
 
   function setupQuiz() {
