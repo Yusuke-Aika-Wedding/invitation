@@ -10,11 +10,13 @@
  * O 送金方法 / P 送金元名義 / Q 送金についてのメモ / R 送金申告日時
  * S 送金申告通知メール送信日時 / T 着金確認日時 / U 着金確認メール送信日時
  * V 要確認メール送信日時 / W メール操作 / X ご祝儀管理メモ
+ * Y Dear Guestメッセージ
  */
 
 const APP_CONFIG = {
   spreadsheetId: '1micDJFsf6ktwZrq_tlIz9TiC4PjbBbv-7dlWgbhMjbs',
   sheetName: 'ゲスト一覧',
+  predictionSheetName: 'WEDDING PREDICTION',
   timeZone: 'Asia/Tokyo',
   weddingDateYmd: '2027-03-21',
   weddingDateIso: '2027-03-21T10:00:00+09:00',
@@ -62,7 +64,8 @@ const HEADERS = [
   '着金確認メール送信日時',
   '要確認メール送信日時',
   'メール操作',
-  'ご祝儀管理メモ'
+  'ご祝儀管理メモ',
+  'Dear Guestメッセージ'
 ];
 
 const COL = {
@@ -89,8 +92,40 @@ const COL = {
   giftConfirmationSentAt: 21,
   giftIssueSentAt: 22,
   giftAction: 23,
-  giftAdminNote: 24
+  giftAdminNote: 24,
+  invitationMessage: 25
 };
+
+const PREDICTION_HEADERS = [
+  'ID',
+  'ゲスト名',
+  '質問ID',
+  '質問',
+  '投票',
+  '正解',
+  '投票日時'
+];
+
+const PREDICTION_QUESTIONS = [
+  {
+    id: 'Q1',
+    question: '披露宴の最初の曲は？',
+    options: ['サザン', 'ミスチル', '嵐', 'ミセス'],
+    answer: 'ミスチル'
+  },
+  {
+    id: 'Q2',
+    question: '新婦のお色直し後のドレスの色は？',
+    options: ['赤', 'ピンク', '水色', '黄色'],
+    answer: 'ピンク'
+  },
+  {
+    id: 'Q3',
+    question: 'ウェディングケーキはどんなタイプ？',
+    options: ['王道', 'フルーツたっぷり', 'ロールケーキ', '唐揚げタワー'],
+    answer: '王道'
+  }
+];
 
 const GIFT_STATUS = {
   unsent: '未送金',
@@ -161,6 +196,7 @@ function setup() {
     ensureGiftStatusColumn_(sheet);
     ensureGiftActionColumn_(sheet);
     formatSheet_(sheet);
+    ensurePredictionSheet_();
     SpreadsheetApp.flush();
   } finally {
     lock.releaseLock();
@@ -176,6 +212,7 @@ function doGet(e) {
     if (action === 'ping') return output_({ ok: true, message: 'pong' }, params.callback);
     if (action === 'status') return output_(getStatus_(params.guestId), params.callback);
     if (action === 'submit') return output_(submitResponse_(params), params.callback);
+    if (action === 'submitPrediction') return output_(submitPrediction_(params), params.callback);
     if (action === 'giftInfo') return output_(getGiftInformation_(params.guestId, params.method), params.callback);
     if (action === 'reportGiftSent') return output_(reportGiftSent_(params), params.callback);
     if (action === 'confirmGiftSent') {
@@ -232,6 +269,8 @@ function getStatus_(guestIdRaw) {
     receptionAttendance: values.reception || '',
     allergy: values.allergy || '',
     message: values.message || '',
+    invitationMessage: values.invitationMessage || '',
+    prediction: completed ? buildPredictionState_(values.id) : null,
     submittedAt: values.submittedAt ? formatDateTime_(values.submittedAt) : ''
   };
 }
@@ -298,7 +337,8 @@ function submitResponse_(params) {
       record.values.giftConfirmationSentAt || '',
       record.values.giftIssueSentAt || '',
       '',
-      record.values.giftAdminNote || ''
+      record.values.giftAdminNote || '',
+      record.values.invitationMessage || ''
     ]]);
 
     sendConfirmationEmail_({
@@ -324,11 +364,149 @@ function submitResponse_(params) {
       giftStatus: giftStatus,
       canShowGiftInformation: canShowGiftInformation_(giftStatus),
       canCancelGiftReport: giftStatus === GIFT_STATUS.reported,
-      displayName: name
+      displayName: name,
+      invitationMessage: record.values.invitationMessage || '',
+      prediction: buildPredictionState_(storedGuestId)
     };
   } finally {
     lock.releaseLock();
   }
+}
+
+function submitPrediction_(params) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const guestId = normalizeGuestId_(params && params.guestId);
+    const questionId = String((params && params.questionId) || '').trim();
+    const option = String((params && params.option) || '').trim();
+    if (!guestId) throw new Error('guestIdがありません。');
+
+    const question = getPredictionQuestion_(questionId);
+    if (!question) throw new Error('アンケートの質問が見つかりません。');
+    if (!question.options.includes(option)) throw new Error('選択肢を確認してください。');
+
+    const guestSheet = getMainSheet_();
+    ensureHeaders_(guestSheet);
+    const guestRecord = findGuestRecord_(guestSheet, guestId);
+    if (!guestRecord) throw new Error('ゲスト情報が見つかりません。');
+    if (!isCompleted_(guestRecord.values)) {
+      throw new Error('WEDDING PREDICTIONは、RSVPの回答後に投票できます。');
+    }
+
+    const storedGuestId = guestRecord.values.id || guestId;
+    const predictionSheet = getPredictionSheet_();
+    const existingVote = readPredictionVotes_(predictionSheet).find(vote =>
+      normalizeGuestId_(vote.guestId) === storedGuestId && vote.questionId === question.id
+    );
+    if (existingVote) {
+      return {
+        ok: true,
+        alreadyVoted: true,
+        prediction: buildPredictionState_(storedGuestId, predictionSheet)
+      };
+    }
+
+    const rowNumber = Math.max(predictionSheet.getLastRow() + 1, 2);
+    predictionSheet.getRange(rowNumber, 1, 1, PREDICTION_HEADERS.length).setValues([[
+      storedGuestId,
+      guestRecord.values.name || 'ゲスト',
+      question.id,
+      question.question,
+      option,
+      question.answer,
+      new Date()
+    ]]);
+    predictionSheet.getRange(rowNumber, 7).setNumberFormat('yyyy/mm/dd hh:mm:ss');
+    SpreadsheetApp.flush();
+
+    return {
+      ok: true,
+      alreadyVoted: false,
+      prediction: buildPredictionState_(storedGuestId, predictionSheet)
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function buildPredictionState_(guestIdRaw, predictionSheet) {
+  const guestId = normalizeGuestId_(guestIdRaw);
+  const votes = readPredictionVotes_(predictionSheet || getPredictionSheet_());
+  const uniqueVotes = new Map();
+
+  votes.forEach(vote => {
+    const question = getPredictionQuestion_(vote.questionId);
+    if (!question || !question.options.includes(vote.option)) return;
+    const normalizedVoteGuestId = normalizeGuestId_(vote.guestId);
+    if (!normalizedVoteGuestId) return;
+    const key = `${normalizedVoteGuestId}\u0000${question.id}`;
+    if (!uniqueVotes.has(key)) uniqueVotes.set(key, vote);
+  });
+
+  return {
+    questions: PREDICTION_QUESTIONS.map(question => {
+      const counts = question.options.map(() => 0);
+      uniqueVotes.forEach(vote => {
+        if (vote.questionId !== question.id) return;
+        const optionIndex = question.options.indexOf(vote.option);
+        if (optionIndex >= 0) counts[optionIndex] += 1;
+      });
+      const totalVotes = counts.reduce((sum, count) => sum + count, 0);
+      const percentages = calculatePercentages_(counts);
+      const ownVote = uniqueVotes.get(`${guestId}\u0000${question.id}`) || null;
+      return {
+        id: question.id,
+        question: question.question,
+        voted: Boolean(ownVote),
+        selectedOption: ownVote ? ownVote.option : '',
+        totalVotes: totalVotes,
+        options: question.options.map((label, index) => ({
+          label: label,
+          percent: ownVote ? percentages[index] : 0
+        }))
+      };
+    })
+  };
+}
+
+function calculatePercentages_(counts) {
+  const total = counts.reduce((sum, count) => sum + count, 0);
+  if (!total) return counts.map(() => 0);
+  const raw = counts.map(count => count * 100 / total);
+  const percentages = raw.map(value => Math.floor(value));
+  let remainder = 100 - percentages.reduce((sum, value) => sum + value, 0);
+  raw
+    .map((value, index) => ({ index: index, fraction: value - percentages[index] }))
+    .sort((a, b) => b.fraction - a.fraction || a.index - b.index)
+    .forEach(item => {
+      if (remainder <= 0) return;
+      percentages[item.index] += 1;
+      remainder -= 1;
+    });
+  return percentages;
+}
+
+function getPredictionQuestion_(questionIdRaw) {
+  const questionId = String(questionIdRaw || '').trim();
+  return PREDICTION_QUESTIONS.find(question => question.id === questionId) || null;
+}
+
+function readPredictionVotes_(sheet) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+  return sheet.getRange(2, 1, lastRow - 1, PREDICTION_HEADERS.length).getValues()
+    .map((row, index) => ({
+      rowNumber: index + 2,
+      guestId: String(row[0] || '').trim(),
+      guestName: String(row[1] || '').trim(),
+      questionId: String(row[2] || '').trim(),
+      question: String(row[3] || '').trim(),
+      option: String(row[4] || '').trim(),
+      answer: String(row[5] || '').trim(),
+      votedAt: row[6]
+    }))
+    .filter(vote => vote.guestId && vote.questionId);
 }
 
 function getGiftInformation_(guestIdRaw, methodRaw) {
@@ -1124,6 +1302,48 @@ function getMainSheet_() {
   return APP_CONFIG.sheetName ? ss.getSheetByName(APP_CONFIG.sheetName) : ss.getSheets()[0];
 }
 
+function getPredictionSheet_() {
+  const sheet = SpreadsheetApp.openById(APP_CONFIG.spreadsheetId)
+    .getSheetByName(APP_CONFIG.predictionSheetName);
+  if (!sheet) {
+    throw new Error('WEDDING PREDICTIONシートがありません。GASエディタからsetupを実行してください。');
+  }
+  return sheet;
+}
+
+function ensurePredictionSheet_() {
+  const spreadsheet = SpreadsheetApp.openById(APP_CONFIG.spreadsheetId);
+  let sheet = spreadsheet.getSheetByName(APP_CONFIG.predictionSheetName);
+  if (!sheet) sheet = spreadsheet.insertSheet(APP_CONFIG.predictionSheetName);
+
+  const current = sheet.getRange(1, 1, 1, PREDICTION_HEADERS.length).getValues()[0];
+  const needsUpdate = PREDICTION_HEADERS.some((header, index) => String(current[index] || '') !== header);
+  if (needsUpdate) sheet.getRange(1, 1, 1, PREDICTION_HEADERS.length).setValues([PREDICTION_HEADERS]);
+
+  const availableRows = Math.max(sheet.getMaxRows() - 1, 1);
+  const questionValidation = SpreadsheetApp.newDataValidation()
+    .requireValueInList(PREDICTION_QUESTIONS.map(question => question.id), true)
+    .setAllowInvalid(false)
+    .build();
+  sheet.getRange(2, 3, availableRows, 1).setDataValidation(questionValidation);
+  sheet.getRange(2, 7, availableRows, 1).setNumberFormat('yyyy/mm/dd hh:mm:ss');
+  sheet.setFrozenRows(1);
+  sheet.getRange(1, 1, 1, PREDICTION_HEADERS.length)
+    .setFontWeight('bold')
+    .setBackground('#f8e9df');
+  sheet.setColumnWidth(1, 130);
+  sheet.setColumnWidth(2, 160);
+  sheet.setColumnWidth(3, 90);
+  sheet.setColumnWidth(4, 320);
+  sheet.setColumnWidth(5, 190);
+  sheet.setColumnWidth(6, 140);
+  sheet.setColumnWidth(7, 170);
+  sheet.getRange(2, 4, availableRows, 3).setWrap(true);
+  sheet.getRange(1, 1, Math.max(sheet.getLastRow(), 1), PREDICTION_HEADERS.length)
+    .setVerticalAlignment('middle');
+  return sheet;
+}
+
 function ensureHeaders_(sheet) {
   const legacyInvitationUrlColumn = 12;
   const legacyHeader = String(sheet.getRange(1, legacyInvitationUrlColumn).getValue() || '').trim();
@@ -1194,8 +1414,10 @@ function formatSheet_(sheet) {
   sheet.setColumnWidth(COL.giftDeclarationNote, 260);
   sheet.setColumnWidth(COL.giftAction, 230);
   sheet.setColumnWidth(COL.giftAdminNote, 340);
+  sheet.setColumnWidth(COL.invitationMessage, 360);
   sheet.getRange(2, COL.giftDeclarationNote, Math.max(sheet.getMaxRows() - 1, 1), 1).setWrap(true);
   sheet.getRange(2, COL.giftAdminNote, Math.max(sheet.getMaxRows() - 1, 1), 1).setWrap(true);
+  sheet.getRange(2, COL.invitationMessage, Math.max(sheet.getMaxRows() - 1, 1), 1).setWrap(true);
   sheet.getRange(1, 1, Math.max(sheet.getLastRow(), 1), HEADERS.length).setVerticalAlignment('middle');
 }
 
@@ -1236,7 +1458,8 @@ function rowToObject_(row) {
     giftConfirmationSentAt: row[COL.giftConfirmationSentAt - 1],
     giftIssueSentAt: row[COL.giftIssueSentAt - 1],
     giftAction: String(row[COL.giftAction - 1] || '').trim(),
-    giftAdminNote: String(row[COL.giftAdminNote - 1] || '').trim()
+    giftAdminNote: String(row[COL.giftAdminNote - 1] || '').trim(),
+    invitationMessage: String(row[COL.invitationMessage - 1] || '').trim()
   };
 }
 

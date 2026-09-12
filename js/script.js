@@ -13,7 +13,8 @@
   const targetDate = new Date(config.weddingDateIso || '2027-03-21T10:00:00+09:00');
   const els = {};
   let guestId = '';
-  let latestStatus = { completed: false, attending: false, giftSent: false, giftStatus: GIFT_STATUS.unsent };
+  let latestStatus = { completed: false, attending: false, invitationMessage: '', prediction: null };
+  const predictionSelections = new Map();
   let currentSlide = 0;
   let authenticated = false;
   let lastGiftTrigger = null;
@@ -50,12 +51,9 @@
     setupFadeIn();
     setupCountdown();
     setupCarousel();
-    setupProfileSurprise();
-    setupQuiz();
     setupAllergyFields();
     setupForm();
-    setupGiftInformation();
-    setupCotraGuide();
+    setupPrediction();
     createPetals();
   }
 
@@ -89,24 +87,8 @@
       menuGuestName: document.getElementById('menuGuestName'),
       changeIdButton: document.getElementById('changeIdButton'),
       invitationPage: document.getElementById('invitationPage'),
-      profilePage: document.getElementById('profilePage'),
-      profileSpeechBubble: document.getElementById('profileSpeechBubble'),
-      quizStartButton: document.getElementById('quizStartButton'),
-      quizPanel: document.getElementById('quizPanel'),
-      quizPlayView: document.getElementById('quizPlayView'),
-      quizResultView: document.getElementById('quizResultView'),
-      quizCurrent: document.getElementById('quizCurrent'),
-      quizProgressBar: document.getElementById('quizProgressBar'),
-      quizQuestion: document.getElementById('quizQuestion'),
-      quizOptions: document.getElementById('quizOptions'),
-      quizFeedback: document.getElementById('quizFeedback'),
-      quizFeedbackTitle: document.getElementById('quizFeedbackTitle'),
-      quizExplanation: document.getElementById('quizExplanation'),
-      quizNextButton: document.getElementById('quizNextButton'),
-      quizScore: document.getElementById('quizScore'),
-      quizResultTitle: document.getElementById('quizResultTitle'),
-      quizResultMessage: document.getElementById('quizResultMessage'),
-      quizRetryButton: document.getElementById('quizRetryButton'),
+      predictionSection: document.getElementById('prediction'),
+      predictionList: document.getElementById('predictionList'),
       giftModal: document.getElementById('giftModal'),
       giftModalCard: document.querySelector('.gift-modal-card'),
       giftModalClose: document.getElementById('giftModalClose'),
@@ -180,12 +162,11 @@
       if (!result || !result.ok) throw new Error((result && result.error) || 'IDを確認できませんでした。');
 
       guestId = normalizeGuestId(result.guestId || candidate);
-      const giftStatus = normalizeGiftStatus(result.giftStatus, Boolean(result.giftSent));
       latestStatus = {
         completed: Boolean(result.completed),
         attending: Boolean(result.attending),
-        giftSent: isGiftLocked(giftStatus),
-        giftStatus: giftStatus
+        invitationMessage: String(result.invitationMessage || '').trim(),
+        prediction: result.prediction || null
       };
       try {
         localStorage.setItem(GUEST_ID_STORAGE_KEY, guestId);
@@ -231,7 +212,7 @@
     if (status.ceremonyAttendance) checkRadio('ceremonyAttendance', status.ceremonyAttendance);
     if (status.receptionAttendance) checkRadio('receptionAttendance', status.receptionAttendance);
     hydrateAllergy(status.allergy || '');
-    renderMessage(latestStatus);
+    renderMessage(status);
   }
 
   function hydrateAllergy(allergy) {
@@ -273,7 +254,8 @@
   function resetToAuth() {
     authenticated = false;
     guestId = '';
-    latestStatus = { completed: false, attending: false, giftSent: false, giftStatus: GIFT_STATUS.unsent };
+    latestStatus = { completed: false, attending: false, invitationMessage: '', prediction: null };
+    predictionSelections.clear();
     try {
       localStorage.removeItem(GUEST_ID_STORAGE_KEY);
     } catch (_) {
@@ -292,8 +274,7 @@
     if (els.form) els.form.reset();
     updateAllergyFields();
     setFormCompleted(false, false);
-    renderGiftInformation(false);
-    closeGiftModal({ restoreFocus: false });
+    renderPrediction(false, null);
     setAuthStatus('', '');
     window.history.replaceState(null, '', location.pathname);
     window.setTimeout(() => { if (els.guestIdEntry) els.guestIdEntry.focus(); }, 50);
@@ -337,19 +318,23 @@
   }
 
   function renderMessage(status) {
-    const giftStatus = normalizeGiftStatus(status && status.giftStatus, Boolean(status && status.giftSent));
     latestStatus = {
       completed: Boolean(status && status.completed),
       attending: Boolean(status && status.attending),
-      giftSent: isGiftLocked(giftStatus),
-      giftStatus: giftStatus
+      invitationMessage: String((status && status.invitationMessage) || latestStatus.invitationMessage || '').trim(),
+      prediction: (status && status.prediction) || latestStatus.prediction || null
     };
 
     const displayName = getDisplayName();
     if (els.messageGuestName) els.messageGuestName.textContent = `${displayName} 様`;
 
     let sentences;
-    if (!latestStatus.completed) {
+    if (latestStatus.invitationMessage) {
+      sentences = [[{
+        text: latestStatus.invitationMessage.replace(/\r\n?/g, '\n'),
+        custom: true
+      }]];
+    } else if (!latestStatus.completed) {
       sentences = [
         [
           { text: 'この度、白戸祐輔と大貫愛佳は', breakAfter: 'mobile' },
@@ -392,6 +377,7 @@
       els.messageBody.replaceChildren(...sentences.map(parts => {
         const line = document.createElement('span');
         line.className = 'message-sentence';
+        if (parts.some(part => part.custom)) line.classList.add('is-custom');
         parts.forEach(part => {
           line.append(document.createTextNode(part.text));
           if (part.breakAfter) {
@@ -403,8 +389,8 @@
         return line;
       }));
     }
-    renderGiftInformation(latestStatus.completed && latestStatus.attending, latestStatus.giftStatus);
     setFormCompleted(latestStatus.completed, latestStatus.attending);
+    renderPrediction(latestStatus.completed, latestStatus.prediction);
   }
 
   function renderGiftInformation(show, giftStatus = GIFT_STATUS.unsent) {
@@ -999,6 +985,172 @@
     }
   }
 
+  function setupPrediction() {
+    if (!els.predictionList) return;
+
+    els.predictionList.addEventListener('click', async event => {
+      const optionButton = event.target.closest('[data-prediction-option]');
+      if (optionButton) {
+        const card = optionButton.closest('[data-prediction-question]');
+        if (!card || card.dataset.voted === 'true') return;
+        const questionId = card.dataset.predictionQuestion || '';
+        const option = optionButton.dataset.predictionOption || '';
+        predictionSelections.set(questionId, option);
+        card.querySelectorAll('[data-prediction-option]').forEach(button => {
+          const selected = button === optionButton;
+          button.classList.toggle('is-selected', selected);
+          button.setAttribute('aria-pressed', String(selected));
+        });
+        const submitButton = card.querySelector('[data-prediction-submit]');
+        if (submitButton) submitButton.disabled = false;
+        setPredictionCardStatus(card, '');
+        return;
+      }
+
+      const submitButton = event.target.closest('[data-prediction-submit]');
+      if (!submitButton) return;
+      const card = submitButton.closest('[data-prediction-question]');
+      if (!card || card.dataset.voted === 'true') return;
+      const questionId = card.dataset.predictionQuestion || '';
+      const option = predictionSelections.get(questionId) || '';
+      if (!questionId || !option) {
+        setPredictionCardStatus(card, '予想を1つ選んでください。', 'error');
+        return;
+      }
+
+      card.querySelectorAll('button').forEach(button => { button.disabled = true; });
+      submitButton.textContent = '投票しています…';
+      setPredictionCardStatus(card, '投票を記録しています。');
+      try {
+        const result = await jsonp('submitPrediction', {
+          guestId: guestId,
+          questionId: questionId,
+          option: option
+        });
+        if (!result || !result.ok) throw new Error((result && result.error) || '投票を記録できませんでした。');
+        latestStatus.prediction = result.prediction || null;
+        predictionSelections.delete(questionId);
+        renderPrediction(true, latestStatus.prediction);
+      } catch (error) {
+        card.querySelectorAll('button').forEach(button => { button.disabled = false; });
+        submitButton.textContent = 'この内容で投票する';
+        setPredictionCardStatus(card, error.message || '時間をおいて、もう一度お試しください。', 'error');
+      }
+    });
+  }
+
+  function renderPrediction(show, prediction) {
+    if (!els.predictionSection || !els.predictionList) return;
+    els.predictionSection.classList.toggle('is-hidden', !show);
+    if (!show) {
+      els.predictionList.replaceChildren();
+      return;
+    }
+    window.requestAnimationFrame(() => els.predictionSection.classList.add('is-visible'));
+
+    const questions = prediction && Array.isArray(prediction.questions)
+      ? prediction.questions
+      : [];
+    if (!questions.length) {
+      const message = document.createElement('p');
+      message.className = 'prediction-loading';
+      message.textContent = 'アンケートを準備しています。ページを再読み込みしてください。';
+      els.predictionList.replaceChildren(message);
+      return;
+    }
+
+    els.predictionList.replaceChildren(...questions.map((question, index) => {
+      const card = document.createElement('article');
+      card.className = 'prediction-card';
+      card.dataset.predictionQuestion = String(question.id || '');
+      card.dataset.voted = String(Boolean(question.voted));
+
+      const header = document.createElement('div');
+      header.className = 'prediction-card-header';
+      const number = document.createElement('span');
+      number.className = 'prediction-number number-font';
+      number.textContent = String(index + 1).padStart(2, '0');
+      const heading = document.createElement('h3');
+      heading.textContent = String(question.question || '');
+      header.append(number, heading);
+      card.append(header);
+
+      const options = document.createElement('div');
+      options.className = question.voted ? 'prediction-results' : 'prediction-options';
+      options.setAttribute('role', question.voted ? 'list' : 'group');
+      options.setAttribute('aria-label', `${question.question || 'アンケート'}の選択肢`);
+
+      (Array.isArray(question.options) ? question.options : []).forEach(item => {
+        const label = String((item && item.label) || item || '');
+        if (question.voted) {
+          const result = document.createElement('div');
+          const selected = label === String(question.selectedOption || '');
+          const percent = Math.max(0, Math.min(100, Number(item.percent) || 0));
+          result.className = `prediction-result${selected ? ' is-selected' : ''}`;
+          result.setAttribute('role', 'listitem');
+          result.setAttribute('aria-label', `${label} ${percent}%${selected ? '、あなたの投票' : ''}`);
+          const bar = document.createElement('span');
+          bar.className = 'prediction-result-bar';
+          bar.style.width = `${percent}%`;
+          const copy = document.createElement('span');
+          copy.className = 'prediction-result-copy';
+          const optionLabel = document.createElement('span');
+          optionLabel.className = 'prediction-result-label';
+          optionLabel.textContent = `${selected ? '✓ ' : ''}${label}`;
+          const percentage = document.createElement('strong');
+          percentage.className = 'prediction-percentage number-font';
+          percentage.textContent = `${percent}%`;
+          copy.append(optionLabel, percentage);
+          result.append(bar, copy);
+          options.append(result);
+        } else {
+          const button = document.createElement('button');
+          button.className = 'prediction-option';
+          button.type = 'button';
+          button.dataset.predictionOption = label;
+          button.setAttribute('aria-pressed', 'false');
+          const mark = document.createElement('span');
+          mark.className = 'prediction-option-mark';
+          mark.setAttribute('aria-hidden', 'true');
+          const copy = document.createElement('span');
+          copy.textContent = label;
+          button.append(mark, copy);
+          options.append(button);
+        }
+      });
+      card.append(options);
+
+      if (question.voted) {
+        const summary = document.createElement('p');
+        summary.className = 'prediction-voted-note';
+        const totalVotes = Number(question.totalVotes) || 0;
+        summary.textContent = `投票済み・全${totalVotes}票`;
+        card.append(summary);
+      } else {
+        const submit = document.createElement('button');
+        submit.className = 'prediction-submit';
+        submit.type = 'button';
+        submit.dataset.predictionSubmit = 'true';
+        submit.disabled = true;
+        submit.textContent = 'この内容で投票する';
+        card.append(submit);
+      }
+
+      const status = document.createElement('p');
+      status.className = 'prediction-card-status';
+      status.setAttribute('aria-live', 'polite');
+      card.append(status);
+      return card;
+    }));
+  }
+
+  function setPredictionCardStatus(card, message, type) {
+    const status = card && card.querySelector('.prediction-card-status');
+    if (!status) return;
+    status.textContent = message || '';
+    status.classList.toggle('is-error', type === 'error');
+  }
+
   function setupOverlay() {
     if (!els.overlay) return;
     const openInvitation = () => {
@@ -1044,17 +1196,8 @@
 
   function applyRoute() {
     if (!authenticated) return;
-    const routeRaw = (location.hash || '#invitation').replace('#', '').toLowerCase();
-    const active = ['invitation', 'profile'].includes(routeRaw)
-      ? routeRaw
-      : 'invitation';
-
-    Object.entries({
-      invitation: els.invitationPage,
-      profile: els.profilePage
-    }).forEach(([key, page]) => {
-      if (page) page.classList.toggle('is-hidden', key !== active);
-    });
+    const active = 'invitation';
+    if (els.invitationPage) els.invitationPage.classList.remove('is-hidden');
     document.querySelectorAll('[data-nav]').forEach(item => {
       item.classList.toggle('is-current', item.dataset.nav === active);
     });
@@ -1356,8 +1499,8 @@
         renderMessage({
           completed: true,
           attending: Boolean(result.attending),
-          giftSent: Boolean(result.giftSent),
-          giftStatus: result.giftStatus
+          invitationMessage: String(result.invitationMessage || latestStatus.invitationMessage || '').trim(),
+          prediction: result.prediction || null
         });
         setStatus('ご回答ありがとうございました。確認メールをご確認ください。', 'success');
         const target = document.getElementById('rsvp');
