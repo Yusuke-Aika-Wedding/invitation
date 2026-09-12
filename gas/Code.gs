@@ -6,11 +6,7 @@
  * A ID / B ゲスト名 / C メールアドレス / D 挙式出欠 / E 披露宴出欠 / F アレルギー
  * G 回答日時 / H 確認メール送信日時 / I 1週間前リマインド送信日時
  * J 前日リマインド送信日時 / K 更新日時 / L メッセージ
- * M 参加ありがとうメール送信日時 / N ご祝儀ステータス
- * O 送金方法 / P 送金元名義 / Q 送金についてのメモ / R 送金申告日時
- * S 送金申告通知メール送信日時 / T 着金確認日時 / U 着金確認メール送信日時
- * V 要確認メール送信日時 / W メール操作 / X ご祝儀管理メモ
- * Y Dear Guestメッセージ
+ * M 参加ありがとうメール送信日時 / N Dear Guestメッセージ
  */
 
 const APP_CONFIG = {
@@ -54,17 +50,6 @@ const HEADERS = [
   '更新日時',
   'メッセージ',
   '参加ありがとうメール送信日時',
-  'ご祝儀ステータス',
-  '送金方法',
-  '送金元名義',
-  '送金についてのメモ',
-  '送金申告日時',
-  '送金申告通知メール送信日時',
-  '着金確認日時',
-  '着金確認メール送信日時',
-  '要確認メール送信日時',
-  'メール操作',
-  'ご祝儀管理メモ',
   'Dear Guestメッセージ'
 ];
 
@@ -82,48 +67,32 @@ const COL = {
   updatedAt: 11,
   message: 12,
   thanksSentAt: 13,
-  giftStatus: 14,
-  giftMethod: 15,
-  giftSenderName: 16,
-  giftDeclarationNote: 17,
-  giftReportedAt: 18,
-  giftHostNotifiedAt: 19,
-  giftConfirmedAt: 20,
-  giftConfirmationSentAt: 21,
-  giftIssueSentAt: 22,
-  giftAction: 23,
-  giftAdminNote: 24,
-  invitationMessage: 25
+  invitationMessage: 14
 };
 
 const PREDICTION_HEADERS = [
   'ID',
   'ゲスト名',
   '質問ID',
-  '質問',
   '投票',
-  '正解',
   '投票日時'
 ];
 
 const PREDICTION_QUESTIONS = [
   {
     id: 'Q1',
-    question: '披露宴の最初の曲は？',
-    options: ['サザン', 'ミスチル', '嵐', 'ミセス'],
-    answer: 'ミスチル'
+    question: '何に入刀する？',
+    options: ['ケーキ', 'ハンバーガー', '唐揚げ', 'その他']
   },
   {
     id: 'Q2',
     question: '新婦のお色直し後のドレスの色は？',
-    options: ['赤', 'ピンク', '水色', '黄色'],
-    answer: 'ピンク'
+    options: ['ピンク', '水色', '黄色', 'その他']
   },
   {
     id: 'Q3',
-    question: 'ウェディングケーキはどんなタイプ？',
-    options: ['王道', 'フルーツたっぷり', 'ロールケーキ', '唐揚げタワー'],
-    answer: '王道'
+    question: '披露宴の最後に流れる曲は誰の曲？',
+    options: ['サザンオールスターズ', 'Mr.Children', '嵐', 'その他']
   }
 ];
 
@@ -192,9 +161,8 @@ function setup() {
   try {
     const sheet = getMainSheet_();
     removeLegacyInvitationUrlColumn_(sheet);
+    removeLegacyGiftColumns_(sheet);
     ensureHeaders_(sheet);
-    ensureGiftStatusColumn_(sheet);
-    ensureGiftActionColumn_(sheet);
     formatSheet_(sheet);
     ensurePredictionSheet_();
     SpreadsheetApp.flush();
@@ -213,13 +181,6 @@ function doGet(e) {
     if (action === 'status') return output_(getStatus_(params.guestId), params.callback);
     if (action === 'submit') return output_(submitResponse_(params), params.callback);
     if (action === 'submitPrediction') return output_(submitPrediction_(params), params.callback);
-    if (action === 'giftInfo') return output_(getGiftInformation_(params.guestId, params.method), params.callback);
-    if (action === 'reportGiftSent') return output_(reportGiftSent_(params), params.callback);
-    if (action === 'confirmGiftSent') {
-      return output_(reportGiftSent_(Object.assign({}, params, { method: params.method || 'unknown' })), params.callback);
-    }
-    if (action === 'cancelGiftReport') return output_(cancelGiftReport_(params.guestId), params.callback);
-    if (action === 'confirmGiftCash') return output_(confirmGiftCash_(params.guestId), params.callback);
     if (action === 'sendThanksNow') return output_({ ok: true, sent: sendAfterReceptionThanksEmails_(true) }, params.callback);
     return output_({ ok: false, error: 'Unknown action.' }, params.callback);
   } catch (error) {
@@ -249,7 +210,6 @@ function getStatus_(guestIdRaw) {
 
   const values = record.values;
   const completed = isCompleted_(values);
-  const giftStatus = normalizeGiftStatus_(values.giftStatus);
   return {
     ok: true,
     guestId: values.id,
@@ -257,14 +217,6 @@ function getStatus_(guestIdRaw) {
     completed: completed,
     attending: isAttending_(values.ceremony, values.reception),
     receptionAttending: normalizeAttendance_(values.reception) === '出席',
-    giftSent: isGiftLocked_(giftStatus),
-    giftStatus: giftStatus,
-    canShowGiftInformation: canShowGiftInformation_(giftStatus),
-    canCancelGiftReport: giftStatus === GIFT_STATUS.reported,
-    giftMethod: values.giftMethod || '',
-    giftSenderName: values.giftSenderName || '',
-    giftDeclarationNote: values.giftDeclarationNote || '',
-    giftReportedAt: values.giftReportedAt ? formatDateTime_(values.giftReportedAt) : '',
     email: values.email || '',
     ceremonyAttendance: values.ceremony || '',
     receptionAttendance: values.reception || '',
@@ -330,17 +282,6 @@ function submitResponse_(params) {
       now,
       message,
       record.values.thanksSentAt || '',
-      normalizeGiftStatus_(record.values.giftStatus),
-      record.values.giftMethod || '',
-      record.values.giftSenderName || '',
-      record.values.giftDeclarationNote || '',
-      record.values.giftReportedAt || '',
-      record.values.giftHostNotifiedAt || '',
-      record.values.giftConfirmedAt || '',
-      record.values.giftConfirmationSentAt || '',
-      record.values.giftIssueSentAt || '',
-      '',
-      record.values.giftAdminNote || '',
       record.values.invitationMessage || ''
     ]]);
 
@@ -358,16 +299,11 @@ function submitResponse_(params) {
     sheet.getRange(record.rowNumber, COL.confirmationSentAt).setValue(afterMail);
     sheet.getRange(record.rowNumber, COL.updatedAt).setValue(afterMail);
 
-    const giftStatus = normalizeGiftStatus_(record.values.giftStatus);
     return {
       ok: true,
       completed: true,
       attending: isAttending_(ceremonyAttendance, receptionAttendance),
       receptionAttending: receptionAttendance === '出席',
-      giftSent: isGiftLocked_(giftStatus),
-      giftStatus: giftStatus,
-      canShowGiftInformation: canShowGiftInformation_(giftStatus),
-      canCancelGiftReport: giftStatus === GIFT_STATUS.reported,
       displayName: name,
       invitationMessage: record.values.invitationMessage || '',
       prediction: receptionAttendance === '出席' ? buildPredictionState_(storedGuestId) : null
@@ -419,12 +355,10 @@ function submitPrediction_(params) {
       storedGuestId,
       guestRecord.values.name || 'ゲスト',
       question.id,
-      question.question,
       option,
-      question.answer,
       new Date()
     ]]);
-    predictionSheet.getRange(rowNumber, 7).setNumberFormat('yyyy/mm/dd hh:mm:ss');
+    predictionSheet.getRange(rowNumber, 5).setNumberFormat('yyyy/mm/dd hh:mm:ss');
     SpreadsheetApp.flush();
 
     return {
@@ -508,10 +442,8 @@ function readPredictionVotes_(sheet) {
       guestId: String(row[0] || '').trim(),
       guestName: String(row[1] || '').trim(),
       questionId: String(row[2] || '').trim(),
-      question: String(row[3] || '').trim(),
-      option: String(row[4] || '').trim(),
-      answer: String(row[5] || '').trim(),
-      votedAt: row[6]
+      option: String(row[3] || '').trim(),
+      votedAt: row[4]
     }))
     .filter(vote => vote.guestId && vote.questionId);
 }
@@ -1294,14 +1226,6 @@ function resetTriggers_() {
     .everyDays(1)
     .atHour(APP_CONFIG.thanksHour)
     .create();
-  ScriptApp.newTrigger('sendPendingGiftReportNotifications')
-    .timeBased()
-    .everyHours(1)
-    .create();
-  ScriptApp.newTrigger('handleGiftMailAction')
-    .forSpreadsheet(APP_CONFIG.spreadsheetId)
-    .onEdit()
-    .create();
 }
 
 function getMainSheet_() {
@@ -1323,6 +1247,19 @@ function ensurePredictionSheet_() {
   let sheet = spreadsheet.getSheetByName(APP_CONFIG.predictionSheetName);
   if (!sheet) sheet = spreadsheet.insertSheet(APP_CONFIG.predictionSheetName);
 
+  const oldHeaderWidth = Math.min(sheet.getMaxColumns(), 7);
+  const oldHeaders = sheet.getRange(1, 1, 1, oldHeaderWidth).getValues()[0];
+  const isLegacySchema = oldHeaders[3] === '質問' || oldHeaders[5] === '正解';
+  if (isLegacySchema && sheet.getLastRow() >= 2) {
+    sheet.getRange(2, 1, sheet.getLastRow() - 1, oldHeaderWidth).clearContent();
+  }
+  if (sheet.getMaxColumns() < PREDICTION_HEADERS.length) {
+    sheet.insertColumnsAfter(sheet.getMaxColumns(), PREDICTION_HEADERS.length - sheet.getMaxColumns());
+  }
+  if (sheet.getMaxColumns() > PREDICTION_HEADERS.length) {
+    sheet.deleteColumns(PREDICTION_HEADERS.length + 1, sheet.getMaxColumns() - PREDICTION_HEADERS.length);
+  }
+
   const current = sheet.getRange(1, 1, 1, PREDICTION_HEADERS.length).getValues()[0];
   const needsUpdate = PREDICTION_HEADERS.some((header, index) => String(current[index] || '') !== header);
   if (needsUpdate) sheet.getRange(1, 1, 1, PREDICTION_HEADERS.length).setValues([PREDICTION_HEADERS]);
@@ -1333,7 +1270,7 @@ function ensurePredictionSheet_() {
     .setAllowInvalid(false)
     .build();
   sheet.getRange(2, 3, availableRows, 1).setDataValidation(questionValidation);
-  sheet.getRange(2, 7, availableRows, 1).setNumberFormat('yyyy/mm/dd hh:mm:ss');
+  sheet.getRange(2, 5, availableRows, 1).setNumberFormat('yyyy/mm/dd hh:mm:ss');
   sheet.setFrozenRows(1);
   sheet.getRange(1, 1, 1, PREDICTION_HEADERS.length)
     .setFontWeight('bold')
@@ -1341,11 +1278,9 @@ function ensurePredictionSheet_() {
   sheet.setColumnWidth(1, 130);
   sheet.setColumnWidth(2, 160);
   sheet.setColumnWidth(3, 90);
-  sheet.setColumnWidth(4, 320);
-  sheet.setColumnWidth(5, 190);
-  sheet.setColumnWidth(6, 140);
-  sheet.setColumnWidth(7, 170);
-  sheet.getRange(2, 4, availableRows, 3).setWrap(true);
+  sheet.setColumnWidth(4, 190);
+  sheet.setColumnWidth(5, 170);
+  sheet.getRange(2, 4, availableRows, 1).setWrap(true);
   sheet.getRange(1, 1, Math.max(sheet.getLastRow(), 1), PREDICTION_HEADERS.length)
     .setVerticalAlignment('middle');
   return sheet;
@@ -1366,6 +1301,19 @@ function removeLegacyInvitationUrlColumn_(sheet) {
   const legacyInvitationUrlColumn = 12;
   const header = String(sheet.getRange(1, legacyInvitationUrlColumn).getValue() || '').trim();
   if (header === '招待状URL') sheet.deleteColumn(legacyInvitationUrlColumn);
+}
+
+function removeLegacyGiftColumns_(sheet) {
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
+    .map(value => String(value || '').trim());
+  const giftStart = headers.indexOf('ご祝儀ステータス') + 1;
+  const invitationMessageColumn = headers.indexOf('Dear Guestメッセージ') + 1;
+  if (giftStart > 0 && invitationMessageColumn > giftStart) {
+    sheet.deleteColumns(giftStart, invitationMessageColumn - giftStart);
+  }
+  if (sheet.getMaxColumns() > HEADERS.length) {
+    sheet.deleteColumns(HEADERS.length + 1, sheet.getMaxColumns() - HEADERS.length);
+  }
 }
 
 function ensureGiftStatusColumn_(sheet) {
@@ -1415,15 +1363,7 @@ function formatSheet_(sheet) {
   sheet.setFrozenRows(1);
   sheet.getRange(1, 1, 1, HEADERS.length).setFontWeight('bold').setBackground('#f8e9df');
   sheet.autoResizeColumns(1, HEADERS.length);
-  sheet.setColumnWidth(COL.giftStatus, 120);
-  sheet.setColumnWidth(COL.giftMethod, 185);
-  sheet.setColumnWidth(COL.giftSenderName, 150);
-  sheet.setColumnWidth(COL.giftDeclarationNote, 260);
-  sheet.setColumnWidth(COL.giftAction, 230);
-  sheet.setColumnWidth(COL.giftAdminNote, 340);
   sheet.setColumnWidth(COL.invitationMessage, 360);
-  sheet.getRange(2, COL.giftDeclarationNote, Math.max(sheet.getMaxRows() - 1, 1), 1).setWrap(true);
-  sheet.getRange(2, COL.giftAdminNote, Math.max(sheet.getMaxRows() - 1, 1), 1).setWrap(true);
   sheet.getRange(2, COL.invitationMessage, Math.max(sheet.getMaxRows() - 1, 1), 1).setWrap(true);
   sheet.getRange(1, 1, Math.max(sheet.getLastRow(), 1), HEADERS.length).setVerticalAlignment('middle');
 }
@@ -1455,17 +1395,6 @@ function rowToObject_(row) {
     updatedAt: row[COL.updatedAt - 1],
     message: String(row[COL.message - 1] || '').trim(),
     thanksSentAt: row[COL.thanksSentAt - 1],
-    giftStatus: normalizeGiftStatus_(row[COL.giftStatus - 1]),
-    giftMethod: String(row[COL.giftMethod - 1] || '').trim(),
-    giftSenderName: String(row[COL.giftSenderName - 1] || '').trim(),
-    giftDeclarationNote: String(row[COL.giftDeclarationNote - 1] || '').trim(),
-    giftReportedAt: row[COL.giftReportedAt - 1],
-    giftHostNotifiedAt: row[COL.giftHostNotifiedAt - 1],
-    giftConfirmedAt: row[COL.giftConfirmedAt - 1],
-    giftConfirmationSentAt: row[COL.giftConfirmationSentAt - 1],
-    giftIssueSentAt: row[COL.giftIssueSentAt - 1],
-    giftAction: String(row[COL.giftAction - 1] || '').trim(),
-    giftAdminNote: String(row[COL.giftAdminNote - 1] || '').trim(),
     invitationMessage: String(row[COL.invitationMessage - 1] || '').trim()
   };
 }

@@ -1151,7 +1151,15 @@
       const thanks = document.createElement('p');
       thanks.className = 'prediction-complete-message';
       thanks.setAttribute('role', 'status');
-      thanks.textContent = '投票ありがとうございます！当日お楽しみに！';
+      const firstLine = document.createElement('span');
+      firstLine.className = 'prediction-complete-line';
+      firstLine.textContent = '投票ありがとうございました！';
+      const mobileBreak = document.createElement('br');
+      mobileBreak.className = 'mobile-only';
+      const secondLine = document.createElement('span');
+      secondLine.className = 'prediction-complete-line';
+      secondLine.textContent = '当日お楽しみに！';
+      thanks.append(firstLine, mobileBreak, secondLine);
       cards.push(thanks);
     }
     els.predictionList.replaceChildren(...cards);
