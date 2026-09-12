@@ -13,7 +13,7 @@
   const targetDate = new Date(config.weddingDateIso || '2027-03-21T10:00:00+09:00');
   const els = {};
   let guestId = '';
-  let latestStatus = { completed: false, attending: false, invitationMessage: '', prediction: null };
+  let latestStatus = { completed: false, attending: false, receptionAttending: false, invitationMessage: '', prediction: null };
   const predictionSelections = new Map();
   let currentSlide = 0;
   let authenticated = false;
@@ -165,6 +165,7 @@
       latestStatus = {
         completed: Boolean(result.completed),
         attending: Boolean(result.attending),
+        receptionAttending: Boolean(result.receptionAttending) || result.receptionAttendance === '出席',
         invitationMessage: String(result.invitationMessage || '').trim(),
         prediction: result.prediction || null
       };
@@ -254,7 +255,7 @@
   function resetToAuth() {
     authenticated = false;
     guestId = '';
-    latestStatus = { completed: false, attending: false, invitationMessage: '', prediction: null };
+    latestStatus = { completed: false, attending: false, receptionAttending: false, invitationMessage: '', prediction: null };
     predictionSelections.clear();
     try {
       localStorage.removeItem(GUEST_ID_STORAGE_KEY);
@@ -321,6 +322,8 @@
     latestStatus = {
       completed: Boolean(status && status.completed),
       attending: Boolean(status && status.attending),
+      receptionAttending: Boolean(status && status.receptionAttending)
+        || String((status && status.receptionAttendance) || '').trim() === '出席',
       invitationMessage: String((status && status.invitationMessage) || latestStatus.invitationMessage || '').trim(),
       prediction: (status && status.prediction) || latestStatus.prediction || null
     };
@@ -390,7 +393,7 @@
       }));
     }
     setFormCompleted(latestStatus.completed, latestStatus.attending);
-    renderPrediction(latestStatus.completed, latestStatus.prediction);
+    renderPrediction(latestStatus.completed && latestStatus.receptionAttending, latestStatus.prediction);
   }
 
   function renderGiftInformation(show, giftStatus = GIFT_STATUS.unsent) {
@@ -1030,7 +1033,7 @@
         if (!result || !result.ok) throw new Error((result && result.error) || '投票を記録できませんでした。');
         latestStatus.prediction = result.prediction || null;
         predictionSelections.delete(questionId);
-        renderPrediction(true, latestStatus.prediction);
+        renderPrediction(latestStatus.completed && latestStatus.receptionAttending, latestStatus.prediction);
       } catch (error) {
         card.querySelectorAll('button').forEach(button => { button.disabled = false; });
         submitButton.textContent = 'この内容で投票する';
@@ -1059,7 +1062,7 @@
       return;
     }
 
-    els.predictionList.replaceChildren(...questions.map((question, index) => {
+    const cards = questions.map((question, index) => {
       const card = document.createElement('article');
       card.className = 'prediction-card';
       card.dataset.predictionQuestion = String(question.id || '');
@@ -1141,7 +1144,17 @@
       status.setAttribute('aria-live', 'polite');
       card.append(status);
       return card;
-    }));
+    });
+
+    const allQuestionsVoted = questions.every(question => Boolean(question.voted));
+    if (allQuestionsVoted) {
+      const thanks = document.createElement('p');
+      thanks.className = 'prediction-complete-message';
+      thanks.setAttribute('role', 'status');
+      thanks.textContent = '投票ありがとうございます！当日お楽しみに！';
+      cards.push(thanks);
+    }
+    els.predictionList.replaceChildren(...cards);
   }
 
   function setPredictionCardStatus(card, message, type) {
@@ -1499,6 +1512,7 @@
         renderMessage({
           completed: true,
           attending: Boolean(result.attending),
+          receptionAttending: Boolean(result.receptionAttending) || payload.receptionAttendance === '出席',
           invitationMessage: String(result.invitationMessage || latestStatus.invitationMessage || '').trim(),
           prediction: result.prediction || null
         });

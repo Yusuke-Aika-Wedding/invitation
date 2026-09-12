@@ -256,6 +256,7 @@ function getStatus_(guestIdRaw) {
     displayName: values.name || 'ゲスト',
     completed: completed,
     attending: isAttending_(values.ceremony, values.reception),
+    receptionAttending: normalizeAttendance_(values.reception) === '出席',
     giftSent: isGiftLocked_(giftStatus),
     giftStatus: giftStatus,
     canShowGiftInformation: canShowGiftInformation_(giftStatus),
@@ -270,7 +271,9 @@ function getStatus_(guestIdRaw) {
     allergy: values.allergy || '',
     message: values.message || '',
     invitationMessage: values.invitationMessage || '',
-    prediction: completed ? buildPredictionState_(values.id) : null,
+    prediction: completed && normalizeAttendance_(values.reception) === '出席'
+      ? buildPredictionState_(values.id)
+      : null,
     submittedAt: values.submittedAt ? formatDateTime_(values.submittedAt) : ''
   };
 }
@@ -360,13 +363,14 @@ function submitResponse_(params) {
       ok: true,
       completed: true,
       attending: isAttending_(ceremonyAttendance, receptionAttendance),
+      receptionAttending: receptionAttendance === '出席',
       giftSent: isGiftLocked_(giftStatus),
       giftStatus: giftStatus,
       canShowGiftInformation: canShowGiftInformation_(giftStatus),
       canCancelGiftReport: giftStatus === GIFT_STATUS.reported,
       displayName: name,
       invitationMessage: record.values.invitationMessage || '',
-      prediction: buildPredictionState_(storedGuestId)
+      prediction: receptionAttendance === '出席' ? buildPredictionState_(storedGuestId) : null
     };
   } finally {
     lock.releaseLock();
@@ -392,6 +396,9 @@ function submitPrediction_(params) {
     if (!guestRecord) throw new Error('ゲスト情報が見つかりません。');
     if (!isCompleted_(guestRecord.values)) {
       throw new Error('WEDDING PREDICTIONは、RSVPの回答後に投票できます。');
+    }
+    if (normalizeAttendance_(guestRecord.values.reception) !== '出席') {
+      throw new Error('WEDDING PREDICTIONは、披露宴にご出席の方だけ投票できます。');
     }
 
     const storedGuestId = guestRecord.values.id || guestId;
