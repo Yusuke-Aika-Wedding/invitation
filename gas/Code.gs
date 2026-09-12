@@ -81,7 +81,7 @@ const PREDICTION_HEADERS = [
 const PREDICTION_QUESTIONS = [
   {
     id: 'Q1',
-    question: '何に入刀する？',
+    question: '新郎新婦が入刀するのは？',
     options: ['ケーキ', 'ハンバーガー', '唐揚げ', 'その他']
   },
   {
@@ -91,7 +91,7 @@ const PREDICTION_QUESTIONS = [
   },
   {
     id: 'Q3',
-    question: '披露宴の最後に流れる曲は誰の曲？',
+    question: '披露宴で、新郎新婦の退場時に流れる曲は誰の曲？',
     options: ['サザンオールスターズ', 'Mr.Children', '嵐', 'その他']
   }
 ];
