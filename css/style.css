@@ -230,7 +230,7 @@ img { max-width: 100%; }
 .auth-overlay.is-handwriting-active .handwriting-text,
 .message-overlay.is-handwriting-active .handwriting-text,
 .menu-panel.is-open .handwriting-text,
-body:not(.auth-locked) .fade-in.is-visible .handwriting-text {
+body.invitation-open .fade-in.is-visible .handwriting-text {
   animation: handwritingReveal var(--handwriting-duration) linear var(--handwriting-delay) both;
 }
 .auth-kicker.handwriting-text { --handwriting-duration: 1.25s; --handwriting-delay: .32s; }

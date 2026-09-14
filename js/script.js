@@ -235,6 +235,7 @@
   function revealAuthenticatedSite() {
     authenticated = true;
     document.body.classList.remove('auth-locked');
+    document.body.classList.remove('invitation-open');
     document.body.classList.add('has-overlay');
     if (els.authOverlay) {
       els.authOverlay.classList.add('is-closing');
@@ -265,7 +266,7 @@
     }
     closeMenu();
     document.body.classList.add('auth-locked');
-    document.body.classList.remove('has-overlay');
+    document.body.classList.remove('has-overlay', 'invitation-open');
     document.body.dataset.defaultName = '';
     if (els.overlay) {
       els.overlay.hidden = true;
@@ -1189,7 +1190,10 @@
     const openInvitation = () => {
       els.overlay.classList.add('is-closing');
       document.body.classList.remove('has-overlay');
-      window.setTimeout(() => { els.overlay.hidden = true; }, 780);
+      window.setTimeout(() => {
+        els.overlay.hidden = true;
+        document.body.classList.add('invitation-open');
+      }, 780);
     };
     els.overlay.addEventListener('click', openInvitation);
     els.overlay.addEventListener('keydown', event => {
