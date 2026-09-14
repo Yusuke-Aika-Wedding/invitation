@@ -216,7 +216,7 @@ img { max-width: 100%; }
 
 /* SVGの線を連続して描き、筆記体を滑らかに書き上げる */
 .handwriting-text {
-  --handwriting-duration: 1.65s;
+  --handwriting-duration: 1.9s;
   --handwriting-delay: .1s;
   width: fit-content;
   max-width: 100%;
@@ -291,12 +291,12 @@ body.invitation-open .fade-in.is-visible .handwriting-word-fill {
 body.invitation-open .fade-in.is-visible .handwriting-word-svg {
   animation: handwritingGuideFade .24s ease-out calc(var(--handwriting-delay) + var(--word-svg-fade-delay)) both;
 }
-.message-card .script-label.handwriting-text { --handwriting-duration: 1.5s; --handwriting-delay: .18s; }
-.message-signature.handwriting-text { --handwriting-duration: 1.9s; --handwriting-delay: .62s; }
-.hero-copy .script-label.handwriting-text { --handwriting-duration: 2s; --handwriting-delay: .1s; }
-.hero-copy h1.handwriting-text { --handwriting-duration: 2.25s; --handwriting-delay: .45s; }
-.section h2.handwriting-text { --handwriting-duration: 1.85s; --handwriting-delay: .3s; }
-.footer .signature.handwriting-text { --handwriting-duration: 1.95s; --handwriting-delay: .14s; }
+.message-card .script-label.handwriting-text { --handwriting-duration: 1.7s; --handwriting-delay: .18s; }
+.message-signature.handwriting-text { --handwriting-duration: 2.2s; --handwriting-delay: .62s; }
+.hero-copy .script-label.handwriting-text { --handwriting-duration: 2.3s; --handwriting-delay: .1s; }
+.hero-copy h1.handwriting-text { --handwriting-duration: 2.6s; --handwriting-delay: .45s; }
+.section h2.handwriting-text { --handwriting-duration: 2.15s; --handwriting-delay: .3s; }
+.footer .signature.handwriting-text { --handwriting-duration: 2.25s; --handwriting-delay: .14s; }
 @keyframes handwritingPathDraw { to { stroke-dashoffset: 0; } }
 @keyframes handwritingGlyphFill { from { opacity: 0; } to { opacity: 1; } }
 @keyframes handwritingFillIn { from { opacity: 0; } to { opacity: 1; } }
