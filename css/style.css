@@ -214,7 +214,7 @@ img { max-width: 100%; }
 }
 @keyframes pulse { 0%, 100% { opacity: .58; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-2px); } }
 
-/* 見えないペン先を文字の曲線に沿わせ、その軌跡だけ字形を表示する */
+/* 字形は変えず、見えないペン先だけを筆記体の書き順に沿わせる */
 .handwriting-text {
   --handwriting-duration: 3.8s;
   --handwriting-delay: .1s;
@@ -251,18 +251,27 @@ img { max-width: 100%; }
 .handwriting-pen-path {
   fill: none;
   stroke: #fff;
-  stroke-width: 150;
+  stroke-width: var(--handwriting-pen-width, 150);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
   will-change: stroke-dashoffset;
 }
+.handwriting-glyph-completion {
+  fill: #fff;
+  opacity: 0;
+}
 .menu-panel .handwriting-text { margin-inline: 0; }
 .message-overlay.is-handwriting-active .handwriting-pen-path,
 .menu-panel.is-open .handwriting-pen-path,
 body.invitation-open .handwriting-text.is-handwriting-visible .handwriting-pen-path {
   animation: handwritingPenDraw var(--glyph-duration) linear calc(var(--handwriting-delay) + var(--glyph-delay)) both;
+}
+.message-overlay.is-handwriting-active .handwriting-glyph-completion,
+.menu-panel.is-open .handwriting-glyph-completion,
+body.invitation-open .handwriting-text.is-handwriting-visible .handwriting-glyph-completion {
+  animation: handwritingGlyphComplete var(--completion-duration) linear calc(var(--handwriting-delay) + var(--completion-delay)) both;
 }
 .message-card .script-label.handwriting-text { --handwriting-duration: 3.4s; --handwriting-delay: .18s; }
 .message-signature.handwriting-text { --handwriting-duration: 4.4s; --handwriting-delay: .62s; }
@@ -272,6 +281,7 @@ body.invitation-open .handwriting-text.is-handwriting-visible .handwriting-pen-p
 #prediction-title.handwriting-text { --handwriting-duration: 4.8s; --handwriting-delay: .22s; }
 .footer .signature.handwriting-text { --handwriting-duration: 4.5s; --handwriting-delay: .14s; }
 @keyframes handwritingPenDraw { to { stroke-dashoffset: 0; } }
+@keyframes handwritingGlyphComplete { to { opacity: 1; } }
 
 .top-menu { position: fixed; top: 18px; right: 18px; z-index: 12; }
 .hamburger {

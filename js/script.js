@@ -307,6 +307,7 @@
 
   function prepareHandwriting(container = document) {
     const wordPaths = window.WEDDING_HANDWRITING_WORDS || {};
+    const handwritingGuides = window.WEDDING_HANDWRITING_GUIDES || {};
     const elements = [];
     if (container instanceof Element && container.matches('.handwriting-text')) elements.push(container);
     elements.push(...container.querySelectorAll('.handwriting-text:not(.is-handwriting-ready)'));
@@ -315,11 +316,13 @@
       const text = element.textContent.trim();
       const tokens = text.split(/(\s+)/).filter(Boolean);
       const words = tokens.filter(token => !/^\s+$/.test(token));
-      if (!text || !words.length || words.some(word => !wordPaths[word])) return;
+      if (!text || !words.length || words.some(word => !hasHandwritingData(wordPaths[word], handwritingGuides[word]))) return;
 
       const duration = parseCssSeconds(getComputedStyle(element).getPropertyValue('--handwriting-duration'), 3.8);
       const render = document.createElement('span');
       const penPaths = [];
+      const penPathScales = [];
+      const glyphCompletions = [];
 
       if (!element.hasAttribute('aria-label')) element.setAttribute('aria-label', text);
       render.className = 'handwriting-render';
@@ -332,6 +335,8 @@
         }
 
         const data = wordPaths[token];
+        const guideData = handwritingGuides[token];
+        const guideGroups = groupHandwritingGuides(guideData.strokes);
         const word = document.createElement('span');
         const source = document.createElement('span');
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -344,11 +349,21 @@
         svg.setAttribute('preserveAspectRatio', 'none');
         svg.setAttribute('focusable', 'false');
 
-        data.glyphs.forEach(glyph => {
+        data.glyphs.forEach((glyph, glyphIndex) => {
+          const guideGroup = guideGroups[glyphIndex];
           const mask = document.createElementNS('http://www.w3.org/2000/svg', 'mask');
+          const fittedGuide = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          const positionedGuide = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          const completion = document.createElementNS('http://www.w3.org/2000/svg', 'path');
           const penPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
           const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
           const maskId = `handwriting-mask-${handwritingMaskId += 1}`;
+          const outlineBounds = measureHandwritingPaths([glyph.d]);
+          const guideBounds = measureHandwritingPaths(
+            guideGroup.strokes.map(stroke => stroke.d),
+            (x, y) => ({ x: x + guideGroup.x, y: 820 - y })
+          );
+          const fit = fitHandwritingGuide(guideBounds, outlineBounds);
 
           mask.classList.add('handwriting-mask');
           mask.setAttribute('id', maskId);
@@ -358,17 +373,34 @@
           mask.setAttribute('y', '-250');
           mask.setAttribute('width', String(viewBoxWidth + 500));
           mask.setAttribute('height', String(viewBoxHeight + 500));
-          penPath.classList.add('handwriting-pen-path');
-          penPath.setAttribute('d', glyph.d);
-          penPath.setAttribute('pathLength', '1');
-          mask.appendChild(penPath);
+          fittedGuide.setAttribute('transform', `matrix(${fit.scaleX} 0 0 ${fit.scaleY} ${fit.translateX} ${fit.translateY})`);
+          positionedGuide.setAttribute('transform', `translate(${guideGroup.x} 820) scale(1 -1)`);
+
+          guideGroup.strokes.forEach(stroke => {
+            const strokePath = penPath.cloneNode();
+            strokePath.classList.add('handwriting-pen-path');
+            strokePath.setAttribute('d', stroke.d);
+            strokePath.setAttribute('pathLength', '1');
+            strokePath.style.setProperty('--handwriting-pen-width', fit.penWidth.toFixed(2));
+            positionedGuide.appendChild(strokePath);
+            penPaths.push(strokePath);
+            penPathScales.push(fit.lengthScale);
+          });
+
+          completion.classList.add('handwriting-glyph-completion');
+          completion.setAttribute('d', glyph.d);
+          fittedGuide.appendChild(positionedGuide);
+          mask.append(fittedGuide, completion);
           defs.appendChild(mask);
 
           path.classList.add('handwriting-glyph');
           path.setAttribute('d', glyph.d);
           path.setAttribute('mask', `url(#${maskId})`);
           svg.appendChild(path);
-          penPaths.push(penPath);
+          glyphCompletions.push({
+            node: completion,
+            finalStrokeIndex: penPaths.length - 1
+          });
         });
 
         svg.prepend(defs);
@@ -378,25 +410,88 @@
       });
 
       element.replaceChildren(render);
-      // 実際の線の長さに合わせて一定の筆速にし、文字間だけわずかに重ねて滑らかにつなぐ。
-      const weights = penPaths.map(path => Math.max(24, path.getTotalLength()));
-      const advanceRatio = .9;
+      // 筆記体の一画ごとの中心線を、実際の長さに合わせた一定の筆速でたどる。
+      const weights = penPaths.map((path, index) => Math.max(24, path.getTotalLength() * penPathScales[index]));
+      const advanceRatio = .94;
       const timingWeight = weights.length
         ? weights[weights.length - 1] + weights.slice(0, -1).reduce((sum, weight) => sum + (weight * advanceRatio), 0)
         : 1;
       const timingScale = duration / timingWeight;
+      const strokeTimings = [];
       let cursor = 0;
 
       penPaths.forEach((path, index) => {
         const glyphDuration = weights[index] * timingScale;
         path.style.setProperty('--glyph-delay', `${cursor.toFixed(3)}s`);
         path.style.setProperty('--glyph-duration', `${glyphDuration.toFixed(3)}s`);
+        strokeTimings.push({ delay: cursor, duration: glyphDuration });
         cursor += glyphDuration * advanceRatio;
+      });
+
+      glyphCompletions.forEach(({ node, finalStrokeIndex }) => {
+        const finalStroke = strokeTimings[finalStrokeIndex];
+        const completionDuration = Math.min(.14, Math.max(.07, finalStroke.duration * .22));
+        const completionDelay = finalStroke.delay + finalStroke.duration - completionDuration;
+        node.style.setProperty('--completion-delay', `${completionDelay.toFixed(3)}s`);
+        node.style.setProperty('--completion-duration', `${completionDuration.toFixed(3)}s`);
       });
 
       element.classList.add('is-handwriting-ready');
       observeHandwriting(element);
     });
+  }
+
+  function hasHandwritingData(outlineData, guideData) {
+    if (!outlineData || !guideData || !Array.isArray(outlineData.glyphs) || !Array.isArray(guideData.strokes)) return false;
+    return outlineData.glyphs.length === groupHandwritingGuides(guideData.strokes).length;
+  }
+
+  function groupHandwritingGuides(strokes) {
+    const groups = [];
+    strokes.forEach(stroke => {
+      const previous = groups[groups.length - 1];
+      if (!previous || previous.x !== stroke.x) groups.push({ x: stroke.x, strokes: [] });
+      groups[groups.length - 1].strokes.push(stroke);
+    });
+    return groups;
+  }
+
+  function measureHandwritingPaths(paths, transform = (x, y) => ({ x, y })) {
+    const bounds = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
+    paths.forEach(path => {
+      const numbers = path.match(/-?\d*\.?\d+(?:e[-+]?\d+)?/gi)?.map(Number) || [];
+      for (let index = 0; index + 1 < numbers.length; index += 2) {
+        const point = transform(numbers[index], numbers[index + 1]);
+        bounds.minX = Math.min(bounds.minX, point.x);
+        bounds.minY = Math.min(bounds.minY, point.y);
+        bounds.maxX = Math.max(bounds.maxX, point.x);
+        bounds.maxY = Math.max(bounds.maxY, point.y);
+      }
+    });
+    return bounds;
+  }
+
+  function fitHandwritingGuide(source, target) {
+    const sourceWidth = Math.max(1, source.maxX - source.minX);
+    const sourceHeight = Math.max(1, source.maxY - source.minY);
+    const targetWidth = Math.max(1, target.maxX - target.minX);
+    const targetHeight = Math.max(1, target.maxY - target.minY);
+    const scaleX = (targetWidth * .9) / sourceWidth;
+    const scaleY = (targetHeight * .9) / sourceHeight;
+    const sourceCenterX = (source.minX + source.maxX) / 2;
+    const sourceCenterY = (source.minY + source.maxY) / 2;
+    const targetCenterX = (target.minX + target.maxX) / 2;
+    const targetCenterY = (target.minY + target.maxY) / 2;
+    const lengthScale = Math.sqrt((scaleX * scaleX + scaleY * scaleY) / 2);
+
+    return {
+      scaleX,
+      scaleY,
+      translateX: targetCenterX - (sourceCenterX * scaleX),
+      translateY: targetCenterY - (sourceCenterY * scaleY),
+      lengthScale,
+      penWidth: 210 / Math.max(.01, lengthScale)
+    };
   }
 
   function setupHandwritingObserver() {
