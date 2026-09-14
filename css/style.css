@@ -214,7 +214,7 @@ img { max-width: 100%; }
 }
 @keyframes pulse { 0%, 100% { opacity: .58; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-2px); } }
 
-/* 字形を一枚だけ使い、筆記体を一文字ずつ滑らかに書き上げる */
+/* 見えないペン先を文字の曲線に沿わせ、その軌跡だけ字形を表示する */
 .handwriting-text {
   --handwriting-duration: 3.8s;
   --handwriting-delay: .1s;
@@ -246,14 +246,23 @@ img { max-width: 100%; }
 }
 .handwriting-glyph {
   fill: currentColor;
-  clip-path: inset(-4% 100% -4% -4%);
-  will-change: clip-path;
+}
+.handwriting-mask { mask-type: luminance; }
+.handwriting-pen-path {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 150;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  will-change: stroke-dashoffset;
 }
 .menu-panel .handwriting-text { margin-inline: 0; }
-.message-overlay.is-handwriting-active .handwriting-glyph,
-.menu-panel.is-open .handwriting-glyph,
-body.invitation-open .fade-in.is-visible .handwriting-glyph {
-  animation: handwritingGlyphReveal var(--glyph-duration) cubic-bezier(.38, .04, .2, 1) calc(var(--handwriting-delay) + var(--glyph-delay)) both;
+.message-overlay.is-handwriting-active .handwriting-pen-path,
+.menu-panel.is-open .handwriting-pen-path,
+body.invitation-open .fade-in.is-visible .handwriting-pen-path {
+  animation: handwritingPenDraw var(--glyph-duration) cubic-bezier(.34, .02, .22, 1) calc(var(--handwriting-delay) + var(--glyph-delay)) both;
 }
 .message-card .script-label.handwriting-text { --handwriting-duration: 3.4s; --handwriting-delay: .18s; }
 .message-signature.handwriting-text { --handwriting-duration: 4.4s; --handwriting-delay: .62s; }
@@ -262,10 +271,7 @@ body.invitation-open .fade-in.is-visible .handwriting-glyph {
 .section h2.handwriting-text { --handwriting-duration: 4.3s; --handwriting-delay: .3s; }
 #prediction-title.handwriting-text { --handwriting-duration: 4.8s; --handwriting-delay: .22s; }
 .footer .signature.handwriting-text { --handwriting-duration: 4.5s; --handwriting-delay: .14s; }
-@keyframes handwritingGlyphReveal {
-  from { clip-path: inset(-4% 100% -4% -4%); }
-  to { clip-path: inset(-4% -4% -4% -4%); }
-}
+@keyframes handwritingPenDraw { to { stroke-dashoffset: 0; } }
 
 .top-menu { position: fixed; top: 18px; right: 18px; z-index: 12; }
 .hamburger {

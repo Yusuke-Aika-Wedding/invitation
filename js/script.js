@@ -23,6 +23,7 @@
   let currentGiftMethod = '';
   let lastCotraGuideTrigger = null;
   let fadeInObserver = null;
+  let handwritingMaskId = 0;
   const QUIZ_QUESTION_COUNT = 5;
   const QUIZ_QUESTIONS = [
     { question: '新郎の血液型は？', options: ['A型', 'B型', 'C型', 'D型'], answer: 'A型', explanation: 'A型っぽいってよく言われてきました。' },
@@ -315,7 +316,7 @@
 
       const duration = parseCssSeconds(getComputedStyle(element).getPropertyValue('--handwriting-duration'), 3.8);
       const render = document.createElement('span');
-      const glyphs = [];
+      const penPaths = [];
 
       if (!element.hasAttribute('aria-label')) element.setAttribute('aria-label', text);
       render.className = 'handwriting-render';
@@ -331,6 +332,8 @@
         const word = document.createElement('span');
         const source = document.createElement('span');
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        const [, , viewBoxWidth = 0, viewBoxHeight = 0] = data.viewBox.split(/\s+/).map(Number);
         source.className = 'handwriting-word-source';
         source.textContent = token;
         svg.classList.add('handwriting-word-svg');
@@ -339,28 +342,48 @@
         svg.setAttribute('focusable', 'false');
 
         data.glyphs.forEach(glyph => {
+          const mask = document.createElementNS('http://www.w3.org/2000/svg', 'mask');
+          const penPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
           const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          const maskId = `handwriting-mask-${handwritingMaskId += 1}`;
+
+          mask.classList.add('handwriting-mask');
+          mask.setAttribute('id', maskId);
+          mask.setAttribute('maskUnits', 'userSpaceOnUse');
+          mask.setAttribute('maskContentUnits', 'userSpaceOnUse');
+          mask.setAttribute('x', '-250');
+          mask.setAttribute('y', '-250');
+          mask.setAttribute('width', String(viewBoxWidth + 500));
+          mask.setAttribute('height', String(viewBoxHeight + 500));
+          penPath.classList.add('handwriting-pen-path');
+          penPath.setAttribute('d', glyph.d);
+          penPath.setAttribute('pathLength', '1');
+          mask.appendChild(penPath);
+          defs.appendChild(mask);
+
           path.classList.add('handwriting-glyph');
           path.setAttribute('d', glyph.d);
+          path.setAttribute('mask', `url(#${maskId})`);
           svg.appendChild(path);
-          glyphs.push(path);
+          penPaths.push(penPath);
         });
 
+        svg.prepend(defs);
         word.className = 'handwriting-word';
         word.append(source, svg);
         render.appendChild(word);
       });
 
       element.replaceChildren(render);
-      const weights = glyphs.map(path => Math.max(1, Math.sqrt(path.getTotalLength())));
-      const advanceRatio = .72;
+      const weights = penPaths.map(path => Math.max(1, Math.sqrt(path.getTotalLength())));
+      const advanceRatio = .82;
       const timingWeight = weights.length
         ? weights[weights.length - 1] + weights.slice(0, -1).reduce((sum, weight) => sum + (weight * advanceRatio), 0)
         : 1;
       const timingScale = duration / timingWeight;
       let cursor = 0;
 
-      glyphs.forEach((path, index) => {
+      penPaths.forEach((path, index) => {
         const glyphDuration = Math.max(.2, weights[index] * timingScale);
         path.style.setProperty('--glyph-delay', `${cursor.toFixed(3)}s`);
         path.style.setProperty('--glyph-duration', `${glyphDuration.toFixed(3)}s`);
