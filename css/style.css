@@ -119,6 +119,12 @@ img { max-width: 100%; }
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .handwriting-text {
+    clip-path: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+    animation: none !important;
+  }
   .petal {
     top: var(--static-top);
     left: var(--left);
@@ -208,6 +214,47 @@ img { max-width: 100%; }
   animation: pulse 1.8s ease-in-out infinite;
 }
 @keyframes pulse { 0%, 100% { opacity: .58; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-2px); } }
+
+/* 筆記体の英字を、左からインクで書き進めるように見せる */
+.handwriting-text {
+  --handwriting-duration: 1.35s;
+  --handwriting-delay: .1s;
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
+  clip-path: inset(-.28em 100% -.34em -.24em);
+  opacity: .18;
+  will-change: clip-path, opacity, filter;
+}
+.menu-panel .handwriting-text { margin-inline: 0; }
+.auth-overlay.is-handwriting-active .handwriting-text,
+.message-overlay.is-handwriting-active .handwriting-text,
+.menu-panel.is-open .handwriting-text,
+body:not(.auth-locked) .fade-in.is-visible .handwriting-text {
+  animation: handwritingReveal var(--handwriting-duration) linear var(--handwriting-delay) both;
+}
+.auth-kicker.handwriting-text { --handwriting-duration: 1.25s; --handwriting-delay: .32s; }
+.auth-content h1.handwriting-text { --handwriting-duration: 1.4s; --handwriting-delay: .76s; }
+.message-card .script-label.handwriting-text { --handwriting-duration: 1.2s; --handwriting-delay: .22s; }
+.message-signature.handwriting-text { --handwriting-duration: 1.55s; --handwriting-delay: .72s; }
+.hero-copy .script-label.handwriting-text { --handwriting-duration: 1.55s; --handwriting-delay: .16s; }
+.hero-copy h1.handwriting-text { --handwriting-duration: 1.85s; --handwriting-delay: .58s; }
+.section h2.handwriting-text { --handwriting-duration: 1.6s; --handwriting-delay: .42s; }
+.footer .signature.handwriting-text { --handwriting-duration: 1.65s; --handwriting-delay: .18s; }
+@keyframes handwritingReveal {
+  0% {
+    clip-path: inset(-.28em 100% -.34em -.24em);
+    opacity: .18;
+    filter: blur(.45px);
+  }
+  8% { opacity: 1; }
+  72% { filter: blur(.15px); }
+  100% {
+    clip-path: inset(-.28em -.34em -.34em -.24em);
+    opacity: 1;
+    filter: none;
+  }
+}
 
 .top-menu { position: fixed; top: 18px; right: 18px; z-index: 12; }
 .hamburger {

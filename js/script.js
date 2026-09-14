@@ -243,6 +243,7 @@
     if (els.overlay) {
       els.overlay.hidden = false;
       els.overlay.classList.remove('is-closing');
+      restartHandwriting(els.overlay);
     }
     applyRoute();
   }
@@ -266,10 +267,14 @@
     document.body.classList.add('auth-locked');
     document.body.classList.remove('has-overlay');
     document.body.dataset.defaultName = '';
-    if (els.overlay) els.overlay.hidden = true;
+    if (els.overlay) {
+      els.overlay.hidden = true;
+      els.overlay.classList.remove('is-handwriting-active');
+    }
     if (els.authOverlay) {
       els.authOverlay.hidden = false;
       els.authOverlay.classList.remove('is-closing');
+      restartHandwriting(els.authOverlay);
     }
     if (els.authForm) els.authForm.reset();
     if (els.form) els.form.reset();
@@ -285,6 +290,13 @@
     if (!els.authButton) return;
     els.authButton.disabled = loading;
     els.authButton.textContent = loading ? 'Checking...' : 'Open Invitation';
+  }
+
+  function restartHandwriting(container) {
+    if (!container) return;
+    container.classList.remove('is-handwriting-active');
+    void container.offsetWidth;
+    container.classList.add('is-handwriting-active');
   }
 
   function setAuthStatus(message, type) {
@@ -417,7 +429,7 @@
 
     if (isCash || isConfirmed) {
       section.innerHTML = `
-      <p class="section-kicker">For Guests</p>
+      <p class="section-kicker handwriting-text">For Guests</p>
       <h2 id="gift-information-title" class="gift-information-title">ご祝儀について</h2>
       <div class="gift-complete-card" aria-live="polite">
         <span class="gift-complete-mark" aria-hidden="true">✓</span>
@@ -433,7 +445,7 @@
     `;
     } else if (isReported) {
       section.innerHTML = `
-        <p class="section-kicker">For Guests</p>
+        <p class="section-kicker handwriting-text">For Guests</p>
         <h2 id="gift-information-title" class="gift-information-title">ご祝儀について</h2>
         <div class="gift-complete-card gift-pending-card" aria-live="polite">
           <span class="gift-complete-mark" aria-hidden="true">…</span>
@@ -446,7 +458,7 @@
       `;
     } else {
       section.innerHTML = `
-      <p class="section-kicker">For Guests</p>
+      <p class="section-kicker handwriting-text">For Guests</p>
       <h2 id="gift-information-title" class="gift-information-title">ご祝儀について</h2>
       ${isIssue ? `
         <div class="gift-issue-card" aria-live="polite">
