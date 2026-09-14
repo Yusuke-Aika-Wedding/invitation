@@ -25,7 +25,6 @@
   let fadeInObserver = null;
   let handwritingObserver = null;
   const handwritingFallbackNodes = new Set();
-  let handwritingMaskId = 0;
   const QUIZ_QUESTION_COUNT = 5;
   const QUIZ_QUESTIONS = [
     { question: '新郎の血液型は？', options: ['A型', 'B型', 'C型', 'D型'], answer: 'A型', explanation: 'A型っぽいってよく言われてきました。' },
@@ -315,7 +314,7 @@
       const text = element.textContent.trim();
       const tokens = text.split(/(\s+)/).filter(Boolean);
       const words = tokens.filter(token => !/^\s+$/.test(token));
-      if (!text || !words.length || words.some(word => !wordPaths[word])) return;
+      if (!text || !words.length || words.some(word => !Array.isArray(wordPaths[word] && wordPaths[word].strokes))) return;
 
       const duration = parseCssSeconds(getComputedStyle(element).getPropertyValue('--handwriting-duration'), 3.8);
       const render = document.createElement('span');
@@ -335,8 +334,6 @@
         const word = document.createElement('span');
         const source = document.createElement('span');
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-        const [, , viewBoxWidth = 0, viewBoxHeight = 0] = data.viewBox.split(/\s+/).map(Number);
         source.className = 'handwriting-word-source';
         source.textContent = token;
         svg.classList.add('handwriting-word-svg');
@@ -344,54 +341,34 @@
         svg.setAttribute('preserveAspectRatio', 'none');
         svg.setAttribute('focusable', 'false');
 
-        data.glyphs.forEach(glyph => {
-          const mask = document.createElementNS('http://www.w3.org/2000/svg', 'mask');
+        data.strokes.forEach(stroke => {
           const penPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-          const maskId = `handwriting-mask-${handwritingMaskId += 1}`;
-
-          mask.classList.add('handwriting-mask');
-          mask.setAttribute('id', maskId);
-          mask.setAttribute('maskUnits', 'userSpaceOnUse');
-          mask.setAttribute('maskContentUnits', 'userSpaceOnUse');
-          mask.setAttribute('x', '-250');
-          mask.setAttribute('y', '-250');
-          mask.setAttribute('width', String(viewBoxWidth + 500));
-          mask.setAttribute('height', String(viewBoxHeight + 500));
           penPath.classList.add('handwriting-pen-path');
-          penPath.setAttribute('d', glyph.d);
-          penPath.setAttribute('pathLength', '1');
-          mask.appendChild(penPath);
-          defs.appendChild(mask);
-
-          path.classList.add('handwriting-glyph');
-          path.setAttribute('d', glyph.d);
-          path.setAttribute('mask', `url(#${maskId})`);
-          svg.appendChild(path);
+          penPath.setAttribute('d', stroke.d);
+          penPath.setAttribute('transform', `translate(${stroke.x} 820) scale(1 -1)`);
+          svg.appendChild(penPath);
           penPaths.push(penPath);
         });
 
-        svg.prepend(defs);
         word.className = 'handwriting-word';
         word.append(source, svg);
         render.appendChild(word);
       });
 
       element.replaceChildren(render);
-      // 実際の線の長さに合わせて一定の筆速にし、文字間だけわずかに重ねて滑らかにつなぐ。
-      const weights = penPaths.map(path => Math.max(24, path.getTotalLength()));
-      const advanceRatio = .9;
-      const timingWeight = weights.length
-        ? weights[weights.length - 1] + weights.slice(0, -1).reduce((sum, weight) => sum + (weight * advanceRatio), 0)
-        : 1;
+      // 中心線を人が書く順に並べ、前の一画が終わってから次の一画を始める。
+      const lengths = penPaths.map(path => Math.max(1, path.getTotalLength()));
+      const weights = lengths.map(length => Math.max(18, length));
+      const timingWeight = weights.reduce((sum, weight) => sum + weight, 0) || 1;
       const timingScale = duration / timingWeight;
       let cursor = 0;
 
       penPaths.forEach((path, index) => {
         const glyphDuration = weights[index] * timingScale;
+        path.style.setProperty('--stroke-length', lengths[index].toFixed(2));
         path.style.setProperty('--glyph-delay', `${cursor.toFixed(3)}s`);
         path.style.setProperty('--glyph-duration', `${glyphDuration.toFixed(3)}s`);
-        cursor += glyphDuration * advanceRatio;
+        cursor += glyphDuration;
       });
 
       element.classList.add('is-handwriting-ready');

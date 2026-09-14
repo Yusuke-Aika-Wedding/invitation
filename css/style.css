@@ -214,7 +214,7 @@ img { max-width: 100%; }
 }
 @keyframes pulse { 0%, 100% { opacity: .58; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-2px); } }
 
-/* 見えないペン先を文字の曲線に沿わせ、その軌跡だけ字形を表示する */
+/* 人が書く順に並べた中心線を、一画ずつペンの軌跡として表示する */
 .handwriting-text {
   --handwriting-duration: 3.8s;
   --handwriting-delay: .1s;
@@ -244,18 +244,15 @@ img { max-width: 100%; }
   opacity: 1;
   shape-rendering: geometricPrecision;
 }
-.handwriting-glyph {
-  fill: currentColor;
-}
-.handwriting-mask { mask-type: luminance; }
 .handwriting-pen-path {
   fill: none;
-  stroke: #fff;
-  stroke-width: 150;
+  stroke: currentColor;
+  stroke-width: 1.7px;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
+  stroke-dasharray: var(--stroke-length, 1000);
+  stroke-dashoffset: var(--stroke-length, 1000);
+  vector-effect: non-scaling-stroke;
   will-change: stroke-dashoffset;
 }
 .menu-panel .handwriting-text { margin-inline: 0; }
