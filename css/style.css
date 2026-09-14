@@ -119,12 +119,8 @@ img { max-width: 100%; }
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .handwriting-text {
-    clip-path: none !important;
-    opacity: 1 !important;
-    filter: none !important;
-    animation: none !important;
-  }
+  .handwriting-text.is-handwriting-ready > .handwriting-source { visibility: visible; }
+  .handwriting-text.is-handwriting-ready > .handwriting-ink { display: none; }
   .petal {
     top: var(--static-top);
     left: var(--left);
@@ -215,44 +211,81 @@ img { max-width: 100%; }
 }
 @keyframes pulse { 0%, 100% { opacity: .58; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-2px); } }
 
-/* 筆記体の英字を、左からインクで書き進めるように見せる */
+/* 筆記体の形を保ちながら、短いインク区間を順番に書き進める */
 .handwriting-text {
   --handwriting-duration: 1.35s;
   --handwriting-delay: .1s;
+  position: relative;
   width: fit-content;
   max-width: 100%;
   margin-inline: auto;
-  clip-path: inset(-.28em 100% -.34em -.24em);
-  opacity: .18;
-  will-change: clip-path, opacity, filter;
+}
+.handwriting-text.is-handwriting-ready > .handwriting-source { visibility: hidden; }
+.handwriting-text.is-handwriting-ready > .handwriting-ink {
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(
+    calc(var(--ink-start) - .5%) -35%,
+    var(--ink-start) -35%,
+    var(--ink-start) 135%,
+    calc(var(--ink-start) - .5%) 135%
+  );
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+  will-change: clip-path, opacity, filter, transform;
+}
+.handwriting-text.is-handwriting-ready > .handwriting-ink::before {
+  content: attr(data-handwriting-text);
+  display: block;
+  width: 100%;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  text-align: inherit;
+  white-space: inherit;
 }
 .menu-panel .handwriting-text { margin-inline: 0; }
-.auth-overlay.is-handwriting-active .handwriting-text,
-.message-overlay.is-handwriting-active .handwriting-text,
-.menu-panel.is-open .handwriting-text,
-body.invitation-open .fade-in.is-visible .handwriting-text {
-  animation: handwritingReveal var(--handwriting-duration) linear var(--handwriting-delay) both;
+.message-overlay.is-handwriting-active .handwriting-text > .handwriting-ink,
+.menu-panel.is-open .handwriting-text > .handwriting-ink,
+body.invitation-open .fade-in.is-visible .handwriting-text > .handwriting-ink {
+  animation: handwritingInkStroke var(--ink-stroke-duration) cubic-bezier(.36, .04, .22, 1) calc(var(--handwriting-delay) + var(--ink-delay)) both;
 }
-.auth-kicker.handwriting-text { --handwriting-duration: 1.25s; --handwriting-delay: .32s; }
-.auth-content h1.handwriting-text { --handwriting-duration: 1.4s; --handwriting-delay: .76s; }
 .message-card .script-label.handwriting-text { --handwriting-duration: 1.2s; --handwriting-delay: .22s; }
 .message-signature.handwriting-text { --handwriting-duration: 1.55s; --handwriting-delay: .72s; }
 .hero-copy .script-label.handwriting-text { --handwriting-duration: 1.55s; --handwriting-delay: .16s; }
 .hero-copy h1.handwriting-text { --handwriting-duration: 1.85s; --handwriting-delay: .58s; }
 .section h2.handwriting-text { --handwriting-duration: 1.6s; --handwriting-delay: .42s; }
 .footer .signature.handwriting-text { --handwriting-duration: 1.65s; --handwriting-delay: .18s; }
-@keyframes handwritingReveal {
+@keyframes handwritingInkStroke {
   0% {
-    clip-path: inset(-.28em 100% -.34em -.24em);
-    opacity: .18;
-    filter: blur(.45px);
+    clip-path: polygon(
+      calc(var(--ink-start) - .5%) -35%,
+      var(--ink-start) -35%,
+      var(--ink-start) 135%,
+      calc(var(--ink-start) - .5%) 135%
+    );
+    opacity: .12;
+    filter: blur(.5px);
+    transform: translateY(.018em);
   }
-  8% { opacity: 1; }
-  72% { filter: blur(.15px); }
+  22% { opacity: 1; }
+  64% {
+    filter: blur(.16px);
+    transform: translateY(0);
+  }
   100% {
-    clip-path: inset(-.28em -.34em -.34em -.24em);
+    clip-path: polygon(
+      calc(var(--ink-start) - .5%) -35%,
+      calc(var(--ink-end) + .45%) -35%,
+      var(--ink-end) 46%,
+      calc(var(--ink-end) + .6%) 135%,
+      calc(var(--ink-start) - .5%) 135%
+    );
     opacity: 1;
     filter: none;
+    transform: translateY(0);
   }
 }
 

@@ -45,6 +45,7 @@
   function init() {
     cacheElements();
     setViewportHeight();
+    prepareHandwriting();
     setupAuth();
     setupOverlay();
     setupMenu();
@@ -275,7 +276,6 @@
     if (els.authOverlay) {
       els.authOverlay.hidden = false;
       els.authOverlay.classList.remove('is-closing');
-      restartHandwriting(els.authOverlay);
     }
     if (els.authForm) els.authForm.reset();
     if (els.form) els.form.reset();
@@ -298,6 +298,54 @@
     container.classList.remove('is-handwriting-active');
     void container.offsetWidth;
     container.classList.add('is-handwriting-active');
+  }
+
+  function prepareHandwriting(container = document) {
+    const elements = [];
+    if (container instanceof Element && container.matches('.handwriting-text')) elements.push(container);
+    elements.push(...container.querySelectorAll('.handwriting-text:not(.is-handwriting-ready)'));
+
+    elements.forEach(element => {
+      const text = element.textContent.trim();
+      if (!text) return;
+
+      const duration = parseCssSeconds(getComputedStyle(element).getPropertyValue('--handwriting-duration'), 1.35);
+      const visibleCharacterCount = Array.from(text.replace(/\s/g, '')).length;
+      const segmentCount = Math.min(22, Math.max(10, visibleCharacterCount + 3));
+      const strokeDuration = Math.min(.2, Math.max(.12, duration / segmentCount * 1.8));
+      const stepDuration = segmentCount > 1 ? (duration - strokeDuration) / (segmentCount - 1) : 0;
+      const fragment = document.createDocumentFragment();
+      const source = document.createElement('span');
+
+      if (!element.hasAttribute('aria-label')) element.setAttribute('aria-label', text);
+      source.className = 'handwriting-source';
+      source.setAttribute('aria-hidden', 'true');
+      source.textContent = text;
+      fragment.appendChild(source);
+
+      for (let index = 0; index < segmentCount; index += 1) {
+        const ink = document.createElement('span');
+        const start = index === 0 ? -3 : (index / segmentCount) * 100;
+        const end = index === segmentCount - 1 ? 103 : ((index + 1) / segmentCount) * 100;
+        ink.className = 'handwriting-ink';
+        ink.setAttribute('aria-hidden', 'true');
+        ink.dataset.handwritingText = text;
+        ink.style.setProperty('--ink-start', `${start.toFixed(3)}%`);
+        ink.style.setProperty('--ink-end', `${end.toFixed(3)}%`);
+        ink.style.setProperty('--ink-delay', `${(index * stepDuration).toFixed(3)}s`);
+        ink.style.setProperty('--ink-stroke-duration', `${strokeDuration.toFixed(3)}s`);
+        fragment.appendChild(ink);
+      }
+
+      element.replaceChildren(fragment);
+      element.classList.add('is-handwriting-ready');
+    });
+  }
+
+  function parseCssSeconds(value, fallback) {
+    const parsed = Number.parseFloat(String(value || '').trim());
+    if (!Number.isFinite(parsed)) return fallback;
+    return String(value).includes('ms') ? parsed / 1000 : parsed;
   }
 
   function setAuthStatus(message, type) {
@@ -515,6 +563,7 @@
 
     const footer = els.invitationPage.querySelector('.footer');
     els.invitationPage.insertBefore(section, footer || null);
+    prepareHandwriting(section);
   }
 
   function setupGiftInformation() {
