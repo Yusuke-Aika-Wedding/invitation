@@ -23,6 +23,8 @@
   let currentGiftMethod = '';
   let lastCotraGuideTrigger = null;
   let fadeInObserver = null;
+  let handwritingObserver = null;
+  const handwritingFallbackNodes = new Set();
   let handwritingMaskId = 0;
   const QUIZ_QUESTION_COUNT = 5;
   const QUIZ_QUESTIONS = [
@@ -47,6 +49,7 @@
   function init() {
     cacheElements();
     setViewportHeight();
+    setupHandwritingObserver();
     prepareHandwriting();
     setupAuth();
     setupOverlay();
@@ -375,8 +378,9 @@
       });
 
       element.replaceChildren(render);
-      const weights = penPaths.map(path => Math.max(1, Math.sqrt(path.getTotalLength())));
-      const advanceRatio = .82;
+      // 実際の線の長さに合わせて一定の筆速にし、文字間だけわずかに重ねて滑らかにつなぐ。
+      const weights = penPaths.map(path => Math.max(24, path.getTotalLength()));
+      const advanceRatio = .9;
       const timingWeight = weights.length
         ? weights[weights.length - 1] + weights.slice(0, -1).reduce((sum, weight) => sum + (weight * advanceRatio), 0)
         : 1;
@@ -384,13 +388,50 @@
       let cursor = 0;
 
       penPaths.forEach((path, index) => {
-        const glyphDuration = Math.max(.2, weights[index] * timingScale);
+        const glyphDuration = weights[index] * timingScale;
         path.style.setProperty('--glyph-delay', `${cursor.toFixed(3)}s`);
         path.style.setProperty('--glyph-duration', `${glyphDuration.toFixed(3)}s`);
         cursor += glyphDuration * advanceRatio;
       });
 
       element.classList.add('is-handwriting-ready');
+      observeHandwriting(element);
+    });
+  }
+
+  function setupHandwritingObserver() {
+    if (!('IntersectionObserver' in window)) {
+      window.addEventListener('scroll', checkHandwritingVisibility, { passive: true });
+      window.addEventListener('resize', checkHandwritingVisibility, { passive: true });
+      return;
+    }
+
+    handwritingObserver = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-handwriting-visible');
+        handwritingObserver.unobserve(entry.target);
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -8% 0px' });
+  }
+
+  function observeHandwriting(node) {
+    if (!node || node.classList.contains('is-handwriting-visible')) return;
+    if (handwritingObserver) {
+      handwritingObserver.observe(node);
+      return;
+    }
+    handwritingFallbackNodes.add(node);
+    checkHandwritingVisibility();
+  }
+
+  function checkHandwritingVisibility() {
+    handwritingFallbackNodes.forEach(node => {
+      const rect = node.getBoundingClientRect();
+      const visibleHeight = Math.min(rect.bottom, window.innerHeight * .92) - Math.max(rect.top, 0);
+      if (visibleHeight < Math.min(rect.height * .15, 12)) return;
+      node.classList.add('is-handwriting-visible');
+      handwritingFallbackNodes.delete(node);
     });
   }
 

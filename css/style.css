@@ -261,8 +261,8 @@ img { max-width: 100%; }
 .menu-panel .handwriting-text { margin-inline: 0; }
 .message-overlay.is-handwriting-active .handwriting-pen-path,
 .menu-panel.is-open .handwriting-pen-path,
-body.invitation-open .fade-in.is-visible .handwriting-pen-path {
-  animation: handwritingPenDraw var(--glyph-duration) cubic-bezier(.34, .02, .22, 1) calc(var(--handwriting-delay) + var(--glyph-delay)) both;
+body.invitation-open .handwriting-text.is-handwriting-visible .handwriting-pen-path {
+  animation: handwritingPenDraw var(--glyph-duration) linear calc(var(--handwriting-delay) + var(--glyph-delay)) both;
 }
 .message-card .script-label.handwriting-text { --handwriting-duration: 3.4s; --handwriting-delay: .18s; }
 .message-signature.handwriting-text { --handwriting-duration: 4.4s; --handwriting-delay: .62s; }
