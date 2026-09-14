@@ -1192,6 +1192,7 @@
       document.body.classList.remove('has-overlay');
       window.setTimeout(() => {
         els.overlay.hidden = true;
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
         document.body.classList.add('invitation-open');
       }, 780);
     };
