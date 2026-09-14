@@ -354,7 +354,7 @@ body.invitation-open .fade-in.is-visible .handwriting-text {
 .slide-dot.is-active { width: 28px; background: #fff; }
 .hero-copy { padding: clamp(30px, 5vw, 60px) 24px clamp(34px, 5vw, 64px); text-align: center; }
 .hero-copy h1, .section h2, .page-title {
-  margin: 0;
+  margin: 0 auto;
   font-family: var(--script);
   font-weight: 400;
   line-height: 1.04;
@@ -1273,7 +1273,7 @@ textarea::placeholder { white-space: pre-wrap; }
 .locked-card .section-note { margin-top: 0; }
 
 .footer { padding: 42px 0 10px; text-align: center; color: var(--muted); }
-.footer .signature { margin: 0; font-family: var(--script); font-size: clamp(2.4rem, 6vw, 4rem); line-height: 1; color: var(--wine-dark); }
+.footer .signature { margin: 0 auto; font-family: var(--script); font-size: clamp(2.4rem, 6vw, 4rem); line-height: 1; color: var(--wine-dark); }
 .fade-in { opacity: 0; transform: translateY(22px); transition: opacity .78s ease, transform .78s ease; }
 .fade-in.is-visible { opacity: 1; transform: translateY(0); }
 
