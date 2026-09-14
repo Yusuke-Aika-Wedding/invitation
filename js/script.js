@@ -22,6 +22,7 @@
   let pendingGiftConfirmation = '';
   let currentGiftMethod = '';
   let lastCotraGuideTrigger = null;
+  let fadeInObserver = null;
   const QUIZ_QUESTION_COUNT = 5;
   const QUIZ_QUESTIONS = [
     { question: '新郎の血液型は？', options: ['A型', 'B型', 'C型', 'D型'], answer: 'A型', explanation: 'A型っぽいってよく言われてきました。' },
@@ -312,11 +313,9 @@
       const words = tokens.filter(token => !/^\s+$/.test(token));
       if (!text || !words.length || words.some(word => !wordPaths[word])) return;
 
-      const duration = parseCssSeconds(getComputedStyle(element).getPropertyValue('--handwriting-duration'), 1.65);
+      const duration = parseCssSeconds(getComputedStyle(element).getPropertyValue('--handwriting-duration'), 3.8);
       const render = document.createElement('span');
-      const strokes = [];
-      const glyphFills = [];
-      const wordElements = [];
+      const glyphs = [];
 
       if (!element.hasAttribute('aria-label')) element.setAttribute('aria-label', text);
       render.className = 'handwriting-render';
@@ -331,68 +330,41 @@
         const data = wordPaths[token];
         const word = document.createElement('span');
         const source = document.createElement('span');
-        const fill = document.createElement('span');
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         source.className = 'handwriting-word-source';
         source.textContent = token;
-        fill.className = 'handwriting-word-fill';
-        fill.textContent = token;
         svg.classList.add('handwriting-word-svg');
         svg.setAttribute('viewBox', data.viewBox);
         svg.setAttribute('preserveAspectRatio', 'none');
         svg.setAttribute('focusable', 'false');
 
         data.glyphs.forEach(glyph => {
-          const glyphFill = document.createElementNS('http://www.w3.org/2000/svg', 'path');
           const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-          glyphFill.classList.add('handwriting-glyph-fill');
-          glyphFill.setAttribute('d', glyph.d);
-          path.classList.add('handwriting-glyph-stroke');
+          path.classList.add('handwriting-glyph');
           path.setAttribute('d', glyph.d);
-          path.setAttribute('pathLength', '1');
-          svg.append(glyphFill, path);
-          glyphFills.push(glyphFill);
-          strokes.push(path);
+          svg.appendChild(path);
+          glyphs.push(path);
         });
 
         word.className = 'handwriting-word';
-        word.append(source, fill, svg);
+        word.append(source, svg);
         render.appendChild(word);
-        wordElements.push({ word, fill, svg, firstStroke: strokes.length - data.glyphs.length, lastStroke: strokes.length - 1 });
       });
 
       element.replaceChildren(render);
-      const weights = strokes.map(path => Math.max(1, Math.sqrt(path.getTotalLength())));
-      const overlap = .56;
+      const weights = glyphs.map(path => Math.max(1, Math.sqrt(path.getTotalLength())));
+      const advanceRatio = .72;
       const timingWeight = weights.length
-        ? weights[weights.length - 1] + weights.slice(0, -1).reduce((sum, weight) => sum + (weight * overlap), 0)
+        ? weights[weights.length - 1] + weights.slice(0, -1).reduce((sum, weight) => sum + (weight * advanceRatio), 0)
         : 1;
       const timingScale = duration / timingWeight;
-      const endTimes = [];
       let cursor = 0;
 
-      strokes.forEach((path, index) => {
-        const glyphDuration = Math.max(.11, weights[index] * timingScale);
-        const glyphFillDelay = cursor + (glyphDuration * .12);
-        const glyphFillDuration = Math.max(.12, glyphDuration * .82);
+      glyphs.forEach((path, index) => {
+        const glyphDuration = Math.max(.2, weights[index] * timingScale);
         path.style.setProperty('--glyph-delay', `${cursor.toFixed(3)}s`);
         path.style.setProperty('--glyph-duration', `${glyphDuration.toFixed(3)}s`);
-        glyphFills[index].style.setProperty('--glyph-fill-delay', `${glyphFillDelay.toFixed(3)}s`);
-        glyphFills[index].style.setProperty('--glyph-fill-duration', `${glyphFillDuration.toFixed(3)}s`);
-        endTimes[index] = cursor + glyphDuration;
-        cursor += glyphDuration * overlap;
-      });
-
-      wordElements.forEach(({ word, firstStroke, lastStroke }) => {
-        const wordStart = strokes[firstStroke]
-          ? parseCssSeconds(strokes[firstStroke].style.getPropertyValue('--glyph-delay'), 0)
-          : 0;
-        const wordEnd = endTimes[lastStroke] || duration;
-        const fillDelay = Math.max(wordStart, wordEnd - .08);
-        const fillDuration = .2;
-        word.style.setProperty('--word-fill-delay', `${fillDelay.toFixed(3)}s`);
-        word.style.setProperty('--word-fill-duration', `${fillDuration.toFixed(3)}s`);
-        word.style.setProperty('--word-svg-fade-delay', `${(wordEnd + .06).toFixed(3)}s`);
+        cursor += glyphDuration * advanceRatio;
       });
 
       element.classList.add('is-handwriting-ready');
@@ -1163,12 +1135,16 @@
 
   function renderPrediction(show, prediction) {
     if (!els.predictionSection || !els.predictionList) return;
+    const wasHidden = els.predictionSection.classList.contains('is-hidden');
     els.predictionSection.classList.toggle('is-hidden', !show);
     if (!show) {
       els.predictionList.replaceChildren();
       return;
     }
-    window.requestAnimationFrame(() => els.predictionSection.classList.add('is-visible'));
+    if (wasHidden) {
+      els.predictionSection.classList.remove('is-visible');
+      window.requestAnimationFrame(() => observeFadeIn(els.predictionSection));
+    }
 
     const questions = prediction && Array.isArray(prediction.questions)
       ? prediction.questions
@@ -1354,15 +1330,24 @@
       nodes.forEach(node => node.classList.add('is-visible'));
       return;
     }
-    const observer = new IntersectionObserver(entries => {
+    fadeInObserver = new IntersectionObserver(entries => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           entry.target.classList.add('is-visible');
-          observer.unobserve(entry.target);
+          fadeInObserver.unobserve(entry.target);
         }
       });
     }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
-    nodes.forEach(node => observer.observe(node));
+    nodes.forEach(observeFadeIn);
+  }
+
+  function observeFadeIn(node) {
+    if (!node) return;
+    if (!fadeInObserver) {
+      node.classList.add('is-visible');
+      return;
+    }
+    fadeInObserver.observe(node);
   }
 
   function setupCountdown() {

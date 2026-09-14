@@ -214,9 +214,9 @@ img { max-width: 100%; }
 }
 @keyframes pulse { 0%, 100% { opacity: .58; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-2px); } }
 
-/* SVGの線を連続して描き、筆記体を滑らかに書き上げる */
+/* 字形を一枚だけ使い、筆記体を一文字ずつ滑らかに書き上げる */
 .handwriting-text {
-  --handwriting-duration: 1.9s;
+  --handwriting-duration: 3.8s;
   --handwriting-delay: .1s;
   width: fit-content;
   max-width: 100%;
@@ -230,7 +230,6 @@ img { max-width: 100%; }
 }
 .handwriting-render { display: inline; }
 .handwriting-word-source { visibility: hidden; }
-.handwriting-word-fill,
 .handwriting-word-svg {
   position: absolute;
   inset: 0;
@@ -239,68 +238,34 @@ img { max-width: 100%; }
   pointer-events: none;
   user-select: none;
 }
-.handwriting-word-fill {
-  color: inherit;
-  font: inherit;
-  letter-spacing: inherit;
-  line-height: inherit;
-  opacity: 0;
-  white-space: nowrap;
-  will-change: opacity;
-}
 .handwriting-word-svg {
   overflow: visible;
   color: inherit;
   opacity: 1;
   shape-rendering: geometricPrecision;
-  will-change: opacity;
 }
-.handwriting-glyph-stroke {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 18;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  will-change: stroke-dashoffset;
-}
-.handwriting-glyph-fill {
+.handwriting-glyph {
   fill: currentColor;
-  opacity: 0;
-  will-change: opacity;
+  clip-path: inset(-4% 100% -4% -4%);
+  will-change: clip-path;
 }
 .menu-panel .handwriting-text { margin-inline: 0; }
-.message-overlay.is-handwriting-active .handwriting-glyph-stroke,
-.menu-panel.is-open .handwriting-glyph-stroke,
-body.invitation-open .fade-in.is-visible .handwriting-glyph-stroke {
-  animation: handwritingPathDraw var(--glyph-duration) linear calc(var(--handwriting-delay) + var(--glyph-delay)) both;
+.message-overlay.is-handwriting-active .handwriting-glyph,
+.menu-panel.is-open .handwriting-glyph,
+body.invitation-open .fade-in.is-visible .handwriting-glyph {
+  animation: handwritingGlyphReveal var(--glyph-duration) cubic-bezier(.38, .04, .2, 1) calc(var(--handwriting-delay) + var(--glyph-delay)) both;
 }
-.message-overlay.is-handwriting-active .handwriting-glyph-fill,
-.menu-panel.is-open .handwriting-glyph-fill,
-body.invitation-open .fade-in.is-visible .handwriting-glyph-fill {
-  animation: handwritingGlyphFill var(--glyph-fill-duration) ease-out calc(var(--handwriting-delay) + var(--glyph-fill-delay)) both;
+.message-card .script-label.handwriting-text { --handwriting-duration: 3.4s; --handwriting-delay: .18s; }
+.message-signature.handwriting-text { --handwriting-duration: 4.4s; --handwriting-delay: .62s; }
+.hero-copy .script-label.handwriting-text { --handwriting-duration: 4.6s; --handwriting-delay: .1s; }
+.hero-copy h1.handwriting-text { --handwriting-duration: 5.2s; --handwriting-delay: .45s; }
+.section h2.handwriting-text { --handwriting-duration: 4.3s; --handwriting-delay: .3s; }
+#prediction-title.handwriting-text { --handwriting-duration: 4.8s; --handwriting-delay: .22s; }
+.footer .signature.handwriting-text { --handwriting-duration: 4.5s; --handwriting-delay: .14s; }
+@keyframes handwritingGlyphReveal {
+  from { clip-path: inset(-4% 100% -4% -4%); }
+  to { clip-path: inset(-4% -4% -4% -4%); }
 }
-.message-overlay.is-handwriting-active .handwriting-word-fill,
-.menu-panel.is-open .handwriting-word-fill,
-body.invitation-open .fade-in.is-visible .handwriting-word-fill {
-  animation: handwritingFillIn var(--word-fill-duration) ease-out calc(var(--handwriting-delay) + var(--word-fill-delay)) both;
-}
-.message-overlay.is-handwriting-active .handwriting-word-svg,
-.menu-panel.is-open .handwriting-word-svg,
-body.invitation-open .fade-in.is-visible .handwriting-word-svg {
-  animation: handwritingGuideFade .24s ease-out calc(var(--handwriting-delay) + var(--word-svg-fade-delay)) both;
-}
-.message-card .script-label.handwriting-text { --handwriting-duration: 1.7s; --handwriting-delay: .18s; }
-.message-signature.handwriting-text { --handwriting-duration: 2.2s; --handwriting-delay: .62s; }
-.hero-copy .script-label.handwriting-text { --handwriting-duration: 2.3s; --handwriting-delay: .1s; }
-.hero-copy h1.handwriting-text { --handwriting-duration: 2.6s; --handwriting-delay: .45s; }
-.section h2.handwriting-text { --handwriting-duration: 2.15s; --handwriting-delay: .3s; }
-.footer .signature.handwriting-text { --handwriting-duration: 2.25s; --handwriting-delay: .14s; }
-@keyframes handwritingPathDraw { to { stroke-dashoffset: 0; } }
-@keyframes handwritingGlyphFill { from { opacity: 0; } to { opacity: 1; } }
-@keyframes handwritingFillIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes handwritingGuideFade { from { opacity: 1; } to { opacity: 0; } }
 
 .top-menu { position: fixed; top: 18px; right: 18px; z-index: 12; }
 .hamburger {
