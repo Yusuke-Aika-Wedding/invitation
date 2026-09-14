@@ -301,43 +301,100 @@
   }
 
   function prepareHandwriting(container = document) {
+    const wordPaths = window.WEDDING_HANDWRITING_WORDS || {};
     const elements = [];
     if (container instanceof Element && container.matches('.handwriting-text')) elements.push(container);
     elements.push(...container.querySelectorAll('.handwriting-text:not(.is-handwriting-ready)'));
 
     elements.forEach(element => {
       const text = element.textContent.trim();
-      if (!text) return;
+      const tokens = text.split(/(\s+)/).filter(Boolean);
+      const words = tokens.filter(token => !/^\s+$/.test(token));
+      if (!text || !words.length || words.some(word => !wordPaths[word])) return;
 
-      const duration = parseCssSeconds(getComputedStyle(element).getPropertyValue('--handwriting-duration'), 1.35);
-      const visibleCharacterCount = Array.from(text.replace(/\s/g, '')).length;
-      const segmentCount = Math.min(22, Math.max(10, visibleCharacterCount + 3));
-      const strokeDuration = Math.min(.2, Math.max(.12, duration / segmentCount * 1.8));
-      const stepDuration = segmentCount > 1 ? (duration - strokeDuration) / (segmentCount - 1) : 0;
-      const fragment = document.createDocumentFragment();
-      const source = document.createElement('span');
+      const duration = parseCssSeconds(getComputedStyle(element).getPropertyValue('--handwriting-duration'), 1.65);
+      const render = document.createElement('span');
+      const strokes = [];
+      const glyphFills = [];
+      const wordElements = [];
 
       if (!element.hasAttribute('aria-label')) element.setAttribute('aria-label', text);
-      source.className = 'handwriting-source';
-      source.setAttribute('aria-hidden', 'true');
-      source.textContent = text;
-      fragment.appendChild(source);
+      render.className = 'handwriting-render';
+      render.setAttribute('aria-hidden', 'true');
 
-      for (let index = 0; index < segmentCount; index += 1) {
-        const ink = document.createElement('span');
-        const start = index === 0 ? -3 : (index / segmentCount) * 100;
-        const end = index === segmentCount - 1 ? 103 : ((index + 1) / segmentCount) * 100;
-        ink.className = 'handwriting-ink';
-        ink.setAttribute('aria-hidden', 'true');
-        ink.dataset.handwritingText = text;
-        ink.style.setProperty('--ink-start', `${start.toFixed(3)}%`);
-        ink.style.setProperty('--ink-end', `${end.toFixed(3)}%`);
-        ink.style.setProperty('--ink-delay', `${(index * stepDuration).toFixed(3)}s`);
-        ink.style.setProperty('--ink-stroke-duration', `${strokeDuration.toFixed(3)}s`);
-        fragment.appendChild(ink);
-      }
+      tokens.forEach(token => {
+        if (/^\s+$/.test(token)) {
+          render.appendChild(document.createTextNode(token));
+          return;
+        }
 
-      element.replaceChildren(fragment);
+        const data = wordPaths[token];
+        const word = document.createElement('span');
+        const source = document.createElement('span');
+        const fill = document.createElement('span');
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        source.className = 'handwriting-word-source';
+        source.textContent = token;
+        fill.className = 'handwriting-word-fill';
+        fill.textContent = token;
+        svg.classList.add('handwriting-word-svg');
+        svg.setAttribute('viewBox', data.viewBox);
+        svg.setAttribute('preserveAspectRatio', 'none');
+        svg.setAttribute('focusable', 'false');
+
+        data.glyphs.forEach(glyph => {
+          const glyphFill = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          glyphFill.classList.add('handwriting-glyph-fill');
+          glyphFill.setAttribute('d', glyph.d);
+          path.classList.add('handwriting-glyph-stroke');
+          path.setAttribute('d', glyph.d);
+          path.setAttribute('pathLength', '1');
+          svg.append(glyphFill, path);
+          glyphFills.push(glyphFill);
+          strokes.push(path);
+        });
+
+        word.className = 'handwriting-word';
+        word.append(source, fill, svg);
+        render.appendChild(word);
+        wordElements.push({ word, fill, svg, firstStroke: strokes.length - data.glyphs.length, lastStroke: strokes.length - 1 });
+      });
+
+      element.replaceChildren(render);
+      const weights = strokes.map(path => Math.max(1, Math.sqrt(path.getTotalLength())));
+      const overlap = .56;
+      const timingWeight = weights.length
+        ? weights[weights.length - 1] + weights.slice(0, -1).reduce((sum, weight) => sum + (weight * overlap), 0)
+        : 1;
+      const timingScale = duration / timingWeight;
+      const endTimes = [];
+      let cursor = 0;
+
+      strokes.forEach((path, index) => {
+        const glyphDuration = Math.max(.11, weights[index] * timingScale);
+        const glyphFillDelay = cursor + (glyphDuration * .12);
+        const glyphFillDuration = Math.max(.12, glyphDuration * .82);
+        path.style.setProperty('--glyph-delay', `${cursor.toFixed(3)}s`);
+        path.style.setProperty('--glyph-duration', `${glyphDuration.toFixed(3)}s`);
+        glyphFills[index].style.setProperty('--glyph-fill-delay', `${glyphFillDelay.toFixed(3)}s`);
+        glyphFills[index].style.setProperty('--glyph-fill-duration', `${glyphFillDuration.toFixed(3)}s`);
+        endTimes[index] = cursor + glyphDuration;
+        cursor += glyphDuration * overlap;
+      });
+
+      wordElements.forEach(({ word, firstStroke, lastStroke }) => {
+        const wordStart = strokes[firstStroke]
+          ? parseCssSeconds(strokes[firstStroke].style.getPropertyValue('--glyph-delay'), 0)
+          : 0;
+        const wordEnd = endTimes[lastStroke] || duration;
+        const fillDelay = Math.max(wordStart, wordEnd - .08);
+        const fillDuration = .2;
+        word.style.setProperty('--word-fill-delay', `${fillDelay.toFixed(3)}s`);
+        word.style.setProperty('--word-fill-duration', `${fillDuration.toFixed(3)}s`);
+        word.style.setProperty('--word-svg-fade-delay', `${(wordEnd + .06).toFixed(3)}s`);
+      });
+
       element.classList.add('is-handwriting-ready');
     });
   }
