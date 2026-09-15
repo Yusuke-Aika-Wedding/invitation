@@ -247,6 +247,14 @@ img { max-width: 100%; }
 .handwriting-glyph {
   fill: currentColor;
 }
+.handwriting-glyph.is-handwriting-capital {
+  stroke: currentColor;
+  stroke-width: .45px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  paint-order: stroke fill;
+  vector-effect: non-scaling-stroke;
+}
 .handwriting-mask { mask-type: luminance; }
 .handwriting-pen-path {
   fill: none;

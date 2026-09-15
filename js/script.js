@@ -337,6 +337,7 @@
         const data = wordPaths[token];
         const guideData = handwritingGuides[token];
         const guideGroups = groupHandwritingGuides(guideData.strokes);
+        const glyphCharacters = Array.from(token);
         const word = document.createElement('span');
         const source = document.createElement('span');
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -351,6 +352,7 @@
 
         data.glyphs.forEach((glyph, glyphIndex) => {
           const guideGroup = guideGroups[glyphIndex];
+          const isCapital = /^[A-Z]$/.test(glyphCharacters[glyphIndex] || '');
           const mask = document.createElementNS('http://www.w3.org/2000/svg', 'mask');
           const fittedGuide = document.createElementNS('http://www.w3.org/2000/svg', 'g');
           const positionedGuide = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -364,7 +366,7 @@
             guideGroup.strokes.map(stroke => stroke.d),
             (x, y) => ({ x: x + guideGroup.x, y: 820 - y })
           );
-          const fit = fitHandwritingGuide(guideBounds, outlineBounds);
+          const fit = fitHandwritingGuide(guideBounds, outlineBounds, isCapital);
 
           mask.classList.add('handwriting-mask');
           mask.setAttribute('id', maskId);
@@ -398,6 +400,7 @@
           defs.appendChild(mask);
 
           path.classList.add('handwriting-glyph');
+          if (isCapital) path.classList.add('is-handwriting-capital');
           path.setAttribute('d', glyph.d);
           path.setAttribute('mask', `url(#${maskId})`);
           svg.appendChild(path);
@@ -475,7 +478,7 @@
     return bounds;
   }
 
-  function fitHandwritingGuide(source, target) {
+  function fitHandwritingGuide(source, target, isCapital = false) {
     const sourceWidth = Math.max(1, source.maxX - source.minX);
     const sourceHeight = Math.max(1, source.maxY - source.minY);
     const targetWidth = Math.max(1, target.maxX - target.minX);
@@ -494,7 +497,7 @@
       translateX: targetCenterX - (sourceCenterX * scaleX),
       translateY: targetCenterY - (sourceCenterY * scaleY),
       lengthScale,
-      penWidth: 210 / Math.max(.01, lengthScale)
+      penWidth: (isCapital ? 250 : 210) / Math.max(.01, lengthScale)
     };
   }
 
