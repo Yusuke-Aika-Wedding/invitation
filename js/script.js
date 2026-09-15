@@ -1326,7 +1326,6 @@
             const selectedMark = document.createElement('span');
             selectedMark.className = 'prediction-result-check';
             selectedMark.setAttribute('aria-hidden', 'true');
-            selectedMark.textContent = '✔';
             optionLabel.append(selectedMark);
           }
           optionLabel.append(document.createTextNode(label));
