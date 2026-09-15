@@ -323,7 +323,6 @@
       const penPaths = [];
       const penPathScales = [];
       const glyphCompletions = [];
-      const capitalReveals = [];
 
       if (!element.hasAttribute('aria-label')) element.setAttribute('aria-label', text);
       render.className = 'handwriting-render';
@@ -354,7 +353,6 @@
         data.glyphs.forEach((glyph, glyphIndex) => {
           const guideGroup = guideGroups[glyphIndex];
           const isCapital = /^[A-Z]$/.test(glyphCharacters[glyphIndex] || '');
-          const firstStrokeIndex = penPaths.length;
           const mask = document.createElementNS('http://www.w3.org/2000/svg', 'mask');
           const fittedGuide = document.createElementNS('http://www.w3.org/2000/svg', 'g');
           const positionedGuide = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -383,7 +381,7 @@
 
           guideGroup.strokes.forEach(stroke => {
             const strokePath = penPath.cloneNode();
-            strokePath.classList.add(isCapital ? 'handwriting-timing-path' : 'handwriting-pen-path');
+            strokePath.classList.add('handwriting-pen-path');
             strokePath.setAttribute('d', stroke.d);
             strokePath.setAttribute('pathLength', '1');
             strokePath.style.setProperty('--handwriting-pen-width', fit.penWidth.toFixed(2));
@@ -398,26 +396,11 @@
           completion.setAttribute('width', String(viewBoxWidth + 500));
           completion.setAttribute('height', String(viewBoxHeight + 500));
           fittedGuide.appendChild(positionedGuide);
-
-          if (isCapital) {
-            // The guide font and Alex Brush have different capital shapes. Revealing the
-            // Alex Brush capital as one coherent glyph prevents detached ink fragments.
-            completion.classList.remove('handwriting-glyph-completion');
-            completion.classList.add('handwriting-capital-reveal');
-            defs.appendChild(fittedGuide);
-            mask.appendChild(completion);
-            capitalReveals.push({
-              node: completion,
-              firstStrokeIndex,
-              finalStrokeIndex: penPaths.length - 1
-            });
-          } else {
-            mask.append(fittedGuide, completion);
-            glyphCompletions.push({
-              node: completion,
-              finalStrokeIndex: penPaths.length - 1
-            });
-          }
+          mask.append(fittedGuide, completion);
+          glyphCompletions.push({
+            node: completion,
+            finalStrokeIndex: penPaths.length - 1
+          });
           defs.appendChild(mask);
 
           path.classList.add('handwriting-glyph');
@@ -458,14 +441,6 @@
         const completionDelay = finalStroke.delay + finalStroke.duration - completionDuration;
         node.style.setProperty('--completion-delay', `${completionDelay.toFixed(3)}s`);
         node.style.setProperty('--completion-duration', `${completionDuration.toFixed(3)}s`);
-      });
-
-      capitalReveals.forEach(({ node, firstStrokeIndex, finalStrokeIndex }) => {
-        const firstStroke = strokeTimings[firstStrokeIndex];
-        const finalStroke = strokeTimings[finalStrokeIndex];
-        const revealDuration = finalStroke.delay + finalStroke.duration - firstStroke.delay;
-        node.style.setProperty('--capital-delay', `${firstStroke.delay.toFixed(3)}s`);
-        node.style.setProperty('--capital-duration', `${Math.max(.28, revealDuration).toFixed(3)}s`);
       });
 
       element.classList.add('is-handwriting-ready');

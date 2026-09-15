@@ -267,18 +267,9 @@ img { max-width: 100%; }
   opacity: 0;
   will-change: stroke-dashoffset, opacity;
 }
-.handwriting-timing-path {
-  fill: none;
-  stroke: none;
-}
 .handwriting-glyph-completion {
   fill: #fff;
   opacity: 0;
-}
-.handwriting-capital-reveal {
-  fill: #fff;
-  opacity: 0;
-  will-change: opacity;
 }
 .menu-panel .handwriting-text { margin-inline: 0; }
 .message-overlay.is-handwriting-active .handwriting-pen-path,
@@ -290,11 +281,6 @@ body.invitation-open .handwriting-text.is-handwriting-visible .handwriting-pen-p
 .menu-panel.is-open .handwriting-glyph-completion,
 body.invitation-open .handwriting-text.is-handwriting-visible .handwriting-glyph-completion {
   animation: handwritingGlyphComplete var(--completion-duration) linear calc(var(--handwriting-delay) + var(--completion-delay)) both;
-}
-.message-overlay.is-handwriting-active .handwriting-capital-reveal,
-.menu-panel.is-open .handwriting-capital-reveal,
-body.invitation-open .handwriting-text.is-handwriting-visible .handwriting-capital-reveal {
-  animation: handwritingCapitalReveal var(--capital-duration) cubic-bezier(.2, .65, .25, 1) calc(var(--handwriting-delay) + var(--capital-delay)) both;
 }
 .message-card .script-label.handwriting-text { --handwriting-duration: 3.4s; --handwriting-delay: .18s; }
 .message-signature.handwriting-text { --handwriting-duration: 4.4s; --handwriting-delay: .62s; }
@@ -309,11 +295,6 @@ body.invitation-open .handwriting-text.is-handwriting-visible .handwriting-capit
   100% { opacity: 1; stroke-dashoffset: 0; }
 }
 @keyframes handwritingGlyphComplete { to { opacity: 1; } }
-@keyframes handwritingCapitalReveal {
-  0% { opacity: 0; }
-  18% { opacity: .62; }
-  100% { opacity: 1; }
-}
 
 .top-menu { position: fixed; top: 18px; right: 18px; z-index: 12; }
 .hamburger {
