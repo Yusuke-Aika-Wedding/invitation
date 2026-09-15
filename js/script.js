@@ -354,7 +354,8 @@
           const mask = document.createElementNS('http://www.w3.org/2000/svg', 'mask');
           const fittedGuide = document.createElementNS('http://www.w3.org/2000/svg', 'g');
           const positionedGuide = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-          const completion = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          // Complete with a solid mask so thin glyph edges are not anti-aliased twice.
+          const completion = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
           const penPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
           const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
           const maskId = `handwriting-mask-${handwritingMaskId += 1}`;
@@ -388,7 +389,10 @@
           });
 
           completion.classList.add('handwriting-glyph-completion');
-          completion.setAttribute('d', glyph.d);
+          completion.setAttribute('x', '-250');
+          completion.setAttribute('y', '-250');
+          completion.setAttribute('width', String(viewBoxWidth + 500));
+          completion.setAttribute('height', String(viewBoxHeight + 500));
           fittedGuide.appendChild(positionedGuide);
           mask.append(fittedGuide, completion);
           defs.appendChild(mask);
