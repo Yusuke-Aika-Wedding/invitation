@@ -44,7 +44,6 @@
 
   document.addEventListener('DOMContentLoaded', init);
   window.addEventListener('resize', setViewportHeight, { passive: true });
-  window.addEventListener('hashchange', applyRoute);
 
   function init() {
     cacheElements();
@@ -53,7 +52,6 @@
     prepareHandwriting();
     setupAuth();
     setupOverlay();
-    setupMenu();
     setupFadeIn();
     setupCountdown();
     setupCarousel();
@@ -88,10 +86,6 @@
       hours: document.getElementById('hours'),
       minutes: document.getElementById('minutes'),
       seconds: document.getElementById('seconds'),
-      menuButton: document.getElementById('menuButton'),
-      menuPanel: document.getElementById('menuPanel'),
-      menuGuestName: document.getElementById('menuGuestName'),
-      changeIdButton: document.getElementById('changeIdButton'),
       invitationPage: document.getElementById('invitationPage'),
       predictionSection: document.getElementById('prediction'),
       predictionList: document.getElementById('predictionList'),
@@ -215,7 +209,6 @@
     if (els.nameInput) els.nameInput.value = displayName;
     if (els.emailInput) els.emailInput.value = status.email || '';
     if (els.guestMessageInput) els.guestMessageInput.value = status.message || '';
-    if (els.menuGuestName) els.menuGuestName.textContent = `${displayName} 様`;
     if (status.ceremonyAttendance) checkRadio('ceremonyAttendance', status.ceremonyAttendance);
     if (status.receptionAttendance) checkRadio('receptionAttendance', status.receptionAttendance);
     hydrateAllergy(status.allergy || '');
@@ -252,44 +245,13 @@
       els.overlay.classList.remove('is-closing');
       restartHandwriting(els.overlay);
     }
-    applyRoute();
+    if (els.invitationPage) els.invitationPage.classList.remove('is-hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function removeIdFromAddressBar() {
     if (!location.search || !window.history || !window.history.replaceState) return;
     window.history.replaceState(null, '', `${location.pathname}${location.hash || ''}`);
-  }
-
-  function resetToAuth() {
-    authenticated = false;
-    guestId = '';
-    latestStatus = { completed: false, attending: false, receptionAttending: false, invitationMessage: '', prediction: null };
-    predictionSelections.clear();
-    try {
-      localStorage.removeItem(GUEST_ID_STORAGE_KEY);
-    } catch (_) {
-      // 何もしません。
-    }
-    closeMenu();
-    document.body.classList.add('auth-locked');
-    document.body.classList.remove('has-overlay', 'invitation-open');
-    document.body.dataset.defaultName = '';
-    if (els.overlay) {
-      els.overlay.hidden = true;
-      els.overlay.classList.remove('is-handwriting-active');
-    }
-    if (els.authOverlay) {
-      els.authOverlay.hidden = false;
-      els.authOverlay.classList.remove('is-closing');
-    }
-    if (els.authForm) els.authForm.reset();
-    if (els.form) els.form.reset();
-    updateAllergyFields();
-    setFormCompleted(false, false);
-    renderPrediction(false, null);
-    setAuthStatus('', '');
-    window.history.replaceState(null, '', location.pathname);
-    window.setTimeout(() => { if (els.guestIdEntry) els.guestIdEntry.focus(); }, 50);
   }
 
   function setAuthLoading(loading) {
@@ -1360,7 +1322,14 @@
           copy.className = 'prediction-result-copy';
           const optionLabel = document.createElement('span');
           optionLabel.className = 'prediction-result-label';
-          optionLabel.textContent = `${selected ? '✓ ' : ''}${label}`;
+          if (selected) {
+            const selectedMark = document.createElement('span');
+            selectedMark.className = 'prediction-result-check';
+            selectedMark.setAttribute('aria-hidden', 'true');
+            selectedMark.textContent = '✔';
+            optionLabel.append(selectedMark);
+          }
+          optionLabel.append(document.createTextNode(label));
           const percentage = document.createElement('strong');
           percentage.className = 'prediction-percentage number-font';
           percentage.textContent = `${percent}%`;
@@ -1451,43 +1420,6 @@
         openInvitation();
       }
     });
-  }
-
-  function setupMenu() {
-    if (!els.menuButton || !els.menuPanel) return;
-    els.menuButton.addEventListener('click', () => {
-      const open = !els.menuPanel.classList.contains('is-open');
-      els.menuPanel.classList.toggle('is-open', open);
-      els.menuButton.classList.toggle('is-open', open);
-      els.menuButton.setAttribute('aria-expanded', String(open));
-      els.menuButton.setAttribute('aria-label', open ? 'メニューを閉じる' : 'メニューを開く');
-    });
-    els.menuPanel.querySelectorAll('a').forEach(link => link.addEventListener('click', closeMenu));
-    if (els.changeIdButton) els.changeIdButton.addEventListener('click', resetToAuth);
-    document.addEventListener('click', event => {
-      if (!event.target.closest('.top-menu')) closeMenu();
-    });
-    document.addEventListener('keydown', event => {
-      if (event.key === 'Escape') closeMenu();
-    });
-  }
-
-  function closeMenu() {
-    if (!els.menuButton || !els.menuPanel) return;
-    els.menuPanel.classList.remove('is-open');
-    els.menuButton.classList.remove('is-open');
-    els.menuButton.setAttribute('aria-expanded', 'false');
-    els.menuButton.setAttribute('aria-label', 'メニューを開く');
-  }
-
-  function applyRoute() {
-    if (!authenticated) return;
-    const active = 'invitation';
-    if (els.invitationPage) els.invitationPage.classList.remove('is-hidden');
-    document.querySelectorAll('[data-nav]').forEach(item => {
-      item.classList.toggle('is-current', item.dataset.nav === active);
-    });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function setupFadeIn() {
@@ -1790,7 +1722,6 @@
         const displayName = String(result.displayName || payload.name || 'ゲスト').trim();
         if (els.nameInput) els.nameInput.value = displayName;
         document.body.dataset.defaultName = displayName;
-        if (els.menuGuestName) els.menuGuestName.textContent = `${displayName} 様`;
         renderMessage({
           completed: true,
           attending: Boolean(result.attending),
