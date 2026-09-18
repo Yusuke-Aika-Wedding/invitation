@@ -120,14 +120,7 @@
   function setupAuth() {
     if (!els.authForm) return;
 
-    document.getElementById('changeGuestId')?.addEventListener('click', () => {
-      try {
-        localStorage.removeItem(GUEST_ID_STORAGE_KEY);
-      } catch (_) {
-        // 再読み込み時の自動認証はURLでも抑止します。
-      }
-      location.replace(`${location.pathname}?change-id=1`);
-    });
+    document.getElementById('changeGuestId')?.addEventListener('click', window.WeddingAccess.changeId);
 
     els.authForm.addEventListener('submit', event => {
       event.preventDefault();
@@ -154,6 +147,7 @@
   }
 
   async function authenticateGuest(rawId, options = {}) {
+    if (window.WeddingAccess.openThanks(rawId)) return;
     const candidate = normalizeGuestId(rawId);
     if (!candidate || !/^[A-Za-z0-9_-]{4,64}$/.test(candidate)) {
       setAuthStatus('IDを半角英数字で正しく入力してください。', 'error');
@@ -185,9 +179,11 @@
         // ストレージを使用できない環境では、次回のみ再入力になります。
       }
 
+      window.WeddingAccess.rememberGuest(guestId);
       hydrateGuest(result);
       revealAuthenticatedSite();
       removeIdFromAddressBar();
+      setupLastPuzzle();
     } catch (error) {
       try {
         localStorage.removeItem(GUEST_ID_STORAGE_KEY);
@@ -201,6 +197,61 @@
       }
     } finally {
       setAuthLoading(false);
+    }
+  }
+
+  let puzzleTimer = null;
+  let puzzleRequestPending = false;
+  let puzzleReleaseTimer = null;
+  function setupLastPuzzle() {
+    if (puzzleTimer) return;
+    refreshLastPuzzle();
+    puzzleTimer = window.setInterval(refreshLastPuzzle, 30000);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) refreshLastPuzzle();
+    });
+  }
+
+  async function refreshLastPuzzle() {
+    if (!authenticated || document.hidden || puzzleRequestPending) return;
+    puzzleRequestPending = true;
+    try {
+      const result = await jsonp('lastPuzzle', { guestId });
+      if (!result || !result.ok) throw new Error('公開設定を取得できませんでした。');
+      const section = document.getElementById('lastPuzzle');
+      const content = document.getElementById('lastPuzzleContent');
+      window.clearTimeout(puzzleReleaseTimer);
+      const untilRelease = Date.parse(result.releaseAt) - Date.parse(result.serverTime);
+      if (!result.published && untilRelease > 0 && untilRelease <= 30000) {
+        puzzleReleaseTimer = window.setTimeout(refreshLastPuzzle, untilRelease + 100);
+      }
+      section.classList.toggle('is-hidden', !result.published);
+      if (!result.published) {
+        content.replaceChildren();
+        return;
+      }
+      if (!content.childElementCount) {
+        (result.examples || []).forEach(example => {
+          const card = document.createElement('div');
+          card.className = 'puzzle-example';
+          const name = document.createElement('p');
+          name.textContent = example.name;
+          const code = document.createElement('p');
+          code.className = 'puzzle-code number-font';
+          code.textContent = example.code;
+          card.append(name, code);
+          content.append(card);
+        });
+        const question = document.createElement('p');
+        question.className = 'puzzle-question';
+        question.textContent = result.question;
+        content.append(question);
+        restartHandwriting(section);
+      }
+    } catch (_) {
+      // 通信できない場合は未公開の問題を表示せず、次回の取得を待ちます。
+    } finally {
+      puzzleRequestPending = false;
     }
   }
 
@@ -1757,37 +1808,7 @@
   }
 
   function jsonp(action, params = {}) {
-    return new Promise((resolve, reject) => {
-      let url;
-      try {
-        url = new URL(config.gasWebAppUrl);
-      } catch (_) {
-        reject(new Error('GASのWebアプリURLが正しくありません。'));
-        return;
-      }
-      const callbackName = `__weddingJsonp_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-      url.searchParams.set('action', action);
-      url.searchParams.set('callback', callbackName);
-      url.searchParams.set('_', String(Date.now()));
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) url.searchParams.set(key, String(value));
-      });
-
-      const script = document.createElement('script');
-      const timer = window.setTimeout(() => cleanup(new Error('通信がタイムアウトしました。')), 22000);
-      window[callbackName] = data => cleanup(null, data);
-      script.onerror = () => cleanup(new Error('GASと通信できませんでした。'));
-      script.src = url.toString();
-      document.body.appendChild(script);
-
-      function cleanup(error, data) {
-        window.clearTimeout(timer);
-        delete window[callbackName];
-        if (script.parentNode) script.parentNode.removeChild(script);
-        if (error) reject(error);
-        else resolve(data);
-      }
-    });
+    return window.WeddingAccess.request(action, params);
   }
 
   function createPetals() {

@@ -173,7 +173,7 @@ function setup() {
   Logger.log('Setup complete. Webアプリとしてデプロイし、URLをGitHub側の js/config.js に貼り付けてください。');
 }
 
-function doGet(e) {
+function doGetInvitation_(e) {
   const params = (e && e.parameter) || {};
   try {
     const action = params.action || 'status';
