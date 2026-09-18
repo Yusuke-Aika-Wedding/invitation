@@ -53,7 +53,7 @@
 1. ブラウザ右上のGoogleアカウントを確認し、`yusuke.aika.wedding@gmail.com` に切り替える。
 2. Googleドライブで `新規` → `その他` → `Google Apps Script` を開く。
 3. プロジェクト名を `Yusuke & Aika Wedding Invitation` に変更する。
-4. `gas/Code.gs` の内容を、GASの `Code.gs` にすべて貼り付ける。
+4. `gas/Code.gs` の内容を、GASの `Code.gs` にすべて貼り付ける。続けてスクリプトファイル `LastPuzzle.gs` を追加し、`gas/LastPuzzle.gs` の内容を貼り付ける。
 5. `gas/appsscript.json` の内容を、GASの `appsscript.json` にすべて貼り付ける。
 6. 保存する。
 

@@ -8,6 +8,8 @@ GitHub Pages + Google Apps Script + Googleスプレッドシートで動く、�
 
 ゲストは初回だけ招待状に記載されたIDを入力します。IDはスプレッドシート「ゲスト一覧」のA列と照合され、認証後は同じブラウザ・同じ端末で再入力する必要がありません。
 
+公開日時はスプレッドシート「公開設定」のB2で変更できます。来場感謝特別サイトへの訪問は「来場感謝サイト訪問記録」で確認できます。
+
 ## 主な機能
 
 - 全員共通の招待状URL
@@ -35,20 +37,22 @@ N列「Dear Guestメッセージ」が空欄のゲストには、従来の共通
 ```text
 invitation/
 ├─ index.html                 # 統一招待状ページ・ID入力画面
+├─ thanks.html                # 来場感謝特別サイト
 ├─ 404.html                   # 統一URLへの戻り先
 ├─ css/style.css              # デザイン
 ├─ js/config.js               # GAS URL・挙式日時などの設定
 ├─ js/script.js               # ID認証・画面切替・フォーム送信
 ├─ assets/                    # 添付ZIPから引き継いだ写真・動画
-├─ gas/Code.gs                # GAS本体
+├─ gas/Code.gs                # 既存の認証・出欠・投票処理
+├─ gas/LastPuzzle.gs          # 時刻公開・特別サイト訪問記録
 ├─ gas/appsscript.json        # GAS設定
 └─ docs/SETUP_GUIDE.md        # 導入・更新手順
 ```
 
 ## 公開前に必要な作業
 
-1. `gas/Code.gs` と `gas/appsscript.json` をGoogle Apps Scriptへ貼り付ける。
-2. GASで `setup` を1回実行する。
+1. `gas/Code.gs`・`gas/LastPuzzle.gs`・`gas/appsscript.json` をGoogle Apps Scriptへ貼り付ける。
+2. GASで `setup` と `setupLastPuzzle` をそれぞれ1回実行する。
 3. GASをウェブアプリとしてデプロイする。
 4. 発行されたURLを `js/config.js` の `gasWebAppUrl` に貼り付ける。
 5. このフォルダの中身をGitHubリポジトリへアップロードする。
