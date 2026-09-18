@@ -120,6 +120,15 @@
   function setupAuth() {
     if (!els.authForm) return;
 
+    document.getElementById('changeGuestId')?.addEventListener('click', () => {
+      try {
+        localStorage.removeItem(GUEST_ID_STORAGE_KEY);
+      } catch (_) {
+        // 再読み込み時の自動認証はURLでも抑止します。
+      }
+      location.replace(`${location.pathname}?change-id=1`);
+    });
+
     els.authForm.addEventListener('submit', event => {
       event.preventDefault();
       authenticateGuest(els.guestIdEntry ? els.guestIdEntry.value : '');
@@ -134,6 +143,7 @@
 
   function getInitialGuestId() {
     const params = new URLSearchParams(location.search);
+    if (params.has('change-id')) return '';
     const fromUrl = params.get('id') || params.get('guest') || params.get('g');
     if (fromUrl) return normalizeGuestId(fromUrl);
     try {
@@ -611,6 +621,7 @@
       }));
     }
     setFormCompleted(latestStatus.completed, latestStatus.attending);
+    document.getElementById('onlineGift')?.classList.toggle('is-hidden', !(latestStatus.completed && latestStatus.attending));
     renderPrediction(latestStatus.completed && latestStatus.receptionAttending, latestStatus.prediction);
   }
 

@@ -1245,6 +1245,11 @@ textarea::placeholder { white-space: pre-wrap; }
 .locked-card .section-note { margin-top: 0; }
 
 .footer { padding: 42px 0 10px; text-align: center; color: var(--muted); }
+.online-gift { text-align: center; }
+.section.online-gift h2 { font-family: var(--serif); font-size: clamp(1.2rem, 4.5vw, 2rem); line-height: 1.6; letter-spacing: .04em; }
+.online-gift .button-link { max-width: 100%; font-size: clamp(.8rem, 3.3vw, 1rem); }
+.change-guest-id { min-height: 44px; margin-top: 16px; padding: 10px 16px; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: .85rem; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
+.change-guest-id:focus-visible, .online-gift .button-link:focus-visible { outline: 3px solid var(--wine); outline-offset: 4px; }
 .footer .signature { margin: 0 auto; font-family: var(--script); font-size: clamp(2.4rem, 6vw, 4rem); line-height: 1; color: var(--wine-dark); }
 .fade-in { opacity: 0; transform: translateY(clamp(44px, 6vw, 72px)) scale(.97); transition: opacity .78s ease, transform .88s cubic-bezier(.22, 1, .36, 1); will-change: opacity, transform; }
 .fade-in.is-visible { opacity: 1; transform: translateY(0); }
