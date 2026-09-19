@@ -75,8 +75,8 @@ function getLastPuzzle_(guestIdRaw) {
   const response = { ok: true, published: published, releaseAt: release ? release.toISOString() : '', serverTime: now.toISOString() };
   if (published) {
     response.examples = [
-      { name: '白戸祐輔のとき', code: 'wwjgwwcx → baseball' },
-      { name: '大貫愛佳のとき', code: 'zanjfcrl → clarinet' }
+      { name: '白戸祐輔 の場合', code: 'wwjgwwcx → baseball' },
+      { name: '大貫愛佳 の場合', code: 'zanjfcrl → clarinet' }
     ];
     response.question = 'では、あなたは？';
   }
@@ -94,19 +94,39 @@ function recordThanksVisit_(params) {
     const sheet = SpreadsheetApp.openById(APP_CONFIG.spreadsheetId).getSheetByName(THANKS_VISITS_SHEET);
     if (!sheet) throw new Error('訪問記録の準備ができていません。');
     const lastRow = sheet.getLastRow();
-    if (lastRow > 1 && sheet.getRange(2, 6, lastRow - 1, 1).getValues().some(row => String(row[0]) === eventId)) {
-      return { ok: true, recorded: true };
+    const visits = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, 6).getValues() : [];
+    const existingIndex = visits.findIndex(row => String(row[5]) === eventId);
+    if (existingIndex !== -1) {
+      return { ok: true, recorded: true, rank: thanksVisitRank_(visits, existingIndex) };
     }
     const guestId = normalizeGuestId_(params.guestId);
     const record = guestId ? findGuestRecord_(getMainSheet_(), guestId) : null;
     const safeText = value => /^[=+@-]/.test(String(value)) ? "'" + value : String(value);
-    sheet.appendRow([
+    const newVisit = [
       new Date(), record ? safeText(record.values.id) : 'ID不明', record ? safeText(record.values.name || '') : '',
       keyword, record ? '直前の認証ID（同じブラウザ）' : '認証履歴なし／照合不可', eventId
-    ]);
+    ];
+    sheet.appendRow(newVisit);
+    visits.push(newVisit);
     SpreadsheetApp.flush();
-    return { ok: true, recorded: true };
+    return { ok: true, recorded: true, rank: thanksVisitRank_(visits, visits.length - 1) };
   } finally {
     lock.releaseLock();
   }
+}
+
+// 同じゲストの再訪は初回順位を返す。ID不明の訪問は訪問ID単位で数える。
+// シートの追記順を正解到達順とし、読み取りから追記まで同じロック内で処理する。
+function thanksVisitRank_(visits, targetIndex) {
+  const ranks = new Map();
+  for (let index = 0; index <= targetIndex; index += 1) {
+    const row = visits[index];
+    const id = String(row[1] || '');
+    const eventId = String(row[5] || '');
+    if (!eventId) continue;
+    const key = id && id !== 'ID不明' ? 'guest:' + id : 'visit:' + eventId;
+    if (!ranks.has(key)) ranks.set(key, ranks.size + 1);
+    if (index === targetIndex) return ranks.get(key);
+  }
+  throw new Error('解答順位を確認できませんでした。');
 }
