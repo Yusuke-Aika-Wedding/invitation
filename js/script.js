@@ -171,6 +171,7 @@
         attending: Boolean(result.attending),
         receptionAttending: Boolean(result.receptionAttending) || result.receptionAttendance === '出席',
         invitationMessage: String(result.invitationMessage || '').trim(),
+        dearGuest: result.dearGuest || null,
         prediction: result.prediction || null
       };
       try {
@@ -218,6 +219,7 @@
     try {
       const result = await jsonp('lastPuzzle', { guestId });
       if (!result || !result.ok) throw new Error('公開設定を取得できませんでした。');
+      if (result.dearGuest) renderMessage({ ...latestStatus, dearGuest: result.dearGuest, invitationMessage: result.invitationMessage }, { messageOnly: true });
       const section = document.getElementById('lastPuzzle');
       const content = document.getElementById('lastPuzzleContent');
       window.clearTimeout(puzzleReleaseTimer);
@@ -597,63 +599,25 @@
     return fromInput || fromBody || 'ゲスト';
   }
 
-  function renderMessage(status) {
+  function renderMessage(status, options = {}) {
     latestStatus = {
       completed: Boolean(status && status.completed),
       attending: Boolean(status && status.attending),
       receptionAttending: Boolean(status && status.receptionAttending)
         || String((status && status.receptionAttendance) || '').trim() === '出席',
-      invitationMessage: String((status && status.invitationMessage) || latestStatus.invitationMessage || '').trim(),
+      invitationMessage: String(status && status.invitationMessage !== undefined ? status.invitationMessage : latestStatus.invitationMessage || '').trim(),
+      dearGuest: (status && status.dearGuest) || latestStatus.dearGuest || null,
       prediction: (status && status.prediction) || latestStatus.prediction || null
     };
 
     const displayName = getDisplayName();
     if (els.messageGuestName) els.messageGuestName.textContent = `${displayName} 様`;
 
-    let sentences;
-    if (latestStatus.invitationMessage) {
-      sentences = [[{
-        text: latestStatus.invitationMessage.replace(/\r\n?/g, '\n'),
-        custom: true
-      }]];
-    } else if (!latestStatus.completed) {
-      sentences = [
-        [
-          { text: 'この度、白戸祐輔と大貫愛佳は', breakAfter: 'mobile' },
-          { text: '結婚することとなりました。' }
-        ],
-        [
-          { text: 'つきましては、', breakAfter: 'mobile' },
-          { text: '結婚式へのご出欠について、', breakAfter: 'always' },
-          { text: 'ご入力・ご回答をお願いいたします。' }
-        ],
-        [
-          { text: '皆様と当日お会いできますことを、', breakAfter: 'always' },
-          { text: '心より楽しみにしております。' }
-        ]
-      ];
-    } else if (latestStatus.attending) {
-      sentences = [
-        [
-          { text: '結婚式へのご出欠について、', breakAfter: 'always' },
-          { text: 'ご回答いただき、', breakAfter: 'mobile' },
-          { text: '誠にありがとうございました。' }
-        ],
-        [
-          { text: '皆様と当日お会いできますことを、', breakAfter: 'always' },
-          { text: '心より楽しみにしております！' }
-        ]
-      ];
-    } else {
-      sentences = [
-        [
-          { text: '結婚式へのご出欠について、', breakAfter: 'always' },
-          { text: 'ご回答いただき、', breakAfter: 'mobile' },
-          { text: '誠にありがとうございました。' }
-        ],
-        [{ text: 'またお会いできる日を楽しみにしております。' }]
-      ];
-    }
+    const phase = latestStatus.dearGuest ? latestStatus.dearGuest.phase : 'early';
+    const copy = window.WeddingDearGuest.selectMessage(latestStatus, phase);
+    const sentences = copy.custom
+      ? [[{ text: copy.text.replace(/\r\n?/g, '\n'), custom: true }]]
+      : copy.paragraphs.map(parts => parts.map((text, index) => ({ text, breakAfter: index < parts.length - 1 ? 'always' : null })));
 
     if (els.messageBody) {
       els.messageBody.replaceChildren(...sentences.map(parts => {
@@ -671,6 +635,7 @@
         return line;
       }));
     }
+    if (options.messageOnly) return;
     setFormCompleted(latestStatus.completed, latestStatus.attending);
     document.getElementById('onlineGift')?.classList.toggle('is-hidden', !(latestStatus.completed && latestStatus.attending));
     renderPrediction(latestStatus.completed && latestStatus.receptionAttending, latestStatus.prediction);
@@ -1790,6 +1755,7 @@
           invitationMessage: String(result.invitationMessage || latestStatus.invitationMessage || '').trim(),
           prediction: result.prediction || null
         });
+        refreshLastPuzzle();
         setStatus('ご回答ありがとうございました。確認メールをご確認ください。', 'success');
         const target = document.getElementById('rsvp');
         if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });

@@ -6,6 +6,11 @@ const THANKS_VISIT_HEADERS = ['訪問日時', 'ID', 'ゲスト名', '入力さ�
 function doGet(e) {
   const params = (e && e.parameter) || {};
   try {
+    if (!params.action || params.action === 'status') {
+      const result = getStatus_(params.guestId);
+      result.dearGuest = getDearGuestState_(result.guestId);
+      return output_(result, params.callback);
+    }
     if (params.action === 'lastPuzzle') return output_(getLastPuzzle_(params.guestId), params.callback);
     if (params.action === 'recordThanksVisit') return output_(recordThanksVisit_(params), params.callback);
     return doGetInvitation_(e);
@@ -67,12 +72,13 @@ function puzzleReleaseDate_(value) {
 
 function getLastPuzzle_(guestIdRaw) {
   const guestId = normalizeGuestId_(guestIdRaw);
-  if (!guestId || !findGuestRecord_(getMainSheet_(), guestId)) throw new Error('ゲスト情報が見つかりません。');
+  const record = guestId ? findGuestRecord_(getMainSheet_(), guestId) : null;
+  if (!record) throw new Error('ゲスト情報が見つかりません。');
   const sheet = SpreadsheetApp.openById(APP_CONFIG.spreadsheetId).getSheetByName(PUZZLE_SETTINGS_SHEET);
   const release = sheet ? puzzleReleaseDate_(sheet.getRange('B2').getValue()) : null;
   const now = new Date();
   const published = Boolean(release && now.getTime() >= release.getTime());
-  const response = { ok: true, published: published, releaseAt: release ? release.toISOString() : '', serverTime: now.toISOString() };
+  const response = { ok: true, published: published, releaseAt: release ? release.toISOString() : '', serverTime: now.toISOString(), dearGuest: getDearGuestState_(guestId, now), invitationMessage: record.values.invitationMessage || '' };
   if (published) {
     response.examples = [
       { name: '白戸祐輔 の場合', code: 'wwjgwwcx → baseball' },
