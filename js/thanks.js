@@ -11,7 +11,7 @@
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const lines = document.querySelectorAll('.thanks-reveal');
   lines.forEach((line, index) => {
-    line.style.setProperty('--reveal-delay', `${line.classList.contains('thanks-signature') ? 19.1 : index * 1.9}s`);
+    line.style.setProperty('--reveal-delay', `${line.classList.contains('thanks-signature') ? 5.8 : index * 0.65}s`);
     line.classList.add('is-revealing');
   });
   const revealStarted = performance.now();
@@ -32,7 +32,7 @@
       }
       rank.textContent = String(result.rank);
       achievement.hidden = false;
-      const remaining = Math.max(0, 17.2 - (performance.now() - revealStarted) / 1000);
+      const remaining = Math.max(0, 4.9 - (performance.now() - revealStarted) / 1000);
       achievement.style.setProperty('--reveal-delay', `${reducedMotion ? 0 : remaining}s`);
       achievement.classList.add('is-revealing');
     } catch (_) {

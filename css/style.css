@@ -1410,26 +1410,25 @@ textarea::placeholder { white-space: pre-wrap; }
 .section #last-puzzle-title { color: var(--gold); font-size: clamp(2.1rem, 6vw, 3.7rem); --handwriting-duration: 4.8s; --handwriting-delay: .22s; }
 .thanks-page {
   min-height: 100svh;
-  color: #f7edd8;
-  background: radial-gradient(ellipse at 50% 0, #40321b 0, #15120e 32%, #090909 72%);
+  color: #655442;
+  background: radial-gradient(ellipse at 50% 0, #fffdf7 0, #f4ecdc 65%, #efe2ca 100%);
 }
 .thanks-site { max-width: 1080px; margin: 0 auto; padding: clamp(16px, 5vw, 64px); text-align: center; }
-.thanks-hero { position: relative; overflow: hidden; background: #0d0c0a; border: 1px solid #9b7b41; box-shadow: 0 30px 100px #0009, 0 0 50px #bd944512; }
-.thanks-hero::after { content: ''; position: absolute; inset: 9px; border: 1px solid #bd944547; pointer-events: none; }
-.thanks-hero img { display: block; width: 100%; max-height: 430px; object-fit: cover; object-position: center; filter: brightness(.82) saturate(.75); mask-image: linear-gradient(#000 65%, transparent); }
+.thanks-hero { position: relative; overflow: hidden; background: #fffdf7; border: 1px solid #d8bd87; box-shadow: 0 24px 70px #65544214, 0 0 50px #ffffff80; }
+.thanks-hero::after { content: ''; position: absolute; inset: 9px; border: 1px solid #d8bd8773; pointer-events: none; }
+.thanks-hero img { display: block; width: 100%; max-height: 430px; object-fit: cover; object-position: center; mask-image: linear-gradient(#000 65%, transparent); }
 .thanks-letter { position: relative; padding: clamp(22px, 5vw, 54px) clamp(18px, 5vw, 60px) clamp(46px, 7vw, 80px); }
-.thanks-letter .section-kicker { margin: 0 0 14px; color: #e3c27c; font-size: clamp(3.7rem, 10vw, 6rem); }
-.thanks-letter h1 { margin: 0 0 38px; color: #f2dfae; font-size: clamp(1.7rem, 5.4vw, 3rem); font-weight: 400; letter-spacing: .18em; }
-.thanks-letter p { color: #e8dcc5; font-size: clamp(.88rem, 2.7vw, 1.05rem); line-height: 2.35; margin: 0 0 28px; }
+.thanks-letter .section-kicker { margin: 0 0 32px; color: #917039; font-weight: 400; font-size: clamp(3.7rem, 10vw, 6rem); }
+.thanks-letter p { color: #655442; font-size: clamp(.88rem, 2.7vw, 1.05rem); line-height: 2.35; margin: 0 0 28px; }
 .thanks-letter .thanks-line { display: block; }
-.thanks-signature { margin: 32px 0 0; color: #e3c27c; font-family: var(--script); font-size: clamp(2.8rem, 9vw, 4.5rem); }
-.thanks-achievement { margin: 42px auto 0; padding: 30px 8px; border-block: 1px solid #bd944559; background: linear-gradient(90deg, transparent, #bd94450d, transparent); }
-.thanks-achievement p { margin: 0; color: #f2dfae; }
+.thanks-signature { margin: 32px 0 0; color: #917039; font-family: var(--script); font-size: clamp(2.8rem, 9vw, 4.5rem); }
+.thanks-achievement { margin: 42px auto 0; padding: 30px 8px; border-block: 1px solid #d8bd878c; background: linear-gradient(90deg, transparent, #d8bd871a, transparent); }
+.thanks-achievement p { margin: 0; color: #655442; }
 .achievement-title { font-family: var(--script); font-size: 1.7em; white-space: nowrap; }
-#puzzleRank { display: inline-block; padding-right: .12em; color: #f4d68e; font-size: 2.5em; line-height: 1.4; }
-.thanks-record-status { font-size: .8rem; color: #e8dcc5; }
+#puzzleRank { display: inline-block; padding-right: .12em; color: #917039; font-size: 2.5em; line-height: 1.4; }
+.thanks-record-status { font-size: .8rem; color: #655442; }
 .thanks-page .footer { padding: 26px 10px 0; }
-.thanks-page .change-guest-id { color: #d8bd82; border-color: #bd944559; }
-.is-revealing { animation: thanksLineReveal 2.5s ease var(--reveal-delay, 0s) both; }
-@keyframes thanksLineReveal { from { opacity: 0; transform: translateY(12px); filter: blur(3px); } to { opacity: 1; transform: translateY(0); filter: blur(0); } }
+.thanks-page .change-guest-id { color: #806331; border-color: #d8bd878c; }
+.is-revealing { animation: thanksLineReveal 1.1s ease var(--reveal-delay, 0s) both; }
+@keyframes thanksLineReveal { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) { .is-revealing { animation: none; } }
