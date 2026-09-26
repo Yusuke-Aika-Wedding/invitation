@@ -51,7 +51,7 @@ function setupLastPuzzle() {
       sheet.setColumnWidth(5, 260);
       sheet.setColumnWidth(6, 310);
       sheet.getRange('A:A').setNumberFormat('yyyy/mm/dd hh:mm:ss');
-      sheet.getRange('B1').setNote('同じタブで直前に認証したIDです。本人確認・来場証明ではありません。認証履歴がない場合はID不明。');
+      sheet.getRange('B1').setNote('同じタブで直前に認証したIDです。本人確認・来場証明ではありません。認証履歴がない場合はID入力後に記録します。');
     }
     SpreadsheetApp.flush();
   } finally {
@@ -94,6 +94,9 @@ function recordThanksVisit_(params) {
   if (['thanks', 'thankyou', 'manythanks'].indexOf(keyword) === -1) throw new Error('合言葉を確認してください。');
   const eventId = String(params.eventId || '');
   if (!/^[a-zA-Z0-9-]{16,64}$/.test(eventId)) throw new Error('訪問IDが不正です。');
+  const guestId = normalizeGuestId_(params.guestId);
+  const record = guestId ? findGuestRecord_(getMainSheet_(), guestId) : null;
+  if (!record) return { ok: false, needsGuestId: true };
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
@@ -103,14 +106,13 @@ function recordThanksVisit_(params) {
     const visits = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, 6).getValues() : [];
     const existingIndex = visits.findIndex(row => String(row[5]) === eventId);
     if (existingIndex !== -1) {
+      if (String(visits[existingIndex][1]) !== String(record.values.id)) return { ok: false, retryWithNewEvent: true };
       return thanksVisitResult_(visits, existingIndex);
     }
-    const guestId = normalizeGuestId_(params.guestId);
-    const record = guestId ? findGuestRecord_(getMainSheet_(), guestId) : null;
     const safeText = value => /^[=+@-]/.test(String(value)) ? "'" + value : String(value);
     const newVisit = [
-      new Date(), record ? safeText(record.values.id) : 'ID不明', record ? safeText(record.values.name || '') : '',
-      keyword, record ? '直前の認証ID（同じブラウザ）' : '認証履歴なし／照合不可', eventId
+      new Date(), safeText(record.values.id), safeText(record.values.name || ''),
+      keyword, '確認済みのゲストID', eventId
     ];
     sheet.appendRow(newVisit);
     visits.push(newVisit);

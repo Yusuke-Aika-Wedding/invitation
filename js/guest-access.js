@@ -15,23 +15,40 @@
     try { localStorage.removeItem(ACTIVE_ID); sessionStorage.removeItem(VISIT); } catch (_) {}
     location.replace(new URL('./?change-id=1', location.href).href);
   }
-  function openThanks(value) {
-    if (!isKeyword(value)) return false;
-    const keyword = normalizeKeyword(value);
-    const eventId = crypto.randomUUID();
-    const visit = { keyword, eventId, guestId: sourceGuest() };
+  function saveVisit(visit) {
     try { sessionStorage.setItem(VISIT, JSON.stringify(visit)); } catch (_) {}
-    location.assign(new URL(`thanks.html#${keyword}/${eventId}`, location.href).href);
-    return true;
+    return visit;
+  }
+  function createVisit(value) {
+    return saveVisit({ keyword: normalizeKeyword(value), eventId: crypto.randomUUID(), guestId: sourceGuest() });
   }
   function currentVisit() {
-    const [keyword, eventId] = location.hash.slice(1).split('/');
+    const parts = location.hash.slice(1).split('/');
+    if (parts[0] === 'thanks-entry') parts.shift();
+    const [keyword, eventId] = parts;
     if (!isKeyword(keyword) || !/^[a-zA-Z0-9-]{16,64}$/.test(eventId || '')) return null;
     let stored;
     try { stored = JSON.parse(sessionStorage.getItem(VISIT) || 'null'); } catch (_) {}
-    if (stored && stored.eventId === eventId) return stored;
-    // 共有されたリンクや保存領域が使えない環境では人物を推測しません。
-    return { keyword: normalizeKeyword(keyword), eventId, guestId: '' };
+    // URLで渡された他人の訪問IDから、ゲストIDを推測しない。
+    if (stored && stored.eventId === eventId) return { ...stored, keyword: normalizeKeyword(keyword) };
+    return { keyword: normalizeKeyword(keyword), eventId, guestId: sourceGuest() };
+  }
+  function returnToEntry(visit) {
+    saveVisit(visit);
+    location.replace(new URL(`./?change-id=1#thanks-entry/${visit.keyword}/${visit.eventId}`, location.href).href);
+  }
+  async function checkThanks(visit) {
+    let result = await request('recordThanksVisit', visit);
+    if (result && result.retryWithNewEvent) {
+      visit.eventId = crypto.randomUUID();
+      saveVisit(visit);
+      result = await request('recordThanksVisit', visit);
+    }
+    return result;
+  }
+  function openThanks(visit) {
+    saveVisit(visit);
+    location.assign(new URL(`thanks.html#${visit.keyword}/${visit.eventId}`, location.href).href);
   }
   function request(action, params = {}) {
     return new Promise((resolve, reject) => {
@@ -67,5 +84,5 @@
     });
   }
 
-  window.WeddingAccess = { rememberGuest, changeId, openThanks, currentVisit, request };
+  window.WeddingAccess = { rememberGuest, changeId, openThanks, currentVisit, request, isKeyword, createVisit, saveVisit, returnToEntry, checkThanks };
 })();

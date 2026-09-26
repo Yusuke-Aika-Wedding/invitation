@@ -16,6 +16,8 @@
   let updateCountdown = () => {};
   const els = {};
   let guestId = '';
+  let thanksEntry = null;
+  let thanksEntryPending = false;
   let latestStatus = { completed: false, attending: false, receptionAttending: false, invitationMessage: '', prediction: null };
   const predictionSelections = new Map();
   let currentSlide = 0;
@@ -130,6 +132,14 @@
       authenticateGuest(els.guestIdEntry ? els.guestIdEntry.value : '');
     });
 
+    if (location.hash.startsWith('#thanks-entry/')) {
+      thanksEntry = window.WeddingAccess.currentVisit();
+      if (thanksEntry) {
+        if (thanksEntry.guestId) enterThanks();
+        else promptThanksGuest();
+        return;
+      }
+    }
     const initialId = getInitialGuestId();
     if (initialId && els.guestIdEntry) {
       els.guestIdEntry.value = initialId;
@@ -149,8 +159,65 @@
     }
   }
 
+  function promptThanksGuest() {
+    document.querySelector('.auth-copy').textContent = 'あなたのIDを入力してください';
+    els.guestIdEntry.value = '';
+    setAuthStatus('', '');
+    els.guestIdEntry.focus();
+  }
+
+  async function enterThanks() {
+    if (thanksEntryPending || !thanksEntry) return;
+    thanksEntryPending = true;
+    setAuthLoading(true);
+    setAuthStatus('', '');
+    try {
+      const result = await window.WeddingAccess.checkThanks(thanksEntry);
+      if (result && result.needsGuestId) {
+        thanksEntry.guestId = '';
+        window.WeddingAccess.saveVisit(thanksEntry);
+        promptThanksGuest();
+        setAuthStatus('IDを半角英数字で正しく入力してください。', 'error');
+        return;
+      }
+      if (!result || !result.ok) throw new Error('IDを確認できませんでした。');
+      window.WeddingAccess.rememberGuest(thanksEntry.guestId);
+      window.WeddingAccess.saveVisit(thanksEntry);
+      if (result.published === true) {
+        window.WeddingAccess.openThanks(thanksEntry);
+      } else {
+        thanksEntry = null;
+        history.replaceState(null, '', location.pathname + '?change-id=1');
+        document.querySelector('.auth-copy').textContent = '招待状に記載されたIDを入力してください。';
+        setAuthStatus('そのIDは...少し待ってくださいね。', 'error');
+      }
+    } catch (_) {
+      setAuthStatus('通信を確認して、もう一度お試しください。', 'error');
+    } finally {
+      thanksEntryPending = false;
+      setAuthLoading(false);
+    }
+  }
+
   async function authenticateGuest(rawId, options = {}) {
-    if (window.WeddingAccess.openThanks(rawId)) return;
+    if (thanksEntryPending) return;
+    const access = window.WeddingAccess;
+    if (access.isKeyword(rawId)) {
+      thanksEntry = thanksEntry || access.createVisit(rawId);
+      if (thanksEntry.guestId) await enterThanks();
+      else promptThanksGuest();
+      return;
+    }
+    if (thanksEntry) {
+      const candidate = normalizeGuestId(rawId);
+      if (!/^[A-Za-z0-9_-]{4,64}$/.test(candidate)) {
+        setAuthStatus('IDを半角英数字で正しく入力してください。', 'error');
+        return;
+      }
+      thanksEntry.guestId = candidate;
+      await enterThanks();
+      return;
+    }
     const candidate = normalizeGuestId(rawId);
     if (!candidate || !/^[A-Za-z0-9_-]{4,64}$/.test(candidate)) {
       setAuthStatus('IDを半角英数字で正しく入力してください。', 'error');
@@ -235,8 +302,9 @@
       const section = document.getElementById('lastPuzzle');
       const content = document.getElementById('lastPuzzleContent');
       window.clearTimeout(puzzleReleaseTimer);
-      const untilRelease = Date.parse(result.releaseAt) - Date.parse(result.serverTime);
-      if (!result.published && untilRelease > 0 && untilRelease <= 30000) {
+      const serverNow = Date.parse(result.serverTime);
+      const untilRelease = Math.min(...[result.startAt, result.releaseAt].map(value => Date.parse(value) - serverNow).filter(value => value > 0));
+      if (untilRelease > 0 && untilRelease <= 30000) {
         puzzleReleaseTimer = window.setTimeout(refreshLastPuzzle, untilRelease + 100);
       }
       section.classList.toggle('is-hidden', !result.published);
@@ -583,6 +651,7 @@
   function setAuthStatus(message, type) {
     if (!els.authStatus) return;
     els.authStatus.textContent = message || '';
+    els.authStatus.classList.toggle('auth-status-single-line', ['IDを半角英数字で正しく入力してください。', 'そのIDは...少し待ってくださいね。'].includes(message));
     els.authStatus.classList.toggle('is-error', type === 'error');
     els.authStatus.classList.toggle('is-success', type === 'success');
   }
@@ -647,8 +716,8 @@
         return line;
       }));
     }
-    if (options.messageOnly) return;
     setFormCompleted(latestStatus.completed, latestStatus.attending);
+    if (options.messageOnly) return;
     document.getElementById('onlineGift')?.classList.toggle('is-hidden', !(latestStatus.completed && latestStatus.attending));
     renderPrediction(latestStatus.completed && latestStatus.receptionAttending, latestStatus.prediction);
   }
@@ -1231,6 +1300,9 @@
   }
 
   function setFormCompleted(completed, attending) {
+    const phase = latestStatus.dearGuest?.phase || 'early';
+    const rsvp = window.WeddingDearGuest.selectRsvp({ completed, attending }, phase);
+    document.getElementById('rsvp').classList.toggle('is-hidden', rsvp.hidden);
     if (els.form) els.form.classList.toggle('is-hidden', Boolean(completed));
     if (els.rsvpInstruction) els.rsvpInstruction.classList.toggle('is-hidden', Boolean(completed));
     if (els.thanks) {
@@ -1239,9 +1311,7 @@
       const text = els.thanks.querySelector('p');
       if (title) title.textContent = 'ご回答ありがとうございました！';
       if (text) {
-        text.textContent = attending
-          ? '当日お会いできますことを、心より楽しみにしております。'
-          : 'またお会いできる日を楽しみにしております。';
+        text.textContent = rsvp.text;
       }
     }
   }

@@ -42,5 +42,18 @@
       ['皆様と当日お会いできますことを、', '心より楽しみにしております！']
     );
   }
-  window.WeddingDearGuest = { selectMessage };
+  function selectRsvp(status, phase) {
+    const text = {
+      early: '当日お会いできますことを、心より楽しみにしております。',
+      eve: '明日お会いできますことを、心より楽しみにしております。',
+      today: '本日お会いできますことを、心より楽しみにしております。',
+      during: 'ついに始まりましたね！楽しみましょう！',
+      after: 'ご来場ありがとうございました！楽しんでいただけましたか？'
+    };
+    return {
+      hidden: !status.completed && ['during', 'after'].includes(phase),
+      text: status.attending ? (text[phase] || text.early) : 'またお会いできる日を楽しみにしております。'
+    };
+  }
+  window.WeddingDearGuest = { selectMessage, selectRsvp };
 })();
