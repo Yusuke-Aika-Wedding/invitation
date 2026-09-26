@@ -266,6 +266,8 @@ function submitResponse_(params) {
     if (!record) throw new Error('ゲスト情報が見つかりません。');
     const storedGuestId = record.values.id || guestId;
 
+    // 回答を書き込む前に、実行アカウント・メール権限・残り送信枠を確認する。
+    assertConfirmationEmailReady_(email);
     const now = new Date();
     const invitationUrl = getInvitationUrl_();
     sheet.getRange(record.rowNumber, 1, 1, HEADERS.length).setValues([[
@@ -1117,6 +1119,36 @@ function sendWeddingEmail_(data) {
 
 function waitBatchEmailInterval_() {
   Utilities.sleep(APP_CONFIG.batchEmailIntervalMs);
+}
+
+// デプロイ前に専用アカウントで実行する。メールや回答データは変更しない。
+function verifyEmailConfiguration() {
+  assertConfirmationEmailReady_(APP_CONFIG.senderEmail);
+  Logger.log('確認メール設定: OK / 実行アカウント: ' + APP_CONFIG.senderEmail);
+}
+
+// 専用アドレスへ確認メールを1通送る。ゲストの回答・送信記録は変更しない。
+function testConfirmationEmailToSender() {
+  assertConfirmationEmailReady_(APP_CONFIG.senderEmail);
+  sendConfirmationEmail_({
+    to: APP_CONFIG.senderEmail,
+    name: '送信確認テスト',
+    ceremonyAttendance: '出席',
+    receptionAttendance: '出席',
+    allergy: 'なし',
+    message: '確認メールの動作確認です。ゲストの回答内容は変更していません。',
+    invitationUrl: getInvitationUrl_()
+  });
+  Logger.log('確認メール1通の送信完了: ' + APP_CONFIG.senderEmail);
+}
+
+function assertConfirmationEmailReady_(recipient) {
+  assertDedicatedExecutionAccount_();
+  const bcc = String(APP_CONFIG.bccEmail || '').trim().toLowerCase();
+  const required = bcc && bcc !== String(recipient || '').trim().toLowerCase() ? 2 : 1;
+  if (MailApp.getRemainingDailyQuota() < required) {
+    throw new Error('確認メールの送信上限に達しています。時間をおいて、もう一度お試しください。');
+  }
 }
 
 function assertDedicatedExecutionAccount_() {
