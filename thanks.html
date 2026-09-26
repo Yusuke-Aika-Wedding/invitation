@@ -10,9 +10,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&amp;family=Noto+Serif+JP:wght@400;500;600;700&amp;family=Old+Standard+TT:wght@400;700&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20260919-champagne-thanks">
+  <link rel="stylesheet" href="css/style.css?v=20260926-shared-schedule">
 </head>
 <body class="thanks-page">
+  <section id="thanksGate" class="thanks-gate" aria-live="polite">
+    <p id="thanksGateMessage">公開状況を確認しています。</p>
+    <p id="visitRecordStatus" class="thanks-record-status" role="status"></p>
+    <button id="retryVisitRecord" class="change-guest-id" type="button" hidden>もう一度試す</button>
+    <p><a class="change-guest-id" href="./?change-id=1">招待状に戻る</a></p>
+  </section>
   <main id="specialThanks" class="thanks-site" hidden>
     <article class="thanks-hero">
       <img src="assets/gallery-1.jpg" alt="祐輔と愛佳の写真">
@@ -23,18 +29,17 @@
         <p><span class="thanks-line thanks-reveal">これからも、私たちふたりを</span><span class="thanks-line thanks-reveal">どうぞよろしくお願いいたします。</span></p>
         <div id="puzzleAchievement" class="thanks-achievement" role="status" hidden>
           <p><span class="thanks-line">あなたは、<span class="achievement-title">The Last Puzzle</span> を</span><span class="thanks-line"><strong id="puzzleRank" class="number-font"></strong>番目に解き明かしました！</span></p>
+          <p id="earlySolveMessage" class="early-solve-message" hidden>もう、ずっと前から気づいていたんですよね。<br>感服いたしました...！</p>
         </div>
         <div class="thanks-signature thanks-reveal">Yusuke &amp; Aika</div>
       </div>
     </article>
     <footer class="footer">
-      <p id="visitRecordStatus" class="thanks-record-status" role="status"></p>
-      <button id="retryVisitRecord" class="change-guest-id" type="button" hidden>もう一度試す</button>
       <div><button id="changeGuestId" class="change-guest-id" type="button">IDを変更する</button></div>
     </footer>
   </main>
   <script src="js/config.js"></script>
-  <script src="js/guest-access.js?v=20260919-champagne-thanks"></script>
-  <script src="js/thanks.js?v=20260919-champagne-thanks"></script>
+  <script src="js/guest-access.js?v=20260926-shared-schedule"></script>
+  <script src="js/thanks.js?v=20260926-shared-schedule"></script>
 </body>
 </html>

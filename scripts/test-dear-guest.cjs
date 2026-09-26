@@ -15,7 +15,7 @@ for(const completed of [false,true])for(const attending of [false,true])for(cons
 }
 // Case-sensitive persisted visits; unknown visits never count for a guest.
 c.puzzleReleaseDate_=v=>v instanceof Date?v:null;
-c.SpreadsheetApp={openById:()=>({getSheetByName:name=>name==='公開設定'?{getRange:()=>({getValues:()=>[[start],[end]]})}:{getLastRow:()=>3,getRange:()=>({getValues:()=>[['Case_ID'],['ID不明']]})}})};
+c.SpreadsheetApp={openById:()=>({getSheetByName:name=>name==='公開設定'?{getLastRow:()=>3,getRange:()=>({getValues:()=>[['Dear Guest 結婚式開始日時',start],['Dear Guest 結婚式終了日時',end]]})}:{getLastRow:()=>3,getRange:()=>({getValues:()=>[['Case_ID'],['ID不明']]})}})};
 c.PUZZLE_SETTINGS_SHEET='公開設定';c.THANKS_VISITS_SHEET='来場感謝サイト訪問記録';
 assert.equal(c.getDearGuestState_('Case_ID',end).thanksVisited,true);assert.equal(c.getDearGuestState_('case_id',end).thanksVisited,false);
 console.log(`PASS ${count} message combinations, JST calendar boundaries, invalid settings, persisted case-sensitive visits`);

@@ -10,7 +10,10 @@
     issue: '要確認',
     cash: '現金'
   });
-  const targetDate = new Date(config.weddingDateIso || '2027-03-21T10:00:00+09:00');
+  let countdownStart = NaN;
+  let countdownSyncTime = 0;
+  let countdownServerTime = 0;
+  let updateCountdown = () => {};
   const els = {};
   let guestId = '';
   let latestStatus = { completed: false, attending: false, receptionAttending: false, invitationMessage: '', prediction: null };
@@ -219,6 +222,15 @@
     try {
       const result = await jsonp('lastPuzzle', { guestId });
       if (!result || !result.ok) throw new Error('公開設定を取得できませんでした。');
+      countdownStart = Date.parse(result.startAt);
+      countdownServerTime = Date.parse(result.serverTime);
+      countdownSyncTime = performance.now();
+      if (Number.isFinite(countdownStart)) {
+        document.getElementById('countdownDate').textContent = new Intl.DateTimeFormat('ja-JP', {
+          timeZone: 'Asia/Tokyo', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false
+        }).format(new Date(countdownStart)) + ' まで';
+      }
+      updateCountdown();
       if (result.dearGuest) renderMessage({ ...latestStatus, dearGuest: result.dearGuest, invitationMessage: result.invitationMessage }, { messageOnly: true });
       const section = document.getElementById('lastPuzzle');
       const content = document.getElementById('lastPuzzleContent');
@@ -1476,7 +1488,11 @@
 
   function setupCountdown() {
     const tick = () => {
-      const diff = Math.max(0, targetDate.getTime() - Date.now());
+      const now = countdownServerTime + performance.now() - countdownSyncTime;
+      const visible = Number.isFinite(countdownStart) && now < countdownStart;
+      document.getElementById('countdownSection').classList.toggle('is-hidden', !visible);
+      if (!visible) return;
+      const diff = Math.max(0, countdownStart - now);
       const totalSeconds = Math.floor(diff / 1000);
       const days = Math.floor(totalSeconds / 86400);
       const hours = Math.floor((totalSeconds % 86400) / 3600);
@@ -1487,6 +1503,7 @@
       setText(els.minutes, pad2(minutes));
       setText(els.seconds, pad2(seconds));
     };
+    updateCountdown = tick;
     tick();
     window.setInterval(tick, 1000);
   }
