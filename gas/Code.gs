@@ -1173,7 +1173,7 @@ function buildReminderText_(data) {
 }
 
 function buildAfterReceptionThanksText_(data) {
-  return `${data.name} 様\n\n本日は私たちの結婚式に\nご参加いただき、\n誠にありがとうございました！\n皆様と大切な時間を過ごすことができ、\n心より感謝しております！\n\n今後ともどうぞ\nよろしくお願いいたします！\n\n【日時】${APP_CONFIG.weddingDateLabel}\n受付 ${APP_CONFIG.checkInTimeLabel}\n挙式 ${APP_CONFIG.ceremonyTimeLabel}\n披露宴 ${APP_CONFIG.receptionTimeLabel}\n\n\n\n\n\n\n\nあれ、どうやら結婚式はまだ\n\n終わっていないようですよ...？\n\nもう一度招待状を開いて、\n\n最後の謎に挑戦しましょう！\n\n招待状URL：\n${data.invitationUrl}\n\nYusuke & Aika`;
+  return `${data.name} 様\n\n本日は私たちの結婚式に\nご参加いただき、\n誠にありがとうございました！\n皆様と大切な時間を過ごすことができ、\n心より感謝しております！\n\n今後ともどうぞ\nよろしくお願いいたします！\n\n\n\n\n\n\n\nあれ、どうやら結婚式はまだ\n\n終わっていないようですよ...？\n\nもう一度招待状を開いて、\n\n最後の謎に挑戦しましょう！\n\n招待状URL：\n${data.invitationUrl}\n\nYusuke & Aika`;
 }
 
 function buildGiftReportNotificationText_(data) {
@@ -1237,6 +1237,16 @@ function buildHtmlMailParagraphs_(textBody) {
       }
       if (!part) return '';
       const margin = gap ? `${gap}px 0 0` : '0';
+      const scheduleLines = part.split('\n');
+      if (scheduleLines.length === 4 && scheduleLines[0].startsWith('【日時】') &&
+          scheduleLines[1].startsWith('受付 ') && scheduleLines[2].startsWith('挙式 ') &&
+          scheduleLines[3].startsWith('披露宴 ')) {
+        // Separate table rows avoid a quoted-text boundary plus <br> becoming an empty line in mail apps.
+        const rows = scheduleLines.map(line =>
+          `<tr><td style="padding:0;margin:0;font-size:16px;line-height:28px;mso-line-height-rule:exactly;vertical-align:top;">${escapeHtml_(line)}</td></tr>`
+        ).join('');
+        return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:${margin};border-collapse:collapse;border-spacing:0;font-family:inherit;color:inherit;"><tbody>${rows}</tbody></table>`;
+      }
       const lines = part.split('\n').map(buildHtmlMailLine_).join('<br>');
       return `<p style="margin:${margin};">${lines}</p>`;
     })
