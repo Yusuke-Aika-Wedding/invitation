@@ -25,7 +25,7 @@ const expectedRsvp = {
  eve: '明日お会いできますことを、心より楽しみにしております。',
  today: '本日お会いできますことを、心より楽しみにしております。',
  during: 'ついに始まりましたね！楽しみましょう！',
- after: 'ご来場ありがとうございました！楽しんでいただけましたか？'
+ after: 'ご来場ありがとうございました！\n楽しんでいただけましたか？'
 };
 for (const [phase, text] of Object.entries(expectedRsvp)) {
  for (const completed of [false, true]) for (const attending of [false, true]) {

@@ -798,8 +798,8 @@
       }));
     }
     setFormCompleted(latestStatus.completed, latestStatus.attending);
+    document.getElementById('onlineGift')?.classList.toggle('is-hidden', !(latestStatus.completed && latestStatus.attending && latestStatus.dearGuest?.phase !== 'after'));
     if (options.messageOnly) return;
-    document.getElementById('onlineGift')?.classList.toggle('is-hidden', !(latestStatus.completed && latestStatus.attending));
     renderPrediction(latestStatus.completed && latestStatus.receptionAttending, latestStatus.prediction);
   }
 

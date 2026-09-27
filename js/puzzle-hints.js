@@ -47,7 +47,7 @@
         if (!hint) return;
         if (!panel.childElementCount) {
           const portraits = document.createElement('div');
-          portraits.className = 'puzzle-hint-portraits';
+          portraits.className = 'puzzle-hint-portraits' + (number === 5 ? ' is-couple' : '');
           const people = number === 5 ? ['teacher', 'girl'] : [number % 2 ? 'teacher' : 'girl'];
           people.forEach(person => {
             const img = document.createElement('img');
@@ -57,7 +57,21 @@
             portraits.append(img);
           });
           const speech = document.createElement('p');
-          speech.textContent = hint.text;
+          // サーバーの本文を保ったまま、意味の区切りで折り返せるようにします。
+          const readable = hint.text
+            .replace('文字列、どこか', '文字列、\nどこか')
+            .replace('3つずつに区切ると', '3つずつに\n区切ると')
+            .replace('A → 10, B → 11, C → 12, ... , I → 18', 'A → 10, B → 11,\nC → 12, ... , I → 18')
+            .replace('16進法... いや、G, H, Iが含まれている人も\nいるみたいだから19進法の考え方だね。', '16進法... いや、\nG, H, Iが含まれている人も\nいるみたいだから\n19進法の考え方だね。')
+            .replace('　「ab2」', '\n「ab2」')
+            .replace('文字列をそのまま', '文字列を\nそのまま');
+          readable.split('\n').forEach((line, index) => {
+            if (index) speech.append(document.createElement('br'));
+            const chunk = document.createElement('span');
+            chunk.className = 'puzzle-hint-phrase';
+            chunk.textContent = line;
+            speech.append(chunk);
+          });
           panel.append(portraits, speech);
         }
         panel.hidden = false;

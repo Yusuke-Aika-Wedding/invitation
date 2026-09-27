@@ -37,16 +37,25 @@
     saveVisit(visit);
     location.replace(new URL(`./?change-id=1#thanks-entry/${visit.keyword}/${visit.eventId}`, location.href).href);
   }
+  function setThanksLoading(loading) {
+    const overlay = document.getElementById('thanksLoading');
+    if (overlay) overlay.hidden = !loading;
+  }
   async function checkThanks(visit) {
-    let result = await request('recordThanksVisit', visit);
-    if (result && result.retryWithNewEvent) {
-      visit.eventId = crypto.randomUUID();
-      saveVisit(visit);
-      result = await request('recordThanksVisit', visit);
-    }
-    return result;
+    const site = document.getElementById('specialThanks');
+    if (!site || site.hidden) setThanksLoading(true);
+    try {
+      let result = await request('recordThanksVisit', visit);
+      if (result && result.retryWithNewEvent) {
+        visit.eventId = crypto.randomUUID();
+        saveVisit(visit);
+        result = await request('recordThanksVisit', visit);
+      }
+      return result;
+    } finally { setThanksLoading(false); }
   }
   function openThanks(visit) {
+    setThanksLoading(true);
     saveVisit(visit);
     location.assign(new URL(`thanks.html#${visit.keyword}/${visit.eventId}`, location.href).href);
   }

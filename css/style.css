@@ -1529,3 +1529,22 @@ textarea::placeholder { white-space: pre-wrap; }
 @media (max-width: 600px) {
   .puzzle-hint-dialogue { gap: 14px; }
 }
+
+/* 終了後のメッセージと、画面幅に合わせたヒントの読みやすさ。 */
+.thanks-card p { white-space: pre-line; }
+.puzzle-hint-phrase { display: inline-block; max-width: 100%; overflow-wrap: anywhere; }
+.puzzle-hint-portraits.is-couple { flex-basis: 168px; flex-wrap: nowrap; }
+.puzzle-hint-portraits.is-couple img { width: calc((100% - 8px) / 2); align-self: flex-start; }
+.thanks-loading { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; padding: 24px; background: #f4ecdc; color: #69543b; }
+.thanks-loading[hidden] { display: none; }
+.thanks-loading-card { text-align: center; }
+.thanks-loading img { display: block; width: 220px; max-width: 100%; height: auto; margin: 0 auto 12px; }
+.thanks-loading p { margin: 0 0 8px; font-size: 1rem; letter-spacing: .06em; }
+.thanks-loading span { font-size: .8rem; }
+@media (max-width: 600px) {
+  .puzzle-hint-dialogue { flex-direction: column; align-items: stretch; gap: 12px; }
+  .puzzle-hint-portraits, .puzzle-hint-portraits.is-couple { flex: none; width: auto; justify-content: center; flex-wrap: nowrap; }
+  .puzzle-hint-portraits img, .puzzle-hint-portraits.is-couple img { width: 64px; }
+  .puzzle-hint-dialogue p { flex: none; padding: 14px 12px; line-height: 1.95; }
+  .puzzle-hint-dialogue p::before { left: 50%; top: -10px; transform: translateX(-50%); border: 0; border-left: 9px solid transparent; border-right: 9px solid transparent; border-bottom: 11px solid #f5ede0; }
+}
