@@ -1506,11 +1506,11 @@ textarea::placeholder { white-space: pre-wrap; }
 .puzzle-hint-item > button { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 56px; border: 0; padding: 14px 18px; background: #f3ecdf; color: #513f2f; font: inherit; font-weight: 700; cursor: pointer; }
 .puzzle-hint-item > button:disabled { color: #6f665c; background: #f3f0eb; cursor: default; }
 .puzzle-hint-countdown { font-size: .9em; font-weight: 400; white-space: nowrap; }
-.puzzle-hint-dialogue { display: flex; align-items: flex-start; gap: 18px; padding: 20px; }
+.puzzle-hint-dialogue { display: flex; align-items: center; gap: 18px; padding: 20px; }
 .puzzle-hint-dialogue[hidden] { display: none; }
 .puzzle-hint-portraits { display: flex; flex-wrap: wrap; flex: 0 0 100px; gap: 8px; }
 .puzzle-hint-portraits img { display: block; width: 100%; height: auto; border-radius: 14px; }
-.puzzle-hint-dialogue p { position: relative; flex: 1; min-width: 0; margin: 0; padding: 16px; border-radius: 14px; background: #f5ede0; color: #44362d; line-height: 1.85; overflow-wrap: anywhere; }
+.puzzle-hint-dialogue p { position: relative; flex: 1; min-width: 0; margin: 0; padding: 16px; border-radius: 14px; background: #f5ede0; color: #44362d; line-height: 1.85; overflow-wrap: anywhere; white-space: pre-line; }
 .puzzle-hint-status { text-align: center; font-size: .9rem; color: #6c4834; }
 .puzzle-hint-status:empty { display: none; }
 .puzzle-hints summary:focus-visible, .puzzle-hint-item button:focus-visible { outline: 3px solid #98743f; outline-offset: 3px; }
@@ -1522,4 +1522,10 @@ textarea::placeholder { white-space: pre-wrap; }
 @media (max-width: 600px) {
   .puzzle-content.has-solved-stamp { margin-bottom: 55px; }
   .puzzle-stamp-hints { top: calc(50% + 190px); }
+}
+
+.puzzle-hint-dialogue p::before { content: ''; position: absolute; left: -10px; top: 50%; transform: translateY(-50%); border-top: 9px solid transparent; border-bottom: 9px solid transparent; border-right: 11px solid #f5ede0; }
+.auth-form .thanks-entry-hint { margin: 4px 0 12px; }
+@media (max-width: 600px) {
+  .puzzle-hint-dialogue { gap: 14px; }
 }

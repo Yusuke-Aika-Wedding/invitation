@@ -18,6 +18,7 @@
   let guestId = '';
   let thanksEntry = null;
   let thanksEntryPending = false;
+  let thanksEntryRequiresId = false;
   let latestStatus = { completed: false, attending: false, receptionAttending: false, invitationMessage: '', prediction: null };
   const predictionSelections = new Map();
   let currentSlide = 0;
@@ -135,7 +136,10 @@
     if (location.hash.startsWith('#thanks-entry/')) {
       thanksEntry = window.WeddingAccess.currentVisit();
       if (thanksEntry) {
-        if (thanksEntry.guestId) enterThanks();
+        if (thanksEntry.waitingForInvitationId) {
+          thanksEntryRequiresId = true;
+          promptThanksGuest({ published: false });
+        } else if (thanksEntry.guestId) enterThanks();
         else promptThanksGuest();
         return;
       }
@@ -169,7 +173,8 @@
       hint = document.createElement('p');
       hint.id = 'thanksEntryHint';
       hint.className = 'thanks-entry-hint';
-      document.querySelector('.auth-copy').after(hint);
+      hint.setAttribute('role', 'status');
+      els.guestIdEntry.after(hint);
     }
     setAuthStatus('', '');
     try {
@@ -202,12 +207,13 @@
       if (result.published === true) {
         window.WeddingAccess.openThanks(thanksEntry);
       } else {
-        const confirmedId = thanksEntry.guestId;
-        thanksEntry = null;
-        history.replaceState(null, '', location.pathname);
-        document.getElementById('thanksEntryHint')?.remove();
-        thanksEntryPending = false;
-        await authenticateGuest(confirmedId);
+        // 合言葉から保存済みIDで自動入場しない。再読み込み後も手入力を待つ。
+        thanksEntryRequiresId = true;
+        thanksEntry.waitingForInvitationId = true;
+        window.WeddingAccess.saveVisit(thanksEntry);
+        try { localStorage.removeItem(GUEST_ID_STORAGE_KEY); } catch (_) {}
+        history.replaceState(null, '', `${location.pathname}?change-id=1#thanks-entry/${thanksEntry.keyword}/${thanksEntry.eventId}`);
+        await promptThanksGuest(result);
 
       }
     } catch (_) {
@@ -227,7 +233,7 @@
       else promptThanksGuest();
       return;
     }
-    if (thanksEntry) {
+    if (thanksEntry && !thanksEntryRequiresId) {
       const candidate = normalizeGuestId(rawId);
       if (!/^[A-Za-z0-9_-]{4,64}$/.test(candidate)) {
         setAuthStatus('IDを半角英数字で正しく入力してください。', 'error');
@@ -270,6 +276,14 @@
       }
 
       window.WeddingAccess.rememberGuest(guestId);
+      if (thanksEntryRequiresId) {
+        delete thanksEntry.waitingForInvitationId;
+        window.WeddingAccess.saveVisit(thanksEntry);
+        thanksEntry = null;
+        thanksEntryRequiresId = false;
+        document.getElementById('thanksEntryHint')?.remove();
+        history.replaceState(null, '', location.pathname);
+      }
       hydrateGuest(result);
       revealAuthenticatedSite();
       removeIdFromAddressBar();
