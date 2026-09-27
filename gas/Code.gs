@@ -18,6 +18,7 @@ const APP_CONFIG = {
   weddingDateIso: '2027-03-21T10:00:00+09:00',
   receptionEndIso: '2027-03-21T14:00:00+09:00',
   weddingDateLabel: '2027年3月21日（日）',
+  checkInTimeLabel: '9:00〜10:00',
   ceremonyTimeLabel: '10:00〜10:30',
   receptionTimeLabel: '11:00〜14:00',
   groomFullName: '白戸祐輔',
@@ -1162,17 +1163,17 @@ function assertDedicatedExecutionAccount_() {
 
 function buildConfirmationText_(data) {
   const messageParagraph = data.message ? `\n\n【メッセージ】\n${data.message}` : '';
-  return `${data.name} 様\n\n結婚式へのご出欠について、\nご回答いただき誠にありがとうございます。\n以下の内容で承りました。\n\n【挙式】${data.ceremonyAttendance}\n【披露宴】${data.receptionAttendance}\n【アレルギー】${data.allergy || 'なし'}${messageParagraph}\n\n【日時】${APP_CONFIG.weddingDateLabel}\n挙式 ${APP_CONFIG.ceremonyTimeLabel}\n披露宴 ${APP_CONFIG.receptionTimeLabel}\n\n【会場】${APP_CONFIG.venueName}\n${APP_CONFIG.venueUrl}\n\nGoogle Map：${APP_CONFIG.mapUrl}\n\n招待状URL：\n${data.invitationUrl}\n\n当日お会いできますことを、\n心より楽しみにしております。\n\nYusuke & Aika`;
+  return `${data.name} 様\n\n結婚式へのご出欠について、\nご回答いただき、\n誠にありがとうございます。\n以下の内容で承りました。\n\n【挙式】${data.ceremonyAttendance}\n【披露宴】${data.receptionAttendance}\n【アレルギー】${data.allergy || 'なし'}${messageParagraph}\n\n【日時】${APP_CONFIG.weddingDateLabel}\n受付 ${APP_CONFIG.checkInTimeLabel}\n挙式 ${APP_CONFIG.ceremonyTimeLabel}\n披露宴 ${APP_CONFIG.receptionTimeLabel}\n\n【会場】${APP_CONFIG.venueName}\n${APP_CONFIG.venueUrl}\n\nGoogle Map：${APP_CONFIG.mapUrl}\n\n招待状URL：\n${data.invitationUrl}\n\n当日お会いできますことを、\n心より楽しみにしております！\n\nYusuke & Aika`;
 }
 
 function buildReminderText_(data) {
   const timing = data.daysBefore === 7 ? '1週間前' : '前日';
   const meetingDay = data.daysBefore === 1 ? '明日' : '当日';
-  return `${data.name} 様\n\n結婚式${timing}のリマインドです。\n当日はお気をつけてお越しください。\n\n【日時】${APP_CONFIG.weddingDateLabel}\n挙式 ${APP_CONFIG.ceremonyTimeLabel}\n披露宴 ${APP_CONFIG.receptionTimeLabel}\n\n【会場】${APP_CONFIG.venueName}\n${APP_CONFIG.venueUrl}\n\nGoogle Map：${APP_CONFIG.mapUrl}\n\n【ご回答内容】\n挙式：${data.ceremonyAttendance}\n披露宴：${data.receptionAttendance}\nアレルギー：${data.allergy || 'なし'}\n\n招待状URL：\n${data.invitationUrl}\n\n皆様と${meetingDay}お会いできますことを、\n心より楽しみにしております。\n\nYusuke & Aika`;
+  return `${data.name} 様\n\n結婚式${timing}のリマインドです。\n${meetingDay}はお気をつけて\nお越しください！\n\n【日時】${APP_CONFIG.weddingDateLabel}\n受付 ${APP_CONFIG.checkInTimeLabel}\n挙式 ${APP_CONFIG.ceremonyTimeLabel}\n披露宴 ${APP_CONFIG.receptionTimeLabel}\n\n【会場】${APP_CONFIG.venueName}\n${APP_CONFIG.venueUrl}\n\nGoogle Map：${APP_CONFIG.mapUrl}\n\n【ご回答内容】\n挙式：${data.ceremonyAttendance}\n披露宴：${data.receptionAttendance}\nアレルギー：${data.allergy || 'なし'}\n\n招待状URL：\n${data.invitationUrl}\n\n皆様と${meetingDay}お会いできますことを、\n心より楽しみにしております！\n\nYusuke & Aika`;
 }
 
 function buildAfterReceptionThanksText_(data) {
-  return `${data.name} 様\n\n本日は私たちの結婚式にご参加いただき、\n誠にありがとうございました。\n皆様と大切な時間を過ごすことができ、\n心より感謝しております。\n\n招待状URL：\n${data.invitationUrl}\n\n今後ともどうぞよろしくお願いいたします。\n\nYusuke & Aika`;
+  return `${data.name} 様\n\n本日は私たちの結婚式に\nご参加いただき、\n誠にありがとうございました！\n皆様と大切な時間を過ごすことができ、\n心より感謝しております！\n\n今後ともどうぞ\nよろしくお願いいたします！\n\n【日時】${APP_CONFIG.weddingDateLabel}\n受付 ${APP_CONFIG.checkInTimeLabel}\n挙式 ${APP_CONFIG.ceremonyTimeLabel}\n披露宴 ${APP_CONFIG.receptionTimeLabel}\n\n\n\n\n\n\n\nあれ、どうやら結婚式はまだ\n\n終わっていないようですよ...？\n\nもう一度招待状を開いて、\n\n最後の謎に挑戦しましょう！\n\n招待状URL：\n${data.invitationUrl}\n\nYusuke & Aika`;
 }
 
 function buildGiftReportNotificationText_(data) {
@@ -1224,16 +1225,35 @@ function buildHtmlMailTitle_(title) {
 }
 
 function buildHtmlMailParagraphs_(textBody) {
+  let gap = 0;
   return String(textBody || '')
     .replace(/\r\n?/g, '\n')
-    .split(/\n{2,}/)
-    .filter(paragraph => paragraph !== '')
-    .map((paragraph, index) => {
-      const margin = index === 0 ? '0' : '18px 0 0';
-      const lines = escapeHtml_(paragraph).replace(/\n/g, '<br>');
+    .split(/(\n{2,})/)
+    .map(part => {
+      if (/^\n+$/.test(part)) {
+        // Preserve the deliberate pause before the final puzzle invitation.
+        gap = 18 + Math.max(0, part.length - 2) * 16;
+        return '';
+      }
+      if (!part) return '';
+      const margin = gap ? `${gap}px 0 0` : '0';
+      const lines = part.split('\n').map(buildHtmlMailLine_).join('<br>');
       return `<p style="margin:${margin};">${lines}</p>`;
     })
     .join('');
+}
+
+function buildHtmlMailLine_(line) {
+  // Keep natural Japanese phrases together on narrow email screens.
+  const phrases = {
+    '皆様と大切な時間を過ごすことができ、': ['皆様と大切な時間を', '過ごすことができ、'],
+    '結婚式1週間前のリマインドです。': ['結婚式1週間前の', 'リマインドです。'],
+    '結婚式前日のリマインドです。': ['結婚式前日の', 'リマインドです。']
+  };
+  if (!phrases[line]) return escapeHtml_(line);
+  return phrases[line].map(phrase =>
+    `<span style="display:inline-block;white-space:nowrap;">${escapeHtml_(phrase)}</span>`
+  ).join('');
 }
 
 function resetTriggers_() {
