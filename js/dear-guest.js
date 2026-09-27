@@ -34,7 +34,8 @@
     if (phase === 'after') return paragraphs(
       ['結婚式は楽しんでいただけましたか？'],
       ['皆様と過ごした時間は、', 'ふたりにとって大切な宝物です。', 'これからも、どうぞよろしくお願いいたします。'],
-      ['ちなみに、謎はこの招待状にも', '隠されているようですよ…。']
+      ['ちなみに、謎はこの招待状にも', '隠されているようですよ…。',
+        ...(status.dearGuest && status.dearGuest.thanksVisitedBefore ? ['あのときのIDをもう一度入力してください！'] : [])]
     );
     if (String(status.invitationMessage || '').trim()) return { custom: true, text: status.invitationMessage.trim() };
     return paragraphs(

@@ -1,6 +1,7 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');
 const root=require('path').resolve(__dirname,'..')+'/';
 const c=vm.createContext({window:{},Date,APP_CONFIG:{spreadsheetId:'test'}});
+vm.runInContext(fs.readFileSync(root+'gas/LastPuzzle.gs','utf8'),c);
 vm.runInContext(fs.readFileSync(root+'gas/DearGuest.gs','utf8'),c);
 vm.runInContext(fs.readFileSync(root+'js/dear-guest.js','utf8'),c);
 const start=new Date('2027-03-21T10:00:00+09:00'),end=new Date('2027-03-21T14:00:00+09:00');
@@ -15,7 +16,7 @@ for(const completed of [false,true])for(const attending of [false,true])for(cons
 }
 // Case-sensitive persisted visits; unknown visits never count for a guest.
 c.puzzleReleaseDate_=v=>v instanceof Date?v:null;
-c.SpreadsheetApp={openById:()=>({getSheetByName:name=>name==='公開設定'?{getLastRow:()=>3,getRange:()=>({getValues:()=>[['Dear Guest 結婚式開始日時',start],['Dear Guest 結婚式終了日時',end]]})}:{getLastRow:()=>3,getRange:()=>({getValues:()=>[['Case_ID'],['ID不明']]})}})};
+c.SpreadsheetApp={openById:()=>({getSheetByName:name=>name==='公開設定'?{getLastRow:()=>3,getRange:()=>({getValues:()=>[['Dear Guest 結婚式開始日時',start],['Dear Guest 結婚式終了日時',end]]})}:{getLastRow:()=>3,getRange:()=>({getValues:()=>[[end,'Case_ID','Fixture','thanks','confirmed','fixture-event-01'],[end,'ID不明','Unknown','thanks','unknown','fixture-event-02']]})}})};
 c.PUZZLE_SETTINGS_SHEET='公開設定';c.THANKS_VISITS_SHEET='来場感謝サイト訪問記録';
 assert.equal(c.getDearGuestState_('Case_ID',end).thanksVisited,true);assert.equal(c.getDearGuestState_('case_id',end).thanksVisited,false);
 console.log(`PASS ${count} message combinations, JST calendar boundaries, invalid settings, persisted case-sensitive visits`);
@@ -34,3 +35,11 @@ for (const [phase, text] of Object.entries(expectedRsvp)) {
  }
 }
 console.log('PASS RSVP exact copy and visibility across 20 response/phase combinations');
+
+for (const [early, after] of [[false,false],[true,false],[true,true],[false,true]]) {
+ const result=select({completed:true,attending:true,dearGuest:{thanksVisited:after,thanksVisitedBefore:early}},'after');
+ const copy=JSON.stringify(result);
+ assert.equal(copy.includes('あのときのIDをもう一度入力してください！'), early&&!after);
+ assert.equal(copy.includes('さすがです'),after);
+}
+console.log('PASS early-only guests receive the exact revisit reminder; post-release visitors receive solved copy');

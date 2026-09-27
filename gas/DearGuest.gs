@@ -24,16 +24,11 @@ function dearGuestPhase_(now, start, end) {
 }
 
 function getDearGuestState_(guestId, now) {
-  const book = SpreadsheetApp.openById(APP_CONFIG.spreadsheetId);
   const { start, end } = getWeddingSchedule_();
-  const phase = dearGuestPhase_(now || new Date(), start, end);
-  let thanksVisited = false;
-  if (phase === 'after') {
-    const visits = book.getSheetByName(THANKS_VISITS_SHEET);
-    if (visits && visits.getLastRow() > 1) {
-      thanksVisited = visits.getRange(2, 2, visits.getLastRow() - 1, 1).getValues()
-        .some(row => String(row[0]) === guestId);
-    }
-  }
-  return { phase: phase, thanksVisited: thanksVisited, settingsValid: Boolean(start && end && end.getTime() > start.getTime()) };
+  const currentTime = now || new Date();
+  const phase = dearGuestPhase_(currentTime, start, end);
+  const visits = getThanksVisitState_(guestId, end, currentTime);
+  return { phase: phase, thanksVisited: phase === 'after' && visits.thanksVisited,
+    thanksVisitedBefore: visits.thanksVisitedBefore, puzzleRank: visits.puzzleRank,
+    settingsValid: Boolean(start && end && end.getTime() > start.getTime()) };
 }

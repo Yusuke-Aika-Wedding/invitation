@@ -331,25 +331,7 @@
         content.replaceChildren();
         return;
       }
-      let stamp = section.querySelector('.puzzle-solved-stamp');
-      if (result.solved && Number.isInteger(result.rank) && result.rank > 0) {
-        if (!stamp) {
-          stamp = document.createElement('div');
-          stamp.className = 'puzzle-solved-stamp';
-          stamp.setAttribute('role', 'status');
-          section.append(stamp);
-        }
-        stamp.replaceChildren();
-        const label = document.createElement('span');
-        label.textContent = '最後の謎を解き明かしました！';
-        const rank = document.createElement('strong');
-        rank.textContent = `第 ${result.rank} 位`;
-        const seal = document.createElement('span');
-        seal.className = 'puzzle-solved-label';
-        seal.textContent = 'THE LAST PUZZLE · SOLVED';
-        stamp.append(seal, rank, label);
-      } else if (stamp) stamp.remove();
-      if (!content.childElementCount) {
+      if (!content.querySelector('.puzzle-example')) {
         (result.examples || []).forEach(example => {
           const card = document.createElement('div');
           card.className = 'puzzle-example';
@@ -367,11 +349,54 @@
         content.append(question);
         restartHandwriting(section);
       }
+      renderPuzzleStamp(content, result);
+
     } catch (_) {
       // 通信できない場合は未公開の問題を表示せず、次回の取得を待ちます。
     } finally {
       puzzleRequestPending = false;
     }
+  }
+
+  function renderPuzzleStamp(content, result) {
+    let stamp = content.querySelector('.puzzle-solved-stamp');
+    const solved = result.solved && Number.isInteger(result.rank) && result.rank > 0;
+    content.classList.toggle('has-solved-stamp', Boolean(solved));
+    if (!solved) {
+      if (stamp) { stamp._observer?.disconnect(); stamp.remove(); }
+      return;
+    }
+    if (stamp) {
+      stamp.querySelector('.puzzle-stamp-rank').textContent = `第${result.rank}位`;
+      stamp.setAttribute('aria-label', `The Last Puzzle 解明済み、第${result.rank}位`);
+      return;
+    }
+    stamp = document.createElement('div');
+    stamp.className = 'puzzle-solved-stamp';
+    stamp.setAttribute('role', 'img');
+    stamp.setAttribute('aria-label', `The Last Puzzle 解明済み、第${result.rank}位`);
+    const image = document.createElement('img');
+    image.src = 'assets/the-last-puzzle-stamp.png';
+    image.alt = '';
+    image.width = 1254;
+    image.height = 1254;
+    const rank = document.createElement('strong');
+    rank.className = 'puzzle-stamp-rank';
+    rank.textContent = `第${result.rank}位`;
+    stamp.append(image, rank);
+    content.append(stamp);
+    const pressStamp = () => {
+      stamp.classList.add('is-stamped');
+      stamp._observer?.disconnect();
+    };
+    // 画面内に謎が入ったときに押印し、定期更新ではアニメーションを繰り返しません。
+    if ('IntersectionObserver' in window) {
+      stamp._observer = new IntersectionObserver(entries => {
+        if (entries.some(entry => entry.isIntersecting)) pressStamp();
+      }, { threshold: 0.35 });
+      const ready = () => { if (stamp.isConnected) stamp._observer.observe(content); };
+      if (image.complete) ready(); else image.addEventListener('load', ready, { once: true });
+    } else pressStamp();
   }
 
   function normalizeGuestId(value) {
@@ -1830,6 +1855,8 @@
       const title = document.createElement('h2');
       title.id = 'answerConfirmationTitle';
       title.textContent = 'この内容でよろしいですか？';
+      title.tabIndex = -1;
+      title.autofocus = true;
       const list = document.createElement('dl');
       entries.forEach(([label, value]) => {
         const term = document.createElement('dt');
@@ -1862,7 +1889,8 @@
       dialog.append(title, list, actions);
       document.body.append(dialog);
       dialog.showModal();
-      back.focus();
+      title.focus({ preventScroll: true });
+      dialog.scrollTop = 0;
     });
   }
 

@@ -1,7 +1,7 @@
 /** 公開日時は「公開設定」のDear Guest 結婚式終了日時（日本時間）です。 */
 const PUZZLE_SETTINGS_SHEET = '公開設定';
 const THANKS_VISITS_SHEET = '来場感謝サイト訪問記録';
-const THANKS_VISIT_HEADERS = ['訪問日時', 'ID', 'ゲスト名', '入力された合言葉', '紐付け方法', '訪問ID'];
+const THANKS_VISIT_HEADERS = ['訪問日時', 'ID', 'ゲスト名', '入力された合言葉', '紐付け方法', '訪問ID', '公開後訪問日時'];
 
 function doGet(e) {
   const params = (e && e.parameter) || {};
@@ -79,11 +79,8 @@ function getLastPuzzle_(guestIdRaw) {
   const now = new Date();
   const published = Boolean(release && now.getTime() >= release.getTime());
   const response = { ok: true, startAt: start ? start.toISOString() : '', published: published, releaseAt: release ? release.toISOString() : '', serverTime: now.toISOString(), dearGuest: getDearGuestState_(guestId, now), invitationMessage: record.values.invitationMessage || '' };
-  const visitSheet = SpreadsheetApp.openById(APP_CONFIG.spreadsheetId).getSheetByName(THANKS_VISITS_SHEET);
-  const visits = visitSheet && visitSheet.getLastRow() > 1 ? visitSheet.getRange(2, 1, visitSheet.getLastRow() - 1, 6).getValues() : [];
-  const visitIndex = visits.findIndex(row => String(row[1]) === String(record.values.id) && row[5]);
-  response.solved = visitIndex !== -1;
-  response.rank = response.solved ? thanksVisitRank_(visits, visitIndex) : null;
+  response.solved = published && response.dearGuest.thanksVisited;
+  response.rank = response.dearGuest.puzzleRank;
   if (published) {
     response.examples = [
       { name: '白戸祐輔 の場合', code: 'ww5jg4ww9cxE → baseball' },
@@ -111,17 +108,29 @@ function recordThanksVisit_(params) {
     const sheet = SpreadsheetApp.openById(APP_CONFIG.spreadsheetId).getSheetByName(THANKS_VISITS_SHEET);
     if (!sheet) throw new Error('訪問記録の準備ができていません。');
     const lastRow = sheet.getLastRow();
-    const visits = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, 6).getValues() : [];
+    const visits = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, 7).getValues() : [];
+    const { end } = getWeddingSchedule_();
+    const now = new Date();
+    const published = Boolean(end && now.getTime() >= end.getTime());
     const existingIndex = visits.findIndex(row => String(row[5]) === eventId);
     if (existingIndex !== -1) {
       if (String(visits[existingIndex][1]) !== String(record.values.id)) return { ok: false, retryWithNewEvent: true };
+      // 同じ訪問IDで公開前から再訪した場合も、初回日時と順位は変更しません。
+      const openedAt = puzzleReleaseDate_(visits[existingIndex][6]);
+      if (published && (!openedAt || openedAt.getTime() < end.getTime())) {
+        sheet.getRange(1, 7).setValue(THANKS_VISIT_HEADERS[6]);
+        sheet.getRange(existingIndex + 2, 7).setValue(now).setNumberFormat('yyyy/mm/dd hh:mm:ss');
+        visits[existingIndex][6] = now;
+        SpreadsheetApp.flush();
+      }
       return thanksVisitResult_(visits, existingIndex);
     }
     const safeText = value => /^[=+@-]/.test(String(value)) ? "'" + value : String(value);
     const newVisit = [
-      new Date(), safeText(record.values.id), safeText(record.values.name || ''),
-      keyword, '確認済みのゲストID', eventId
+      now, safeText(record.values.id), safeText(record.values.name || ''),
+      keyword, '確認済みのゲストID', eventId, published ? now : ''
     ];
+    sheet.getRange(1, 7).setValue(THANKS_VISIT_HEADERS[6]);
     sheet.appendRow(newVisit);
     visits.push(newVisit);
     SpreadsheetApp.flush();
@@ -161,4 +170,21 @@ function thanksVisitResult_(visits, targetIndex) {
     earlySolved: Boolean(end && solvedAt && solvedAt.getTime() < end.getTime()),
     releaseAt: end ? end.toISOString() : '', serverTime: now.toISOString()
   };
+}
+
+// 初回到達の順位と、公開後に実際に開いたかを別々に判定します。
+function getThanksVisitState_(guestId, end, now) {
+  const sheet = SpreadsheetApp.openById(APP_CONFIG.spreadsheetId).getSheetByName(THANKS_VISITS_SHEET);
+  const rows = sheet && sheet.getLastRow() > 1 ? sheet.getRange(2, 1, sheet.getLastRow() - 1, 7).getValues() : [];
+  const matching = rows.filter(row => String(row[1]) === guestId && row[5]);
+  const firstIndex = rows.findIndex(row => String(row[1]) === guestId && row[5]);
+  const before = matching.some(row => {
+    const date = puzzleReleaseDate_(row[0]);
+    return Boolean(end && date && date.getTime() < end.getTime());
+  });
+  const after = matching.some(row => [row[0], row[6]].some(value => {
+    const date = puzzleReleaseDate_(value);
+    return Boolean(end && date && date.getTime() >= end.getTime() && date.getTime() <= now.getTime());
+  }));
+  return { thanksVisited: after, thanksVisitedBefore: before, puzzleRank: firstIndex < 0 ? null : thanksVisitRank_(rows, firstIndex) };
 }
