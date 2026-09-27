@@ -1,7 +1,7 @@
 /** 公開日時は「公開設定」のDear Guest 結婚式終了日時（日本時間）です。 */
 const PUZZLE_SETTINGS_SHEET = '公開設定';
 const THANKS_VISITS_SHEET = '来場感謝サイト訪問記録';
-const THANKS_VISIT_HEADERS = ['訪問日時', 'ID', 'ゲスト名', '入力された合言葉', '紐付け方法', '訪問ID', '公開後訪問日時'];
+const THANKS_VISIT_HEADERS = ['訪問日時', 'ID', 'ゲスト名', '入力された合言葉', '紐付け方法', '訪問ID', '公開後訪問日時', '使用ヒント数'];
 
 function doGet(e) {
   const params = (e && e.parameter) || {};
@@ -11,6 +11,7 @@ function doGet(e) {
       result.dearGuest = getDearGuestState_(result.guestId);
       return output_(result, params.callback);
     }
+    if (params.action === 'puzzleHints') return output_(puzzleHints_(params), params.callback);
     if (params.action === 'lastPuzzle') return output_(getLastPuzzle_(params.guestId), params.callback);
     if (params.action === 'recordThanksVisit') return output_(recordThanksVisit_(params), params.callback);
     return doGetInvitation_(e);
@@ -81,6 +82,7 @@ function getLastPuzzle_(guestIdRaw) {
   const response = { ok: true, startAt: start ? start.toISOString() : '', published: published, releaseAt: release ? release.toISOString() : '', serverTime: now.toISOString(), dearGuest: getDearGuestState_(guestId, now), invitationMessage: record.values.invitationMessage || '' };
   response.solved = published && response.dearGuest.thanksVisited;
   response.rank = response.dearGuest.puzzleRank;
+  response.hintCount = getThanksVisitState_(guestId, release, now).hintCount;
   if (published) {
     response.examples = [
       { name: '白戸祐輔 の場合', code: 'ww5jg4ww9cxE → baseball' },
@@ -108,7 +110,7 @@ function recordThanksVisit_(params) {
     const sheet = SpreadsheetApp.openById(APP_CONFIG.spreadsheetId).getSheetByName(THANKS_VISITS_SHEET);
     if (!sheet) throw new Error('訪問記録の準備ができていません。');
     const lastRow = sheet.getLastRow();
-    const visits = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, 7).getValues() : [];
+    const visits = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, 8).getValues() : [];
     const { end } = getWeddingSchedule_();
     const now = new Date();
     const published = Boolean(end && now.getTime() >= end.getTime());
@@ -128,9 +130,10 @@ function recordThanksVisit_(params) {
     const safeText = value => /^[=+@-]/.test(String(value)) ? "'" + value : String(value);
     const newVisit = [
       now, safeText(record.values.id), safeText(record.values.name || ''),
-      keyword, '確認済みのゲストID', eventId, published ? now : ''
+      keyword, '確認済みのゲストID', eventId, published ? now : '', readPuzzleHints_(guestId).opened.length
     ];
     sheet.getRange(1, 7).setValue(THANKS_VISIT_HEADERS[6]);
+    sheet.getRange(1, 8).setValue(THANKS_VISIT_HEADERS[7]);
     sheet.appendRow(newVisit);
     visits.push(newVisit);
     SpreadsheetApp.flush();
@@ -167,6 +170,7 @@ function thanksVisitResult_(visits, targetIndex) {
   return {
     ok: true, recorded: true, rank: thanksVisitRank_(visits, targetIndex),
     published: Boolean(end && now.getTime() >= end.getTime()),
+    hintCount: Number(first[7]) || 0,
     earlySolved: Boolean(end && solvedAt && solvedAt.getTime() < end.getTime()),
     releaseAt: end ? end.toISOString() : '', serverTime: now.toISOString()
   };
@@ -175,7 +179,7 @@ function thanksVisitResult_(visits, targetIndex) {
 // 初回到達の順位と、公開後に実際に開いたかを別々に判定します。
 function getThanksVisitState_(guestId, end, now) {
   const sheet = SpreadsheetApp.openById(APP_CONFIG.spreadsheetId).getSheetByName(THANKS_VISITS_SHEET);
-  const rows = sheet && sheet.getLastRow() > 1 ? sheet.getRange(2, 1, sheet.getLastRow() - 1, 7).getValues() : [];
+  const rows = sheet && sheet.getLastRow() > 1 ? sheet.getRange(2, 1, sheet.getLastRow() - 1, 8).getValues() : [];
   const matching = rows.filter(row => String(row[1]) === guestId && row[5]);
   const firstIndex = rows.findIndex(row => String(row[1]) === guestId && row[5]);
   const before = matching.some(row => {
@@ -186,5 +190,63 @@ function getThanksVisitState_(guestId, end, now) {
     const date = puzzleReleaseDate_(value);
     return Boolean(end && date && date.getTime() >= end.getTime() && date.getTime() <= now.getTime());
   }));
-  return { thanksVisited: after, thanksVisitedBefore: before, puzzleRank: firstIndex < 0 ? null : thanksVisitRank_(rows, firstIndex) };
+  return { hintCount: firstIndex < 0 ? null : Number(rows[firstIndex][7]) || 0, thanksVisited: after, thanksVisitedBefore: before, puzzleRank: firstIndex < 0 ? null : thanksVisitRank_(rows, firstIndex) };
+}
+
+const PUZZLE_HINTS_SHEET = '謎解きヒント記録';
+const PUZZLE_HINT_TEXTS = [
+  'ローマ字と数字の文字列、どこかで使ったような...。',
+  '文字列を3つずつに区切るといいみたい！',
+  '大文字は次のように変換してみよう。A→10, B→11, C→12,...,I→18　16進法...いや、Iが含まれている人もいるみたいだから19進法の考え方だね。',
+  '「ab1」→「bc」　「ab2」→「cd」だよ！もうそろそろ分かったかな？',
+  '変換してできた文字列をそのままIDに入力してみて！'
+];
+
+function readPuzzleHints_(guestId) {
+  const sheet = SpreadsheetApp.openById(APP_CONFIG.spreadsheetId).getSheetByName(PUZZLE_HINTS_SHEET);
+  const rows = sheet && sheet.getLastRow() > 1 ? sheet.getRange(2, 1, sheet.getLastRow() - 1, 3).getValues() : [];
+  const index = rows.findIndex(row => String(row[0]) === guestId);
+  if (index < 0) return { sheet: sheet, row: 0, firstSeen: null, opened: [] };
+  const opened = String(rows[index][2] || '').split(',').map(Number).filter(n => Number.isInteger(n) && n >= 1 && n <= 5);
+  return { sheet: sheet, row: index + 2, firstSeen: puzzleReleaseDate_(rows[index][1]), opened: Array.from(new Set(opened)) };
+}
+
+// 閲覧開始とヒント開封はサーバー時刻で記録し、端末を変えても引き継ぎます。
+function puzzleHints_(params) {
+  const guestId = normalizeGuestId_(params.guestId);
+  if (!guestId || !findGuestRecord_(getMainSheet_(), guestId)) throw new Error('ゲスト情報が見つかりません。');
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const now = new Date();
+    const { end } = getWeddingSchedule_();
+    if (!end || now.getTime() < end.getTime()) throw new Error('まだ公開されていません。');
+    const state = readPuzzleHints_(guestId);
+    if (!state.sheet) {
+      state.sheet = SpreadsheetApp.openById(APP_CONFIG.spreadsheetId).insertSheet(PUZZLE_HINTS_SHEET);
+      state.sheet.appendRow(['ID', '問題の初回表示日時', '開いたヒント番号']);
+      state.sheet.setFrozenRows(1);
+      state.sheet.getRange('B:B').setNumberFormat('yyyy/mm/dd hh:mm:ss');
+    }
+    if (!state.firstSeen) {
+      state.firstSeen = now;
+      state.sheet.appendRow([guestId, now, '']);
+      state.row = state.sheet.getLastRow();
+    }
+    const hint = Number(params.hint);
+    if (hint) {
+      if (!Number.isInteger(hint) || hint < 1 || hint > 5) throw new Error('ヒントを確認してください。');
+      if (now.getTime() - state.firstSeen.getTime() < hint * 5 * 60 * 1000) throw new Error('ヒントの解禁までお待ちください。');
+      if (!state.opened.includes(hint)) {
+        state.opened.push(hint);
+        state.opened.sort((a, b) => a - b);
+        state.sheet.getRange(state.row, 3).setValue(state.opened.join(','));
+      }
+    }
+    SpreadsheetApp.flush();
+    return { ok: true, firstSeen: state.firstSeen.toISOString(), serverTime: now.toISOString(),
+      opened: state.opened, hints: state.opened.map(n => ({ number: n, text: PUZZLE_HINT_TEXTS[n - 1] })) };
+  } finally {
+    lock.releaseLock();
+  }
 }

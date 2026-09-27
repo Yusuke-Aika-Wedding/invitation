@@ -350,6 +350,7 @@
         restartHandwriting(section);
       }
       renderPuzzleStamp(content, result);
+      window.WeddingHints.mount(section, guestId);
 
     } catch (_) {
       // 通信できない場合は未公開の問題を表示せず、次回の取得を待ちます。
@@ -367,14 +368,15 @@
       return;
     }
     if (stamp) {
-      stamp.querySelector('.puzzle-stamp-rank').textContent = `第${result.rank}位`;
-      stamp.setAttribute('aria-label', `The Last Puzzle 解明済み、第${result.rank}位`);
+      stamp.querySelector('.puzzle-stamp-rank').textContent = window.WeddingHints.ordinal(result.rank);
+      stamp.querySelector('.puzzle-stamp-hints').textContent = window.WeddingHints.clearLabel(result.hintCount);
+      stamp.setAttribute('aria-label', `The Last Puzzle Solved, ${window.WeddingHints.ordinal(result.rank)}, ${window.WeddingHints.clearLabel(result.hintCount)}`);
       return;
     }
     stamp = document.createElement('div');
     stamp.className = 'puzzle-solved-stamp';
     stamp.setAttribute('role', 'img');
-    stamp.setAttribute('aria-label', `The Last Puzzle 解明済み、第${result.rank}位`);
+    stamp.setAttribute('aria-label', `The Last Puzzle Solved, ${window.WeddingHints.ordinal(result.rank)}, ${window.WeddingHints.clearLabel(result.hintCount)}`);
     const image = document.createElement('img');
     image.src = 'assets/the-last-puzzle-stamp.png';
     image.alt = '';
@@ -382,8 +384,11 @@
     image.height = 1254;
     const rank = document.createElement('strong');
     rank.className = 'puzzle-stamp-rank';
-    rank.textContent = `第${result.rank}位`;
-    stamp.append(image, rank);
+    rank.textContent = window.WeddingHints.ordinal(result.rank);
+    const hints = document.createElement('small');
+    hints.className = 'puzzle-stamp-hints';
+    hints.textContent = window.WeddingHints.clearLabel(result.hintCount);
+    stamp.append(image, rank, hints);
     content.append(stamp);
     const pressStamp = () => {
       stamp.classList.add('is-stamped');
@@ -1529,6 +1534,7 @@
     });
 
     const allQuestionsVoted = questions.every(question => Boolean(question.voted));
+    els.predictionSection.querySelector('.prediction-rule').hidden = allQuestionsVoted;
     if (allQuestionsVoted) {
       const thanks = document.createElement('p');
       thanks.className = 'prediction-complete-message';

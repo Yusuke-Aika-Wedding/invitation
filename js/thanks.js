@@ -30,6 +30,7 @@
       } else {
         site.hidden = false;
         document.getElementById('puzzleRank').textContent = String(result.rank);
+        document.getElementById('puzzleHintAchievement').textContent = window.WeddingHints.clearLabel(result.hintCount);
         document.getElementById('earlySolveMessage').hidden = !result.earlySolved;
         achievement.hidden = false;
         if (!revealed) {

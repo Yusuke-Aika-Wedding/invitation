@@ -7,6 +7,7 @@ c.getMainSheet_ = () => ({});
 c.findGuestRecord_ = (_, id) => ['Case_ID', 'Other_ID'].includes(id) ? { values: { id, name: 'Fixture' } } : null;
 c.LockService = { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) };
 c.SpreadsheetApp = { openById: () => ({ getSheetByName: () => ({ getLastRow: () => rows.length + 1, getRange: (r, col) => ({ getValues: () => rows.slice(), setValue(value) { if (r > 1) rows[r-2][col-1]=value; return this; }, setNumberFormat() {return this;} }), appendRow: row => { writes++; rows.push(row); } }) }), flush() {} };
+c.readPuzzleHints_ = () => ({opened: []});
 c.getWeddingSchedule_ = () => ({ end: new Date('2099-03-21T14:00:00+09:00') });
 const call = (guestId, eventId = 'fixture-event-00001') => c.recordThanksVisit_({ keyword: 'thanks', guestId, eventId });
 for (const id of ['', 'ID不明', 'case_id', 'missing']) assert.equal(call(id).needsGuestId, true);

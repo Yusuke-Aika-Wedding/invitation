@@ -1494,3 +1494,28 @@ textarea::placeholder { white-space: pre-wrap; }
   .puzzle-solved-stamp.is-stamped { animation: none; opacity: 1; }
   .puzzle-solved-stamp.is-stamped img { animation: none; opacity: .22; }
 }
+
+/* ヒントはスタンプの領域の外に置き、開閉で押印位置を動かしません。 */
+.has-solved-stamp .puzzle-code { color: #253c43; text-shadow: 0 1px 3px #fffdf7, 0 0 8px #fffdf7; }
+.puzzle-stamp-hints { position: absolute; top: 90%; left: 50%; transform: translateX(-50%); width: 80%; text-align: center; color: #601c2d; font-size: clamp(11px, 3vw, 16px); font-weight: 700; white-space: nowrap; }
+.puzzle-hint-achievement { color: #795b2e; font-weight: 700; letter-spacing: .04em; }
+.puzzle-hints { max-width: 700px; margin: 32px auto 0; text-align: left; }
+.puzzle-hints > summary { width: fit-content; margin: auto; padding: 12px 24px; border: 1px solid #ad9470; border-radius: 999px; color: #654f32; cursor: pointer; }
+.puzzle-hint-list { display: grid; gap: 12px; margin-top: 20px; }
+.puzzle-hint-item { border: 1px solid #d9cbb5; border-radius: 16px; overflow: hidden; background: #fffdf7; }
+.puzzle-hint-item > button { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 56px; border: 0; padding: 14px 18px; background: #f3ecdf; color: #513f2f; font: inherit; font-weight: 700; cursor: pointer; }
+.puzzle-hint-item > button:disabled { color: #6f665c; background: #f3f0eb; cursor: default; }
+.puzzle-hint-countdown { font-size: .9em; font-weight: 400; white-space: nowrap; }
+.puzzle-hint-dialogue { display: flex; align-items: flex-start; gap: 18px; padding: 20px; }
+.puzzle-hint-dialogue[hidden] { display: none; }
+.puzzle-hint-portraits { display: flex; flex-wrap: wrap; flex: 0 0 100px; gap: 8px; }
+.puzzle-hint-portraits img { display: block; width: 100%; height: auto; border-radius: 14px; }
+.puzzle-hint-dialogue p { position: relative; flex: 1; min-width: 0; margin: 0; padding: 16px; border-radius: 14px; background: #f5ede0; color: #44362d; line-height: 1.85; overflow-wrap: anywhere; }
+.puzzle-hint-status { text-align: center; font-size: .9rem; color: #6c4834; }
+.puzzle-hint-status:empty { display: none; }
+.puzzle-hints summary:focus-visible, .puzzle-hint-item button:focus-visible { outline: 3px solid #98743f; outline-offset: 3px; }
+@media (max-width: 600px) {
+  .puzzle-hint-dialogue { gap: 10px; padding: 12px; }
+  .puzzle-hint-portraits { flex-basis: 64px; }
+  .puzzle-hint-dialogue p { padding: 12px; font-size: .92rem; }
+}
