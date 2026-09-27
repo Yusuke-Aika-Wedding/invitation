@@ -1519,3 +1519,7 @@ textarea::placeholder { white-space: pre-wrap; }
   .puzzle-hint-portraits { flex-basis: 64px; }
   .puzzle-hint-dialogue p { padding: 12px; font-size: .92rem; }
 }
+@media (max-width: 600px) {
+  .puzzle-content.has-solved-stamp { margin-bottom: 55px; }
+  .puzzle-stamp-hints { top: calc(50% + 190px); }
+}
