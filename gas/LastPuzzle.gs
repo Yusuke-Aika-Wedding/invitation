@@ -79,6 +79,11 @@ function getLastPuzzle_(guestIdRaw) {
   const now = new Date();
   const published = Boolean(release && now.getTime() >= release.getTime());
   const response = { ok: true, startAt: start ? start.toISOString() : '', published: published, releaseAt: release ? release.toISOString() : '', serverTime: now.toISOString(), dearGuest: getDearGuestState_(guestId, now), invitationMessage: record.values.invitationMessage || '' };
+  const visitSheet = SpreadsheetApp.openById(APP_CONFIG.spreadsheetId).getSheetByName(THANKS_VISITS_SHEET);
+  const visits = visitSheet && visitSheet.getLastRow() > 1 ? visitSheet.getRange(2, 1, visitSheet.getLastRow() - 1, 6).getValues() : [];
+  const visitIndex = visits.findIndex(row => String(row[1]) === String(record.values.id) && row[5]);
+  response.solved = visitIndex !== -1;
+  response.rank = response.solved ? thanksVisitRank_(visits, visitIndex) : null;
   if (published) {
     response.examples = [
       { name: '白戸祐輔 の場合', code: 'ww5jg4ww9cxE → baseball' },
@@ -96,7 +101,10 @@ function recordThanksVisit_(params) {
   if (!/^[a-zA-Z0-9-]{16,64}$/.test(eventId)) throw new Error('訪問IDが不正です。');
   const guestId = normalizeGuestId_(params.guestId);
   const record = guestId ? findGuestRecord_(getMainSheet_(), guestId) : null;
-  if (!record) return { ok: false, needsGuestId: true };
+  if (!record) {
+    const { end } = getWeddingSchedule_();
+    return { ok: false, needsGuestId: true, published: Boolean(end && Date.now() >= end.getTime()) };
+  }
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {

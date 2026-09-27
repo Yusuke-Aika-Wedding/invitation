@@ -31,7 +31,7 @@ const APP_CONFIG = {
   venueName: 'キンプトン新宿東京',
   venueUrl: 'https://www.kimptonshinjukuwedding.com/',
   mapUrl: 'https://www.google.com/maps/search/?api=1&query=%E3%82%AD%E3%83%B3%E3%83%97%E3%83%88%E3%83%B3%E6%96%B0%E5%AE%BF%E6%9D%B1%E4%BA%AC',
-  baseInvitationUrl: 'https://Yusuke-Aika-Wedding.github.io/invitation/',
+  baseInvitationUrl: 'https://yusuke-aika-wedding.com/',
   reminderHour: 9,
   thanksHour: 15,
   batchEmailIntervalMs: 1000
@@ -181,6 +181,7 @@ function doGetInvitation_(e) {
     if (action === 'ping') return output_({ ok: true, message: 'pong' }, params.callback);
     if (action === 'status') return output_(getStatus_(params.guestId), params.callback);
     if (action === 'submit') return output_(submitResponse_(params), params.callback);
+    if (action === 'submitPredictions') return output_(submitPredictions_(params), params.callback);
     if (action === 'submitPrediction') return output_(submitPrediction_(params), params.callback);
     if (action === 'sendThanksNow') return output_({ ok: true, sent: sendAfterReceptionThanksEmails_(true) }, params.callback);
     return output_({ ok: false, error: 'Unknown action.' }, params.callback);
@@ -372,6 +373,42 @@ function submitPrediction_(params) {
   } finally {
     lock.releaseLock();
   }
+}
+
+// 全回答を検証してから、未回答分を一括で記録します。再送でも既存票は変更しません。
+function submitPredictions_(params) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const guestId = normalizeGuestId_(params && params.guestId);
+    const guestSheet = getMainSheet_();
+    const guest = guestId ? findGuestRecord_(guestSheet, guestId) : null;
+    if (!guest) throw new Error('ゲスト情報が見つかりません。');
+    if (!isCompleted_(guest.values) || normalizeAttendance_(guest.values.reception) !== '出席') {
+      throw new Error('WEDDING PREDICTIONは、RSVPで披露宴への出席をご回答後に投票できます。');
+    }
+    let answers;
+    try { answers = JSON.parse(String(params.answers || '')); } catch (_) { throw new Error('3問すべての予想を選んでください。'); }
+    if (!Array.isArray(answers) || answers.length !== PREDICTION_QUESTIONS.length) throw new Error('3問すべての予想を選んでください。');
+    const sheet = getPredictionSheet_();
+    const votes = readPredictionVotes_(sheet).filter(vote => normalizeGuestId_(vote.guestId) === guest.values.id);
+    const now = new Date();
+    const rows = [];
+    PREDICTION_QUESTIONS.forEach(question => {
+      const matches = answers.filter(answer => answer && answer.questionId === question.id);
+      if (matches.length !== 1 || !question.options.includes(matches[0].option)) throw new Error('選択肢を確認してください。');
+      if (!votes.some(vote => vote.questionId === question.id)) rows.push([
+        guest.values.id, guest.values.name || 'ゲスト', question.id, matches[0].option, now
+      ]);
+    });
+    if (rows.length) {
+      const firstRow = Math.max(sheet.getLastRow() + 1, 2);
+      sheet.getRange(firstRow, 1, rows.length, PREDICTION_HEADERS.length).setValues(rows);
+      sheet.getRange(firstRow, 5, rows.length, 1).setNumberFormat('yyyy/mm/dd hh:mm:ss');
+      SpreadsheetApp.flush();
+    }
+    return { ok: true, alreadyVoted: !rows.length, prediction: buildPredictionState_(guest.values.id, sheet) };
+  } finally { lock.releaseLock(); }
 }
 
 function buildPredictionState_(guestIdRaw, predictionSheet) {

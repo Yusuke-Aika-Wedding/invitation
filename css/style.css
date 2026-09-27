@@ -1442,3 +1442,36 @@ textarea::placeholder { white-space: pre-wrap; }
 .auth-form { min-width: 0; container-type: inline-size; }
 #authStatus.auth-status-single-line { white-space: nowrap; letter-spacing: 0; font-size: clamp(10px, 4cqi, 14px); }
 .thanks-card p { text-wrap: pretty; }
+
+/* RSVPとPredictionに共通する送信前の確認画面 */
+.answer-confirmation {
+  width: min(560px, calc(100% - 32px));
+  max-height: calc(100dvh - 40px);
+  margin: auto;
+  padding: clamp(20px, 5vw, 36px);
+  box-sizing: border-box;
+  overflow-y: auto;
+  border: 1px solid #ccbda5;
+  border-radius: 20px;
+  background: #fffdf7;
+  color: #4f1424;
+  box-shadow: 0 20px 80px #30201540;
+}
+.answer-confirmation::backdrop { background: #241b1acc; }
+.answer-confirmation h2 { font-size: clamp(17px, 4.6vw, 23px); line-height: 1.7; margin: 0 0 22px; }
+.answer-confirmation dl { margin: 0; text-align: left; }
+.answer-confirmation dt { font-weight: 700; font-size: 14px; margin-top: 18px; }
+.answer-confirmation dd { margin: 6px 0 0; padding-bottom: 14px; border-bottom: 1px solid #e8dfd2; color: #4d433b; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.8; }
+.answer-confirmation-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+.answer-confirmation-actions button { flex: 1 1 180px; min-height: 48px; padding: 12px 16px; font: inherit; cursor: pointer; }
+.answer-confirmation .secondary-button { background: transparent; color: #4f1424; border: 1px solid #ccbda5; border-radius: 999px; }
+.thanks-entry-hint { font-size: clamp(12px, 3.4vw, 16px); white-space: nowrap; color: #7a1d33; text-align: center; }
+.puzzle-solved-stamp {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  width: min(100%, 420px); margin: 40px auto 12px; padding: 28px 14px;
+  box-sizing: border-box; border: 6px double #8c6332; border-radius: 22px;
+  color: #805b30; background: #fbf3e1; text-align: center;
+}
+.puzzle-solved-stamp strong { font-size: clamp(40px, 10vw, 66px); line-height: 1.2; }
+.puzzle-solved-stamp span { font-size: clamp(12px, 3.5vw, 17px); }
+.puzzle-solved-stamp .puzzle-solved-label { font-size: clamp(10px, 3vw, 14px); letter-spacing: .12em; }

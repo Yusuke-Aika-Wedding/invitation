@@ -1,6 +1,6 @@
 window.WEDDING_CONFIG = {
   repoName: 'invitation',
-  baseInvitationUrl: 'https://Yusuke-Aika-Wedding.github.io/invitation/',
+  baseInvitationUrl: 'https://yusuke-aika-wedding.com/',
   // GASをデプロイしたら、ここにWebアプリURLを貼り付けてください。
   gasWebAppUrl: 'https://script.google.com/macros/s/AKfycbynXKwaUPkVY3IOXkWe-_AjcBJTS0ClrJ3JZxhNbsiZUeOiJYRRAR4v8SAirZnnpwFO/exec',
   weddingDateIso: '2027-03-21T10:00:00+09:00',

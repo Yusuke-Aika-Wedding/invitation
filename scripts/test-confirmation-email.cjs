@@ -26,3 +26,14 @@ assert.equal(c.submitResponse_(params).ok, true);
 assert.equal(sends, 1);
 assert.equal(writes, 3);
 console.log('PASS wrong sender and insufficient quota do not save; valid submission sends once and records completion');
+const mail = vm.createContext({});
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../gas/Code.gs'), 'utf8'), mail);
+const base = mail.getInvitationUrl_();
+assert.equal(base, 'https://yusuke-aika-wedding.com/');
+const data = {name:'Fixture',invitationUrl:base,ceremonyAttendance:'出席',receptionAttendance:'出席'};
+for (const body of [mail.buildConfirmationText_(data), mail.buildReminderText_({...data,daysBefore:7}), mail.buildReminderText_({...data,daysBefore:1}), mail.buildAfterReceptionThanksText_(data)]) {
+  assert.ok(body.includes('招待状URL：\nhttps://yusuke-aika-wedding.com/'));
+  assert.ok(!body.includes('github.io'));
+  assert.ok(mail.buildHtmlMail_('Fixture',body,base).includes('href="https://yusuke-aika-wedding.com/"'));
+}
+console.log('PASS all four email bodies and buttons use the custom domain');

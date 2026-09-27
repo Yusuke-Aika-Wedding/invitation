@@ -159,10 +159,26 @@
     }
   }
 
-  function promptThanksGuest() {
-    document.querySelector('.auth-copy').textContent = 'あなたのIDを入力してください';
+  async function promptThanksGuest(availability) {
+    const wasPending = thanksEntryPending;
+    thanksEntryPending = true;
+    setAuthLoading(true);
     els.guestIdEntry.value = '';
+    let hint = document.getElementById('thanksEntryHint');
+    if (!hint) {
+      hint = document.createElement('p');
+      hint.id = 'thanksEntryHint';
+      hint.className = 'thanks-entry-hint';
+      document.querySelector('.auth-copy').after(hint);
+    }
     setAuthStatus('', '');
+    try {
+      const result = availability || await window.WeddingAccess.checkThanks({ ...thanksEntry, guestId: '' });
+      hint.textContent = result.published === false ? 'そのIDは...少し待ってくださいね。' : '';
+    } catch (_) { hint.textContent = ''; }
+    document.querySelector('.auth-copy').textContent = 'あなたのIDを入力してください';
+    thanksEntryPending = wasPending;
+    setAuthLoading(false);
     els.guestIdEntry.focus();
   }
 
@@ -176,7 +192,7 @@
       if (result && result.needsGuestId) {
         thanksEntry.guestId = '';
         window.WeddingAccess.saveVisit(thanksEntry);
-        promptThanksGuest();
+        await promptThanksGuest(result);
         setAuthStatus('IDを半角英数字で正しく入力してください。', 'error');
         return;
       }
@@ -186,10 +202,13 @@
       if (result.published === true) {
         window.WeddingAccess.openThanks(thanksEntry);
       } else {
+        const confirmedId = thanksEntry.guestId;
         thanksEntry = null;
-        history.replaceState(null, '', location.pathname + '?change-id=1');
-        document.querySelector('.auth-copy').textContent = '招待状に記載されたIDを入力してください。';
-        setAuthStatus('そのIDは...少し待ってくださいね。', 'error');
+        history.replaceState(null, '', location.pathname);
+        document.getElementById('thanksEntryHint')?.remove();
+        thanksEntryPending = false;
+        await authenticateGuest(confirmedId);
+
       }
     } catch (_) {
       setAuthStatus('通信を確認して、もう一度お試しください。', 'error');
@@ -312,6 +331,24 @@
         content.replaceChildren();
         return;
       }
+      let stamp = section.querySelector('.puzzle-solved-stamp');
+      if (result.solved && Number.isInteger(result.rank) && result.rank > 0) {
+        if (!stamp) {
+          stamp = document.createElement('div');
+          stamp.className = 'puzzle-solved-stamp';
+          stamp.setAttribute('role', 'status');
+          section.append(stamp);
+        }
+        stamp.replaceChildren();
+        const label = document.createElement('span');
+        label.textContent = '最後の謎を解き明かしました！';
+        const rank = document.createElement('strong');
+        rank.textContent = `第 ${result.rank} 位`;
+        const seal = document.createElement('span');
+        seal.className = 'puzzle-solved-label';
+        seal.textContent = 'THE LAST PUZZLE · SOLVED';
+        stamp.append(seal, rank, label);
+      } else if (stamp) stamp.remove();
       if (!content.childElementCount) {
         (result.examples || []).forEach(example => {
           const card = document.createElement('div');
@@ -1318,55 +1355,43 @@
 
   function setupPrediction() {
     if (!els.predictionList) return;
-
+    let submitting = false;
     els.predictionList.addEventListener('click', async event => {
+      if (submitting) return;
       const optionButton = event.target.closest('[data-prediction-option]');
       if (optionButton) {
         const card = optionButton.closest('[data-prediction-question]');
         if (!card || card.dataset.voted === 'true') return;
-        const questionId = card.dataset.predictionQuestion || '';
-        const option = optionButton.dataset.predictionOption || '';
-        predictionSelections.set(questionId, option);
+        predictionSelections.set(card.dataset.predictionQuestion, optionButton.dataset.predictionOption);
         card.querySelectorAll('[data-prediction-option]').forEach(button => {
-          const selected = button === optionButton;
-          button.classList.toggle('is-selected', selected);
-          button.setAttribute('aria-pressed', String(selected));
+          button.classList.toggle('is-selected', button === optionButton);
+          button.setAttribute('aria-pressed', String(button === optionButton));
         });
-        const submitButton = card.querySelector('[data-prediction-submit]');
-        if (submitButton) submitButton.disabled = false;
-        setPredictionCardStatus(card, '');
+        const submit = els.predictionList.querySelector('[data-prediction-submit]');
+        if (submit) submit.disabled = !latestStatus.prediction.questions.every(q => q.voted || predictionSelections.has(q.id));
         return;
       }
-
-      const submitButton = event.target.closest('[data-prediction-submit]');
-      if (!submitButton) return;
-      const card = submitButton.closest('[data-prediction-question]');
-      if (!card || card.dataset.voted === 'true') return;
-      const questionId = card.dataset.predictionQuestion || '';
-      const option = predictionSelections.get(questionId) || '';
-      if (!questionId || !option) {
-        setPredictionCardStatus(card, '予想を1つ選んでください。', 'error');
-        return;
-      }
-
-      card.querySelectorAll('button').forEach(button => { button.disabled = true; });
-      submitButton.textContent = '投票しています…';
-      setPredictionCardStatus(card, '投票を記録しています。');
+      const submit = event.target.closest('[data-prediction-submit]');
+      if (!submit) return;
+      const questions = latestStatus.prediction.questions;
+      const answers = questions.map(q => ({ questionId: q.id, option: q.voted ? q.selectedOption : predictionSelections.get(q.id) }));
+      if (answers.some(answer => !answer.option)) return;
+      submitting = true;
+      const confirmed = await confirmAnswers(questions.map((q, i) => [q.question, answers[i].option]), 'この内容で投票する');
+      if (!confirmed) { submitting = false; return; }
+      els.predictionList.querySelectorAll('button').forEach(button => { button.disabled = true; });
+      submit.textContent = '投票しています…';
       try {
-        const result = await jsonp('submitPrediction', {
-          guestId: guestId,
-          questionId: questionId,
-          option: option
-        });
+        const result = await jsonp('submitPredictions', { guestId, answers: JSON.stringify(answers) });
         if (!result || !result.ok) throw new Error((result && result.error) || '投票を記録できませんでした。');
-        latestStatus.prediction = result.prediction || null;
-        predictionSelections.delete(questionId);
+        latestStatus.prediction = result.prediction;
+        predictionSelections.clear();
         renderPrediction(latestStatus.completed && latestStatus.receptionAttending, latestStatus.prediction);
       } catch (error) {
-        card.querySelectorAll('button').forEach(button => { button.disabled = false; });
-        submitButton.textContent = 'この内容で投票する';
-        setPredictionCardStatus(card, error.message || '時間をおいて、もう一度お試しください。', 'error');
-      }
+        els.predictionList.querySelectorAll('button').forEach(button => { button.disabled = false; });
+        submit.textContent = '回答内容を確認する';
+        setPredictionCardStatus(els.predictionList, error.message || '時間をおいて、もう一度お試しください。', 'error');
+      } finally { submitting = false; }
     });
   }
 
@@ -1449,7 +1474,9 @@
           button.className = 'prediction-option';
           button.type = 'button';
           button.dataset.predictionOption = label;
-          button.setAttribute('aria-pressed', 'false');
+          const selected = predictionSelections.get(question.id) === label;
+          button.setAttribute('aria-pressed', String(selected));
+          button.classList.toggle('is-selected', selected);
           const mark = document.createElement('span');
           mark.className = 'prediction-option-mark';
           mark.setAttribute('aria-hidden', 'true');
@@ -1467,14 +1494,6 @@
         const totalVotes = Number(question.totalVotes) || 0;
         summary.textContent = `投票済み・全${totalVotes}票`;
         card.append(summary);
-      } else {
-        const submit = document.createElement('button');
-        submit.className = 'prediction-submit';
-        submit.type = 'button';
-        submit.dataset.predictionSubmit = 'true';
-        submit.disabled = true;
-        submit.textContent = 'この内容で投票する';
-        card.append(submit);
       }
 
       const status = document.createElement('p');
@@ -1499,6 +1518,15 @@
       secondLine.textContent = '当日お楽しみに！';
       thanks.append(firstLine, mobileBreak, secondLine);
       cards.push(thanks);
+    }
+    if (!allQuestionsVoted) {
+      const submit = document.createElement('button');
+      submit.className = 'prediction-submit';
+      submit.type = 'button';
+      submit.dataset.predictionSubmit = 'true';
+      submit.disabled = !questions.every(q => q.voted || predictionSelections.has(q.id));
+      submit.textContent = '回答内容を確認する';
+      cards.push(submit);
     }
     els.predictionList.replaceChildren(...cards);
   }
@@ -1794,10 +1822,56 @@
     }
   }
 
+  function confirmAnswers(entries, submitLabel) {
+    return new Promise(resolve => {
+      const dialog = document.createElement('dialog');
+      dialog.className = 'answer-confirmation';
+      dialog.setAttribute('aria-labelledby', 'answerConfirmationTitle');
+      const title = document.createElement('h2');
+      title.id = 'answerConfirmationTitle';
+      title.textContent = 'この内容でよろしいですか？';
+      const list = document.createElement('dl');
+      entries.forEach(([label, value]) => {
+        const term = document.createElement('dt');
+        term.textContent = label;
+        const detail = document.createElement('dd');
+        detail.textContent = String(value || 'なし');
+        list.append(term, detail);
+      });
+      const actions = document.createElement('div');
+      actions.className = 'answer-confirmation-actions';
+      const back = document.createElement('button');
+      back.type = 'button';
+      back.className = 'secondary-button';
+      back.textContent = '修正する';
+      const send = document.createElement('button');
+      send.type = 'button';
+      send.className = 'primary-button';
+      send.textContent = submitLabel;
+      const previousFocus = document.activeElement;
+      const finish = confirmed => {
+        dialog.close();
+        dialog.remove();
+        previousFocus?.focus();
+        resolve(confirmed);
+      };
+      back.addEventListener('click', () => finish(false), { once: true });
+      send.addEventListener('click', () => finish(true), { once: true });
+      dialog.addEventListener('cancel', event => { event.preventDefault(); finish(false); }, { once: true });
+      actions.append(back, send);
+      dialog.append(title, list, actions);
+      document.body.append(dialog);
+      dialog.showModal();
+      back.focus();
+    });
+  }
+
   function setupForm() {
     if (!els.form) return;
+    let submitting = false;
     els.form.addEventListener('submit', async event => {
       event.preventDefault();
+      if (submitting) return;
       if (!guestId || !authenticated) {
         setStatus('IDの認証情報がありません。IDを再入力してください。', 'error');
         return;
@@ -1827,6 +1901,13 @@
         return;
       }
 
+      submitting = true;
+      const confirmed = await confirmAnswers([
+        ['氏名', payload.name], ['メールアドレス', payload.email],
+        ['挙式', payload.ceremonyAttendance], ['披露宴', payload.receptionAttendance],
+        ['アレルギー', payload.allergy], ['メッセージ', payload.message || 'なし']
+      ], 'この内容で送信する');
+      if (!confirmed) { submitting = false; return; }
       setLoading(true);
       setStatus(['送信しています。', '画面を閉じずにお待ちください。'], '');
       try {
@@ -1850,6 +1931,7 @@
         setStatus(`送信できませんでした。${error.message || 'GASの設定を確認してください。'}`, 'error');
       } finally {
         setLoading(false);
+        submitting = false;
       }
     });
   }
