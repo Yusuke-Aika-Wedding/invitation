@@ -1538,7 +1538,20 @@ textarea::placeholder { white-space: pre-wrap; }
 .thanks-loading { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; padding: 24px; background: #f4ecdc; color: #69543b; }
 .thanks-loading[hidden] { display: none; }
 .thanks-loading-card { text-align: center; }
-.thanks-loading img { display: block; width: 220px; max-width: 100%; height: auto; margin: 0 auto 12px; }
+/* One small motif at a time, in the same central position. */
+.thanks-loading-icons { position: relative; width: 80px; height: 80px; margin: 0 auto 20px; }
+.thanks-loading-icon { position: absolute; inset: 0; display: block; width: 80px; height: 80px; opacity: 0; animation: thanks-loading-cycle 4.5s ease-in-out infinite; }
+.thanks-loading-icon:nth-child(2) { animation-delay: 1.5s; }
+.thanks-loading-icon:nth-child(3) { animation-delay: 3s; }
+@keyframes thanks-loading-cycle {
+  0% { opacity: 0; transform: translateY(6px) scale(.92); }
+  6%, 26% { opacity: 1; transform: translateY(0) scale(1); }
+  33.333%, 100% { opacity: 0; transform: translateY(-4px) scale(.96); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .thanks-loading-icon { animation-name: thanks-loading-still-cycle; animation-timing-function: steps(1, end); }
+  @keyframes thanks-loading-still-cycle { 0%, 33.333%, 100% { opacity: 0; } 1%, 32% { opacity: 1; } }
+}
 .thanks-loading p { margin: 0 0 8px; font-size: 1rem; letter-spacing: .06em; }
 .thanks-loading span { font-size: .8rem; }
 @media (max-width: 600px) {
