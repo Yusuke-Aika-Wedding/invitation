@@ -1558,19 +1558,3 @@ textarea::placeholder { white-space: pre-wrap; }
   .puzzle-hint-dialogue p { flex: none; padding: 14px 12px; line-height: 1.95; }
   .puzzle-hint-dialogue p::before { left: 50%; top: -10px; transform: translateX(-50%); border: 0; border-left: 9px solid transparent; border-right: 9px solid transparent; border-bottom: 11px solid #f5ede0; }
 }
-
-/* Show both sets of cheering goods without cropping the mobile close-up. */
-@media (max-width: 600px) {
-  .hero-slide:has(img[src$="wedding-113.webp"])::before {
-    content: '';
-    position: absolute;
-    inset: -20px;
-    background: url('../assets/wedding-113.webp') center / cover;
-    filter: blur(16px) brightness(.72);
-  }
-  .hero-slide img[src$="wedding-113.webp"] {
-    position: relative;
-    object-fit: contain;
-    object-position: center;
-  }
-}
