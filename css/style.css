@@ -144,7 +144,7 @@ img { max-width: 100%; }
   padding: 24px;
   background:
     linear-gradient(180deg, rgba(40,24,20,.12), rgba(40,24,20,.56)),
-    url('../assets/gallery-1.jpg');
+    url('../assets/wedding-27.webp');
   background-size: cover;
   background-position: center 42%;
   transition: opacity .76s ease, visibility .76s ease;
@@ -318,10 +318,8 @@ body.invitation-open .handwriting-text.is-handwriting-visible .handwriting-glyph
 }
 .hero-slide { position: absolute; inset: 0; opacity: 0; transition: opacity 1.1s ease; }
 .hero-slide.is-active { opacity: 1; }
-.hero-slide img { width: 100%; height: 100%; display: block; object-fit: cover; object-position: center 48%; user-select: none; -webkit-user-drag: none; }
-.hero-slide:nth-child(1) img { object-position: center 46%; }
-.hero-slide:nth-child(2) img { object-position: center 48%; }
-.hero-slide:nth-child(3) img { object-position: center 34%; }
+.hero-slide img { width: 100%; height: 100%; display: block; object-fit: cover; object-position: var(--photo-position, center); user-select: none; -webkit-user-drag: none; }
+.hero-slide-portrait img { object-fit: contain; }
 .slider-dots { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); display: flex; gap: 10px; }
 .slide-dot { width: 9px; height: 9px; border: 0; border-radius: 999px; background: rgba(255,255,255,.54); padding: 0; cursor: pointer; }
 .slide-dot.is-active { width: 28px; background: #fff; }

@@ -1652,10 +1652,46 @@
   }
 
   function setupCarousel() {
-    const slides = Array.from(document.querySelectorAll('.hero-slide'));
-    const dots = Array.from(document.querySelectorAll('.slide-dot'));
     const slider = document.querySelector('.hero-slider');
-    if (slides.length <= 1) return;
+    if (!slider) return;
+    const photos = {
+      2: { file: 30, alt: '森の中で斜め上を見上げる新郎新婦', position: '30% 55%' },
+      3: { file: 100, alt: '橋の近くを歩く新郎新婦', position: '78% 65%' },
+      4: { file: 109, alt: '阪神のグッズを持つ新郎新婦（遠め）', position: '52% 50%' },
+      5: { file: 113, alt: '阪神のグッズを持つ新郎新婦（近め）', position: '50% 50%' },
+      6: { file: 126, alt: '座る新婦と横で腕を組む新郎', portrait: true },
+      7: { file: 145, alt: '竹林の中で斜め上を見上げる新郎新婦', portrait: true },
+      8: { file: 147, alt: '竹林の中で正面を向く新郎新婦', position: '53% 55%' },
+      9: { file: 210, alt: '白い傘を持ち話しながら歩く新郎新婦', position: '67% 60%' },
+      10: { file: 212, alt: '白い傘を持ち正面を向く新郎新婦', position: '36% 55%' }
+    };
+    // Choose once per page load, then repeat that pattern in the requested order.
+    const pattern = Math.random() < 0.5 ? 'A' : 'B';
+    const order = pattern === 'A' ? [2, 3, 4, 6, 7, 10] : [2, 3, 5, 6, 8, 9];
+    slider.dataset.pattern = pattern;
+    const dotContainer = slider.querySelector('.slider-dots');
+    slider.querySelectorAll('.hero-slide').forEach(slide => slide.remove());
+    dotContainer.replaceChildren();
+    order.forEach((number, index) => {
+      const photo = photos[number];
+      const slide = document.createElement('div');
+      slide.className = 'hero-slide' + (photo.portrait ? ' hero-slide-portrait' : '');
+      slide.style.setProperty('--photo-position', photo.position || 'center');
+      const img = document.createElement('img');
+      img.src = `assets/wedding-${photo.file}.webp`;
+      img.alt = photo.alt;
+      img.loading = 'eager';
+      img.draggable = false;
+      slide.appendChild(img);
+      slider.insertBefore(slide, dotContainer);
+      const dot = document.createElement('button');
+      dot.className = 'slide-dot';
+      dot.type = 'button';
+      dot.setAttribute('aria-label', `写真${index + 1}`);
+      dotContainer.appendChild(dot);
+    });
+    const slides = Array.from(slider.querySelectorAll('.hero-slide'));
+    const dots = Array.from(dotContainer.querySelectorAll('.slide-dot'));
     let autoplayTimer = null;
     let swipeStart = null;
     const show = index => {
@@ -1669,7 +1705,11 @@
     };
     const restartAutoplay = () => {
       window.clearInterval(autoplayTimer);
-      autoplayTimer = window.setInterval(() => show(currentSlide + 1), 5000);
+      autoplayTimer = window.setInterval(() => {
+        if (document.body.classList.contains('invitation-open') && !document.hidden) {
+          show(currentSlide + 1);
+        }
+      }, 5000);
     };
     dots.forEach((dot, i) => dot.addEventListener('click', () => {
       show(i);
