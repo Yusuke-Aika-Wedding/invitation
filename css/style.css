@@ -1558,3 +1558,8 @@ textarea::placeholder { white-space: pre-wrap; }
   .puzzle-hint-dialogue p { flex: none; padding: 14px 12px; line-height: 1.95; }
   .puzzle-hint-dialogue p::before { left: 50%; top: -10px; transform: translateX(-50%); border: 0; border-left: 9px solid transparent; border-right: 9px solid transparent; border-bottom: 11px solid #f5ede0; }
 }
+
+/* Keep the bride's cheering bat inside the close-up on narrow screens. */
+@media (max-width: 600px) {
+  .hero-slide img[src$="wedding-113.webp"] { object-position: 75% 50%; }
+}
