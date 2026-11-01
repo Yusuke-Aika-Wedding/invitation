@@ -1263,6 +1263,7 @@ textarea::placeholder { white-space: pre-wrap; }
   .site-shell { width: min(100% - 24px, 680px); padding-top: 16px; }
   .hero { border-radius: 28px; }
   .hero-slider { height: min(112vw, 690px); }
+  .hero-slide img[src$="wedding-126.webp"] { object-position: center bottom; }
   .section { margin-top: 20px; padding: 28px 18px; border-radius: 26px; }
   .section::before { inset: 9px; border-radius: 21px; }
   .countdown-grid { gap: 9px; }

@@ -1658,7 +1658,7 @@
       2: { file: 30, alt: '森の中で斜め上を見上げる新郎新婦', position: '30% 55%' },
       3: { file: 100, alt: '橋の近くを歩く新郎新婦', position: '78% 65%' },
       4: { file: 109, alt: '阪神のグッズを持つ新郎新婦（遠め）', position: '52% 50%' },
-      6: { file: 126, alt: '座る新婦と横で腕を組む新郎', portrait: true, position: 'center calc(50% + clamp(18px, 6vw, 68px))' },
+      6: { file: 126, alt: '座る新婦と横で腕を組む新郎', portrait: true, position: 'center 65%' },
       7: { file: 145, alt: '竹林の中で斜め上を見上げる新郎新婦', portrait: true },
       8: { file: 147, alt: '竹林の中で正面を向く新郎新婦', position: '53% 55%' },
       9: { file: 210, alt: '白い傘を持ち話しながら歩く新郎新婦', position: '67% 60%' },
