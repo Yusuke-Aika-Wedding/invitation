@@ -4,6 +4,7 @@ vm.runInContext(fs.readFileSync('gas/LastPuzzle.gs', 'utf8'), c);
 let rows = [], writes = 0;
 c.normalizeGuestId_ = v => String(v || '');
 c.getMainSheet_ = () => ({});
+c.isCompleted_ = () => false;
 c.findGuestRecord_ = (_, id) => ['Case_ID', 'Other_ID'].includes(id) ? { values: { id, name: 'Fixture' } } : null;
 c.LockService = { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) };
 c.SpreadsheetApp = { openById: () => ({ getSheetByName: () => ({ getLastRow: () => rows.length + 1, getRange: (r, col) => ({ getValues: () => rows.slice(), setValue(value) { if (r > 1) rows[r-2][col-1]=value; return this; }, setNumberFormat() {return this;} }), appendRow: row => { writes++; rows.push(row); } }) }), flush() {} };

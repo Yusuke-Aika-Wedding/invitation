@@ -83,17 +83,20 @@ const PREDICTION_QUESTIONS = [
   {
     id: 'Q1',
     question: '新郎新婦が入刀するのは？',
-    options: ['ケーキ', 'ハンバーガー', '唐揚げ', 'その他']
+    options: ['ケーキ', 'シュークリーム', 'エクレア', 'その他'],
+    answer: 'ケーキ'
   },
   {
     id: 'Q2',
     question: '新婦のお色直し後のドレスの色は？',
-    options: ['ピンク', '水色', '黄色', 'その他']
+    options: ['ピンク', '水色', '黄色', 'その他'],
+    answer: 'ピンク'
   },
   {
     id: 'Q3',
     question: '披露宴で、新郎新婦の退場時に流れる曲は誰の曲？',
-    options: ['サザンオールスターズ', 'Mr.Children', '嵐', 'その他']
+    options: ['サザンオールスターズ', 'Mr.Children', '嵐', 'その他'],
+    answer: 'その他'
   }
 ];
 
@@ -354,6 +357,7 @@ function submitPrediction_(params) {
       };
     }
 
+    if (getPredictionTiming_().published) throw new Error('正解発表後の投票はできません。');
     const rowNumber = Math.max(predictionSheet.getLastRow() + 1, 2);
     predictionSheet.getRange(rowNumber, 1, 1, PREDICTION_HEADERS.length).setValues([[
       storedGuestId,
@@ -402,6 +406,7 @@ function submitPredictions_(params) {
       ]);
     });
     if (rows.length) {
+      if (getPredictionTiming_(now).published) throw new Error('正解発表後の投票はできません。');
       const firstRow = Math.max(sheet.getLastRow() + 1, 2);
       sheet.getRange(firstRow, 1, rows.length, PREDICTION_HEADERS.length).setValues(rows);
       sheet.getRange(firstRow, 5, rows.length, 1).setNumberFormat('yyyy/mm/dd hh:mm:ss');
@@ -411,9 +416,27 @@ function submitPredictions_(params) {
   } finally { lock.releaseLock(); }
 }
 
+function getPredictionTiming_(now) {
+  const current = now || new Date();
+  const sheet = SpreadsheetApp.openById(APP_CONFIG.spreadsheetId).getSheetByName('公開設定');
+  // 正解の公開は項目名ではなく、指定されたB3セルを参照します。
+  const release = puzzleReleaseDate_(sheet && sheet.getRange('B3').getValue());
+  const { start } = getWeddingSchedule_();
+  const weddingStart = start || new Date(APP_CONFIG.weddingDateIso);
+  const day = date => Math.floor((date.getTime() + 9 * 60 * 60 * 1000) / 86400000);
+  const published = Boolean(release && current.getTime() >= release.getTime());
+  return {
+    published: published,
+    phase: published ? 'after' : day(current) >= day(weddingStart) ? 'today' : 'before',
+    releaseAt: release ? release.toISOString() : '',
+    dayAt: new Date(day(weddingStart) * 86400000 - 9 * 60 * 60 * 1000).toISOString()
+  };
+}
+
 function buildPredictionState_(guestIdRaw, predictionSheet) {
   const guestId = normalizeGuestId_(guestIdRaw);
   const votes = readPredictionVotes_(predictionSheet || getPredictionSheet_());
+  const timing = getPredictionTiming_();
   const uniqueVotes = new Map();
 
   votes.forEach(vote => {
@@ -426,6 +449,7 @@ function buildPredictionState_(guestIdRaw, predictionSheet) {
   });
 
   return {
+    ...timing,
     questions: PREDICTION_QUESTIONS.map(question => {
       const counts = question.options.map(() => 0);
       uniqueVotes.forEach(vote => {
@@ -441,10 +465,12 @@ function buildPredictionState_(guestIdRaw, predictionSheet) {
         question: question.question,
         voted: Boolean(ownVote),
         selectedOption: ownVote ? ownVote.option : '',
+        ...(timing.published ? { answer: question.answer, correct: ownVote ? ownVote.option === question.answer : null } : {}),
         totalVotes: totalVotes,
         options: question.options.map((label, index) => ({
           label: label,
-          percent: ownVote ? percentages[index] : 0
+          percent: ownVote || timing.published ? percentages[index] : 0,
+          count: ownVote || timing.published ? counts[index] : 0
         }))
       };
     })

@@ -80,6 +80,8 @@ function getLastPuzzle_(guestIdRaw) {
   const now = new Date();
   const published = Boolean(release && now.getTime() >= release.getTime());
   const response = { ok: true, startAt: start ? start.toISOString() : '', published: published, releaseAt: release ? release.toISOString() : '', serverTime: now.toISOString(), dearGuest: getDearGuestState_(guestId, now), invitationMessage: record.values.invitationMessage || '' };
+  response.prediction = isCompleted_(record.values) && normalizeAttendance_(record.values.reception) === '出席'
+    ? buildPredictionState_(guestId) : null;
   response.solved = published && response.dearGuest.thanksVisited;
   response.rank = response.dearGuest.puzzleRank;
   response.hintCount = getThanksVisitState_(guestId, release, now).hintCount;

@@ -21,6 +21,7 @@
   let thanksEntryRequiresId = false;
   let latestStatus = { completed: false, attending: false, receptionAttending: false, invitationMessage: '', prediction: null };
   const predictionSelections = new Map();
+  let predictionSubmitting = false;
   let currentSlide = 0;
   let authenticated = false;
   let lastGiftTrigger = null;
@@ -332,11 +333,15 @@
       }
       updateCountdown();
       if (result.dearGuest) renderMessage({ ...latestStatus, dearGuest: result.dearGuest, invitationMessage: result.invitationMessage }, { messageOnly: true });
+      if (result.prediction && !predictionSubmitting) {
+        latestStatus.prediction = result.prediction;
+        renderPrediction(latestStatus.completed && latestStatus.receptionAttending, result.prediction);
+      }
       const section = document.getElementById('lastPuzzle');
       const content = document.getElementById('lastPuzzleContent');
       window.clearTimeout(puzzleReleaseTimer);
       const serverNow = Date.parse(result.serverTime);
-      const untilRelease = Math.min(...[result.startAt, result.releaseAt].map(value => Date.parse(value) - serverNow).filter(value => value > 0));
+      const untilRelease = Math.min(...[result.startAt, result.releaseAt, result.prediction?.releaseAt, result.prediction?.dayAt].map(value => Date.parse(value) - serverNow).filter(value => value > 0));
       if (untilRelease > 0 && untilRelease <= 30000) {
         puzzleReleaseTimer = window.setTimeout(refreshLastPuzzle, untilRelease + 100);
       }
@@ -1399,9 +1404,8 @@
 
   function setupPrediction() {
     if (!els.predictionList) return;
-    let submitting = false;
     els.predictionList.addEventListener('click', async event => {
-      if (submitting) return;
+      if (predictionSubmitting) return;
       const optionButton = event.target.closest('[data-prediction-option]');
       if (optionButton) {
         const card = optionButton.closest('[data-prediction-question]');
@@ -1420,9 +1424,9 @@
       const questions = latestStatus.prediction.questions;
       const answers = questions.map(q => ({ questionId: q.id, option: q.voted ? q.selectedOption : predictionSelections.get(q.id) }));
       if (answers.some(answer => !answer.option)) return;
-      submitting = true;
+      predictionSubmitting = true;
       const confirmed = await confirmAnswers(questions.map((q, i) => [q.question, answers[i].option]), 'この内容で投票する');
-      if (!confirmed) { submitting = false; return; }
+      if (!confirmed) { predictionSubmitting = false; return; }
       els.predictionList.querySelectorAll('button').forEach(button => { button.disabled = true; });
       submit.textContent = '投票しています…';
       try {
@@ -1435,7 +1439,7 @@
         els.predictionList.querySelectorAll('button').forEach(button => { button.disabled = false; });
         submit.textContent = '回答内容を確認する';
         setPredictionCardStatus(els.predictionList, error.message || '時間をおいて、もう一度お試しください。', 'error');
-      } finally { submitting = false; }
+      } finally { predictionSubmitting = false; }
     });
   }
 
@@ -1452,6 +1456,9 @@
       window.requestAnimationFrame(() => observeFadeIn(els.predictionSection));
     }
 
+    const published = Boolean(prediction && prediction.published);
+    const phase = prediction && prediction.phase;
+    els.predictionSection.querySelector('.prediction-introduction').hidden = phase === 'today' || phase === 'after';
     const questions = prediction && Array.isArray(prediction.questions)
       ? prediction.questions
       : [];
@@ -1480,19 +1487,19 @@
       card.append(header);
 
       const options = document.createElement('div');
-      options.className = question.voted ? 'prediction-results' : 'prediction-options';
-      options.setAttribute('role', question.voted ? 'list' : 'group');
+      options.className = question.voted || published ? 'prediction-results' : 'prediction-options';
+      options.setAttribute('role', question.voted || published ? 'list' : 'group');
       options.setAttribute('aria-label', `${question.question || 'アンケート'}の選択肢`);
 
       (Array.isArray(question.options) ? question.options : []).forEach(item => {
         const label = String((item && item.label) || item || '');
-        if (question.voted) {
+        if (question.voted || published) {
           const result = document.createElement('div');
           const selected = label === String(question.selectedOption || '');
           const percent = Math.max(0, Math.min(100, Number(item.percent) || 0));
           result.className = `prediction-result${selected ? ' is-selected' : ''}`;
           result.setAttribute('role', 'listitem');
-          result.setAttribute('aria-label', `${label} ${percent}%${selected ? '、あなたの投票' : ''}`);
+          result.setAttribute('aria-label', `${label} ${percent}%${Number.isFinite(item.count) ? `、${item.count}票` : ''}${selected ? '、あなたの投票' : ''}`);
           const bar = document.createElement('span');
           bar.className = 'prediction-result-bar';
           bar.style.width = `${percent}%`;
@@ -1510,6 +1517,12 @@
           const percentage = document.createElement('strong');
           percentage.className = 'prediction-percentage number-font';
           percentage.textContent = `${percent}%`;
+          if (Number.isFinite(item.count)) {
+            const count = document.createElement('small');
+            count.className = 'prediction-vote-count';
+            count.textContent = `${item.count}票`;
+            percentage.append(count);
+          }
           copy.append(optionLabel, percentage);
           result.append(bar, copy);
           options.append(result);
@@ -1532,11 +1545,17 @@
       });
       card.append(options);
 
-      if (question.voted) {
+      if (published) {
+        const verdict = document.createElement('p');
+        verdict.className = `prediction-verdict${question.correct ? ' is-correct' : ''}`;
+        verdict.textContent = `${question.voted ? (question.correct ? '正解！' : '不正解') : '未回答'}　正解は「${question.answer}」`;
+        card.append(verdict);
+      }
+      if (question.voted || published) {
         const summary = document.createElement('p');
         summary.className = 'prediction-voted-note';
         const totalVotes = Number(question.totalVotes) || 0;
-        summary.textContent = `投票済み・全${totalVotes}票`;
+        summary.textContent = `${question.voted ? '投票済み' : '未回答'}・全${totalVotes}票`;
         card.append(summary);
       }
 
@@ -1548,23 +1567,27 @@
     });
 
     const allQuestionsVoted = questions.every(question => Boolean(question.voted));
-    els.predictionSection.querySelector('.prediction-rule').hidden = allQuestionsVoted;
+    els.predictionSection.querySelector('.prediction-rule').hidden = allQuestionsVoted || published;
     if (allQuestionsVoted) {
       const thanks = document.createElement('p');
       thanks.className = 'prediction-complete-message';
       thanks.setAttribute('role', 'status');
       const firstLine = document.createElement('span');
       firstLine.className = 'prediction-complete-line';
-      firstLine.textContent = '投票ありがとうございました！';
+      firstLine.textContent = published ? 'ご来場ありがとうございました！' : '投票ありがとうございました！';
       const mobileBreak = document.createElement('br');
-      mobileBreak.className = 'mobile-only';
+      mobileBreak.className = published ? '' : 'mobile-only';
       const secondLine = document.createElement('span');
       secondLine.className = 'prediction-complete-line';
-      secondLine.textContent = '当日お楽しみに！';
+      const score = questions.filter(question => question.correct === true).length;
+      secondLine.textContent = published
+        ? score === 0 ? '1問も正解できませんでしたね...。残念！'
+          : score === 3 ? '全問正解！素晴らしい！' : `3問中${score}問正解でした！`
+        : phase === 'today' ? '本日お楽しみに！' : '当日お楽しみに！';
       thanks.append(firstLine, mobileBreak, secondLine);
       cards.push(thanks);
     }
-    if (!allQuestionsVoted) {
+    if (!allQuestionsVoted && !published) {
       const submit = document.createElement('button');
       submit.className = 'prediction-submit';
       submit.type = 'button';

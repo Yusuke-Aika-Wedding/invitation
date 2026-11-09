@@ -584,7 +584,10 @@ textarea::placeholder { white-space: pre-wrap; }
   text-align: center;
   text-wrap: balance;
 }
-.prediction-complete-line { white-space: nowrap; }
+.prediction-complete-line { display: inline-block; max-width: 100%; overflow-wrap: anywhere; text-wrap: pretty; }
+.prediction-vote-count { display: block; font-size: .72rem; font-weight: 400; text-align: right; }
+.prediction-verdict { margin: 18px 0 0; padding: 12px 16px; border-radius: 14px; background: #f8efed; color: var(--wine-dark); font-weight: 600; line-height: 1.8; text-wrap: pretty; }
+.prediction-verdict.is-correct { background: var(--prediction-green-soft); color: #3d7047; }
 .prediction-option:focus-visible, .prediction-submit:focus-visible { outline: 3px solid rgba(181,139,93,.48); outline-offset: 3px; }
 .gift-information { padding-bottom: clamp(34px, 5.5vw, 62px); }
 .section .gift-information-title {
