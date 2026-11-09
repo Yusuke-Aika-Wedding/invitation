@@ -10,7 +10,17 @@ c.LockService = { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) };
 c.SpreadsheetApp = { openById: () => ({ getSheetByName: () => ({ getLastRow: () => rows.length + 1, getRange: (r, col) => ({ getValues: () => rows.slice(), setValue(value) { if (r > 1) rows[r-2][col-1]=value; return this; }, setNumberFormat() {return this;} }), appendRow: row => { writes++; rows.push(row); } }) }), flush() {} };
 c.readPuzzleHints_ = () => ({opened: []});
 c.getWeddingSchedule_ = () => ({ end: new Date('2099-03-21T14:00:00+09:00') });
-const call = (guestId, eventId = 'fixture-event-00001') => c.recordThanksVisit_({ keyword: 'thanks', guestId, eventId });
+const call = (guestId, eventId = 'fixture-event-00001') => c.recordThanksVisit_({ keyword: 'joy', guestId, eventId });
+for (const keyword of ['joy', 'love', 'happy', ' LOVE ']) {
+  assert.equal(c.recordThanksVisit_({keyword,guestId:'',eventId:'fixture-keyword-01'}).needsGuestId,true);
+}
+for (const keyword of ['thanks', 'thankyou', 'manythanks']) {
+  assert.throws(()=>c.recordThanksVisit_({keyword,guestId:'',eventId:'fixture-keyword-01'}),/合言葉/);
+}
+const accessContext=vm.createContext({window:{}});
+vm.runInContext(fs.readFileSync('js/guest-access.js','utf8'),accessContext);
+for(const keyword of ['joy','love','happy',' LOVE ','HAPPY']) assert.equal(accessContext.window.WeddingAccess.isKeyword(keyword),true);
+for(const keyword of ['thanks','thankyou','manythanks','guest1']) assert.equal(accessContext.window.WeddingAccess.isKeyword(keyword),false);
 for (const id of ['', 'ID不明', 'case_id', 'missing']) assert.equal(call(id).needsGuestId, true);
 assert.equal(writes, 0);
 let result = call('Case_ID');
@@ -37,7 +47,7 @@ console.log('PASS puzzle stamps use persisted first rank and unknown IDs receive
 // First arrival, first rank, and post-release opening are distinct facts.
 const release = new Date(Date.now()-10000);
 c.getWeddingSchedule_=()=>({end:release});
-rows=[[new Date(release.getTime()-1000),'Case_ID','Fixture','thanks','confirmed','fixture-early-0001'],[new Date(release.getTime()-500),'Other_ID','Fixture','thanks','confirmed','fixture-early-0002']];
+rows=[[new Date(release.getTime()-1000),'Case_ID','Fixture','joy','confirmed','fixture-early-0001'],[new Date(release.getTime()-500),'Other_ID','Fixture','joy','confirmed','fixture-early-0002']];
 assert.equal(c.getLastPuzzle_('Case_ID').solved,false);
 assert.equal(c.getLastPuzzle_('Case_ID').rank,1);
 assert.equal(c.getThanksVisitState_('Case_ID',release,new Date()).thanksVisitedBefore,true);
@@ -50,7 +60,7 @@ assert.equal(call('Other_ID','fixture-new-after-0002').rank,2);
 assert.equal(c.getLastPuzzle_('Other_ID').solved,true);
 const timestamp=rows[0][6];call('Case_ID','fixture-early-0001');assert.equal(rows[0][6],timestamp);
 assert.equal(c.getThanksVisitState_('case_id',release,new Date()).thanksVisited,false);
-rows=[[release,'Case_ID','Fixture','thanks','confirmed','fixture-boundary-1']];
+rows=[[release,'Case_ID','Fixture','joy','confirmed','fixture-boundary-1']];
 assert.equal(c.getThanksVisitState_('Case_ID',release,release).thanksVisited,true);
 assert.equal(c.getThanksVisitState_('Case_ID',release,release).thanksVisitedBefore,false);
 c.getWeddingSchedule_=()=>({end:new Date(Date.now()+10000)});

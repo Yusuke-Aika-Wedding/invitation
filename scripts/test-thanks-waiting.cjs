@@ -7,13 +7,13 @@ function fixture({ known = true, published = false, restored = false } = {}) {
   const nodes = {};
   const element = () => ({ value:'', textContent:'', className:'', addEventListener(){}, focus(){}, select(){}, setAttribute(){}, after(node){nodes[node.id]=node;this.nextElementSibling=node;}, remove(){delete nodes[this.id];} });
   const entry=element(),copy=element();
-  const visit={keyword:'thanks',eventId:'fixture-event-00001',guestId:known?'Case_ID':''};
+  const visit={keyword:'joy',eventId:'fixture-event-00001',guestId:known?'Case_ID':''};
   if(restored)visit.waitingForInvitationId=true;
   const c=vm.createContext({URLSearchParams, localStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},
-    location:{pathname:'/',search:restored?'?change-id=1':'',hash:restored?'#thanks-entry/thanks/fixture-event-00001':''},
+    location:{pathname:'/',search:restored?'?change-id=1':'',hash:restored?'#thanks-entry/joy/fixture-event-00001':''},
     history:{replaceState:(_,__,url)=>{c.location.search=url.includes('?')?url.slice(url.indexOf('?')).split('#')[0]:'';c.location.hash=url.includes('#')?'#'+url.split('#')[1]:'';}},
     document:{getElementById:id=>nodes[id]||null,querySelector:()=>copy,createElement:element},
-    window:{WeddingAccess:{isKeyword:v=>['thanks','thankyou','manythanks'].includes(v.replace(/\s/g,'').toLowerCase()),createVisit:()=>({...visit}),currentVisit:()=>({...visit}),saveVisit:v=>{saved={...v};return v;},rememberGuest(){},openThanks(){opened++;},checkThanks:async v=>v.guestId==='Case_ID'?{ok:true,published,rank:1}:{ok:false,needsGuestId:true,published}}},
+    window:{WeddingAccess:{isKeyword:v=>['joy','love','happy'].includes(v.replace(/\s/g,'').toLowerCase()),createVisit:()=>({...visit}),currentVisit:()=>({...visit}),saveVisit:v=>{saved={...v};return v;},rememberGuest(){},openThanks(){opened++;},checkThanks:async v=>v.guestId==='Case_ID'?{ok:true,published,rank:1}:{ok:false,needsGuestId:true,published}}},
     normalizeGuestId:v=>String(v).trim(),setAuthLoading(){},setAuthStatus(){},isGasConfigured:()=>true,
     jsonp:async(action,p)=>{statusCalls++;return p.guestId==='Case_ID'?{ok:true,guestId:p.guestId}:{ok:false,error:'Invalid ID'};},
     hydrateGuest(){},revealAuthenticatedSite(){revealed++;},removeIdFromAddressBar(){},setupLastPuzzle(){}
@@ -23,7 +23,7 @@ function fixture({ known = true, published = false, restored = false } = {}) {
   return {c,entry,nodes,storage,stats:()=>({revealed,statusCalls,opened,saved})};
 }
 (async()=>{
-  let f=fixture(); await f.c.authenticateGuest('thanks');
+  let f=fixture(); await f.c.authenticateGuest('joy');
   assert.equal(f.stats().revealed,0); assert.equal(f.stats().statusCalls,0);
   assert.equal(f.entry.value,''); assert.equal(f.nodes.thanksEntryHint.textContent,'そのIDは...少し待ってくださいね。');
   assert.equal(f.entry.nextElementSibling,f.nodes.thanksEntryHint);
@@ -32,10 +32,10 @@ function fixture({ known = true, published = false, restored = false } = {}) {
   await f.c.authenticateGuest('missing'); assert.equal(f.stats().revealed,0); assert.equal(f.c.state().thanksEntryRequiresId,true);
   await f.c.authenticateGuest('Case_ID'); assert.equal(f.stats().revealed,1); assert.equal(f.c.state().thanksEntry,null); assert.equal(f.nodes.thanksEntryHint,undefined); assert.equal(f.c.location.hash,'');
   f=fixture({restored:true}); f.c.setupAuth(); assert.equal(f.stats().revealed,0); assert.equal(f.stats().statusCalls,0); assert.equal(f.c.state().thanksEntryRequiresId,true);
-  await f.c.authenticateGuest('manythanks');assert.equal(f.stats().revealed,0);
+  await f.c.authenticateGuest('happy');assert.equal(f.stats().revealed,0);
   await f.c.authenticateGuest('Case_ID');assert.equal(f.stats().revealed,1);
-  f=fixture({known:false}); await f.c.authenticateGuest('thanks'); await f.c.authenticateGuest('Case_ID'); assert.equal(f.stats().revealed,0); assert.equal(f.c.state().thanksEntryRequiresId,true);
+  f=fixture({known:false}); await f.c.authenticateGuest('joy'); await f.c.authenticateGuest('Case_ID'); assert.equal(f.stats().revealed,0); assert.equal(f.c.state().thanksEntryRequiresId,true);
   await f.c.authenticateGuest('Case_ID'); assert.equal(f.stats().revealed,1);
-  f=fixture({published:true}); await f.c.authenticateGuest('thanks'); assert.equal(f.stats().opened,1);assert.equal(f.stats().revealed,0);
+  f=fixture({published:true}); await f.c.authenticateGuest('joy'); assert.equal(f.stats().opened,1);assert.equal(f.stats().revealed,0);
   console.log('PASS known/unknown IDs, prerelease waiting, hint below input, reload persistence, invalid IDs, manual reentry and published redirect');
 })().catch(e=>{console.error(e);process.exitCode=1;});

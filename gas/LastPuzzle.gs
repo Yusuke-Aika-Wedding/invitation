@@ -97,7 +97,7 @@ function getLastPuzzle_(guestIdRaw) {
 
 function recordThanksVisit_(params) {
   const keyword = String(params.keyword || '').replace(/\s+/g, '').toLowerCase();
-  if (['thanks', 'thankyou', 'manythanks'].indexOf(keyword) === -1) throw new Error('合言葉を確認してください。');
+  if (['joy', 'love', 'happy'].indexOf(keyword) === -1) throw new Error('合言葉を確認してください。');
   const eventId = String(params.eventId || '');
   if (!/^[a-zA-Z0-9-]{16,64}$/.test(eventId)) throw new Error('訪問IDが不正です。');
   const guestId = normalizeGuestId_(params.guestId);
@@ -198,8 +198,8 @@ function getThanksVisitState_(guestId, end, now) {
 const PUZZLE_HINTS_SHEET = '謎解きヒント記録';
 const PUZZLE_HINT_TEXTS = [
   'アルファベットと数字の列、\nどこかで使ったような...。',
-  '2つずつ区切るといいみたい！',
-  '大文字は次のように変換してみよう。\nA → 10, B → 11, C → 12, ... , I → 18\n16進法... いや、G, H, Iが含まれている人も\nいるみたいだから19進法の考え方だね。',
+  '2つずつ区切って考えるといいみたい！',
+  '大文字は次のように変換してみよう。\nA → 10, B → 11, C → 12, ... , J → 19\n16進法... いや、G, H, I, Jが含まれている人も\nいるみたいだから20進法の考え方だね。',
   '「a1」→「b」\n「a2」→「c」だよ！\nもうそろそろ分かったかな？',
   '変換してできた文字列をそのままIDに入力してみて！'
 ];

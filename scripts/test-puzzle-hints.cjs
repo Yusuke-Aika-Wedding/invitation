@@ -24,10 +24,10 @@ for(let n=1;n<=5;n++) {
  assert.equal(call(n).opened.length,n); assert.equal(call().firstSeen,first.firstSeen);
 }
 assert.equal(sheets.get('謎解きヒント記録').rows.length,2);
-let result=c.recordThanksVisit_({guestId:'Case_ID',keyword:'thanks',eventId:'fixture-hints-00001'});
+let result=c.recordThanksVisit_({guestId:'Case_ID',keyword:'joy',eventId:'fixture-hints-00001'});
 assert.equal(result.hintCount,5);
 sheets.get('謎解きヒント記録').rows[1][2]='1';
-result=c.recordThanksVisit_({guestId:'Case_ID',keyword:'thanks',eventId:'fixture-hints-00002'});
+result=c.recordThanksVisit_({guestId:'Case_ID',keyword:'joy',eventId:'fixture-hints-00002'});
 assert.equal(result.hintCount,5); assert.equal(result.rank,1);
 assert.equal(c.getThanksVisitState_('Case_ID',new Clock('2027-03-21T05:00:00Z'),new Clock()).hintCount,5);
 c.getWeddingSchedule_=()=>({end:new Clock('2099-01-01T00:00:00Z')}); assert.throws(()=>call());

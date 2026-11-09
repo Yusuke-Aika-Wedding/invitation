@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const access = window.WeddingAccess;
-  const visit = access.currentVisit() || access.createVisit('thanks');
+  const visit = access.currentVisit() || access.createVisit('joy');
   const site = document.getElementById('specialThanks');
   const achievement = document.getElementById('puzzleAchievement');
   document.getElementById('changeGuestId').addEventListener('click', access.changeId);

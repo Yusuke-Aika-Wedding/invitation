@@ -4,7 +4,7 @@
   const SOURCE_ID = 'yusuke-aika-wedding-source-id-v1';
   const VISIT = 'yusuke-aika-wedding-thanks-visit-v1';
   const normalizeKeyword = value => String(value || '').replace(/\s+/g, '').toLowerCase();
-  const isKeyword = value => ['thanks', 'thankyou', 'manythanks'].includes(normalizeKeyword(value));
+  const isKeyword = value => ['joy', 'love', 'happy'].includes(normalizeKeyword(value));
   function rememberGuest(id) {
     try { sessionStorage.setItem(SOURCE_ID, id); } catch (_) {}
   }

@@ -1531,6 +1531,8 @@ textarea::placeholder { white-space: pre-wrap; }
 /* 終了後のメッセージと、画面幅に合わせたヒントの読みやすさ。 */
 .thanks-card p { white-space: pre-line; }
 .puzzle-hint-phrase { display: inline-block; max-width: 100%; overflow-wrap: anywhere; }
+#puzzle-hint-2 p { container-type: inline-size; }
+#puzzle-hint-2 .puzzle-hint-phrase { white-space: nowrap; letter-spacing: 0; font-size: min(1em, 5.2cqw); }
 .puzzle-hint-portraits.is-couple { flex-basis: 168px; flex-wrap: nowrap; }
 .puzzle-hint-portraits.is-couple img { width: calc((100% - 8px) / 2); align-self: flex-start; }
 .thanks-loading { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; padding: 24px; background: #f4ecdc; color: #69543b; }
