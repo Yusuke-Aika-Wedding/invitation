@@ -47,7 +47,7 @@ const source=fs.readFileSync('js/script.js','utf8');
 vm.runInContext(source.slice(source.indexOf('  function renderPrediction('),source.indexOf('  function setPredictionCardStatus(')),c);
 for (score=0;score<=3;score++) {
  c.renderPrediction(true,c.buildPredictionState_('Case_ID'));
- const expected=score===0?'1問も正解できませんでしたね...。残念！':score===3?'全問正解！素晴らしい！':`3問中${score}問正解でした！`;
+ const expected=score===0?'全問不正解...。残念！':score===3?'全問正解！素晴らしい！':`3問中${score}問正解でした！`;
  assert.ok(list.textContent.includes('ご来場ありがとうございました！'+expected));
  assert.equal(intro.hidden,true);assert.equal(rule.hidden,true);assert.ok(list.textContent.includes('全2票'));assert.ok(list.textContent.includes('%'));
  assert.equal(list.children.filter(e=>e.tag==='button').length,0);

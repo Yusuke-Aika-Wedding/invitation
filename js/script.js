@@ -1581,7 +1581,7 @@
       secondLine.className = 'prediction-complete-line';
       const score = questions.filter(question => question.correct === true).length;
       secondLine.textContent = published
-        ? score === 0 ? '1問も正解できませんでしたね...。残念！'
+        ? score === 0 ? '全問不正解...。残念！'
           : score === 3 ? '全問正解！素晴らしい！' : `3問中${score}問正解でした！`
         : phase === 'today' ? '本日お楽しみに！' : '当日お楽しみに！';
       thanks.append(firstLine, mobileBreak, secondLine);
