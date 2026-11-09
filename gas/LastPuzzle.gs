@@ -87,8 +87,8 @@ function getLastPuzzle_(guestIdRaw) {
   response.hintCount = getThanksVisitState_(guestId, release, now).hintCount;
   if (published) {
     response.examples = [
-      { name: '白戸祐輔 の場合', code: 'ww5jg4ww9cxE → baseball' },
-      { name: '大貫愛佳 の場合', code: 'za3njBfcDrl8 → clarinet' }
+      { name: '白戸祐輔 の場合', code: 'b5w4d9qE → game' },
+      { name: '大貫愛佳 の場合', code: 'y3pBfDk8 → bass' }
     ];
     response.question = 'では、あなたは？';
   }
@@ -197,10 +197,10 @@ function getThanksVisitState_(guestId, end, now) {
 
 const PUZZLE_HINTS_SHEET = '謎解きヒント記録';
 const PUZZLE_HINT_TEXTS = [
-  'ローマ字と数字の文字列、どこかで使ったような...。',
-  '文字列を3つずつに区切るといいみたい！',
+  'アルファベットと数字の列、\nどこかで使ったような...。',
+  '2つずつ区切るといいみたい！',
   '大文字は次のように変換してみよう。\nA → 10, B → 11, C → 12, ... , I → 18\n16進法... いや、G, H, Iが含まれている人も\nいるみたいだから19進法の考え方だね。',
-  '「ab1」→「bc」　「ab2」→「cd」だよ！\nもうそろそろ分かったかな？',
+  '「a1」→「b」\n「a2」→「c」だよ！\nもうそろそろ分かったかな？',
   '変換してできた文字列をそのままIDに入力してみて！'
 ];
 
