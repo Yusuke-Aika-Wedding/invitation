@@ -35,13 +35,13 @@
   let handwritingMaskId = 0;
   const QUIZ_QUESTION_COUNT = 5;
   const QUIZ_QUESTIONS = [
-    { question: '新郎の血液型は？', options: ['A型', 'B型', 'C型', 'D型'], answer: 'A型', explanation: 'A型っぽいってよく言われてきました。' },
+    { question: '新郎の血液型は？', options: ['A型', 'B型', 'C型', 'D型'], answer: 'A型', explanation: 'A型っぽいってよく言われてきました' },
     { question: '新郎の実家で昔飼っていたのは？', options: ['犬', '猫'], answer: '犬', explanation: '犬・猫どちらも好きですよ！' },
-    { question: '新郎・新婦が好きなプロ野球球団は？', options: ['阪神タイガース', '読売ジャイアンツ', '横浜DeNAベイスターズ', 'ヤクルトスワローズ', '広島カープ', '中日ドラゴンズ'], answer: '阪神タイガース', explanation: '他球団ファンの方、すみません！' },
+    { question: '新郎・新婦が好きなプロ野球球団は？', options: ['阪神タイガース', '読売ジャイアンツ', '横浜DeNAベイスターズ', 'ヤクルトスワローズ', '広島カープ', '中日ドラゴンズ'], answer: '阪神タイガース', explanation: '他球団ファンの方 すみません！' },
     { question: '新郎の誕生月は？', options: ['2月', '3月', '5月', '7月', '11月'], answer: '5月', explanation: '2,3,5,7,11. どんな数字の並びか分かりますよね！？' },
     { question: '新婦の誕生月は？', options: ['2月', '3月', '5月', '7月', '11月'], answer: '11月', explanation: '2,3,5,7,11. どんな数字の並びか分かりますよね！？' },
     { question: '新郎が1番好きな寿司ネタは？', options: ['マグロ', 'サーモン', 'たこ', 'いか', 'たまご'], answer: 'サーモン', explanation: 'サーモン1択！' },
-    { question: '新郎が1番好きなおにぎりの具は？', options: ['鮭', 'ツナマヨ', 'こんぶ', 'おかか'], answer: 'ツナマヨ', explanation: '鮭も好きですね。' },
+    { question: '新郎が1番好きなおにぎりの具は？', options: ['鮭', 'ツナマヨ', 'こんぶ', 'おかか'], answer: 'ツナマヨ', explanation: '鮭も好きですね' },
     { question: '新郎が1番得意な教科は？', options: ['国語', '数学', '英語', '理科', '社会'], answer: '数学', explanation: 'もちろん！' },
     { question: '新郎が1番苦手な教科は？', options: ['音楽', '美術', '書道'], answer: '美術', explanation: '絵だけは勘弁...' },
     { question: '新郎・新婦の出身高校は？', options: ['越谷東高校', '越谷南高校', '越谷西高校', '越谷北高校'], answer: '越谷北高校', explanation: '同級生も出席してくれます！' },
@@ -180,7 +180,7 @@
     setAuthStatus('', '');
     try {
       const result = availability || await window.WeddingAccess.checkThanks({ ...thanksEntry, guestId: '' });
-      hint.textContent = result.published === false ? 'そのIDは...少し待ってくださいね。' : '';
+      hint.textContent = result.published === false ? 'そのIDは...少し待ってくださいね' : '';
     } catch (_) { hint.textContent = ''; }
     document.querySelector('.auth-copy').textContent = 'あなたのIDを入力してください';
     thanksEntryPending = wasPending;
@@ -199,10 +199,10 @@
         thanksEntry.guestId = '';
         window.WeddingAccess.saveVisit(thanksEntry);
         await promptThanksGuest(result);
-        setAuthStatus('IDを半角英数字で正しく入力してください。', 'error');
+        setAuthStatus('IDを半角英数字で正しく入力してください', 'error');
         return;
       }
-      if (!result || !result.ok) throw new Error('IDを確認できませんでした。');
+      if (!result || !result.ok) throw new Error('IDを確認できませんでした');
       window.WeddingAccess.rememberGuest(thanksEntry.guestId);
       window.WeddingAccess.saveVisit(thanksEntry);
       if (result.published === true) {
@@ -218,7 +218,7 @@
 
       }
     } catch (_) {
-      setAuthStatus('通信を確認して、もう一度お試しください。', 'error');
+      setAuthStatus('通信を確認して もう一度お試しください', 'error');
     } finally {
       thanksEntryPending = false;
       setAuthLoading(false);
@@ -237,7 +237,7 @@
     if (thanksEntry && !thanksEntryRequiresId) {
       const candidate = normalizeGuestId(rawId);
       if (!/^[A-Za-z0-9_-]{4,64}$/.test(candidate)) {
-        setAuthStatus('IDを半角英数字で正しく入力してください。', 'error');
+        setAuthStatus('IDを半角英数字で正しく入力してください', 'error');
         return;
       }
       thanksEntry.guestId = candidate;
@@ -246,20 +246,20 @@
     }
     const candidate = normalizeGuestId(rawId);
     if (!candidate || !/^[A-Za-z0-9_-]{4,64}$/.test(candidate)) {
-      setAuthStatus('IDを半角英数字で正しく入力してください。', 'error');
+      setAuthStatus('IDを半角英数字で正しく入力してください', 'error');
       if (els.guestIdEntry) els.guestIdEntry.focus();
       return;
     }
     if (!isGasConfigured()) {
-      setAuthStatus('GASのWebアプリURLが未設定です。先にセットアップを完了してください。', 'error');
+      setAuthStatus('GASのWebアプリURLが未設定です先にセットアップを完了してください', 'error');
       return;
     }
 
     setAuthLoading(true);
-    setAuthStatus(options.returningGuest ? '招待状を準備しています。' : 'IDを確認しています。', '');
+    setAuthStatus(options.returningGuest ? '招待状を準備しています' : 'IDを確認しています', '');
     try {
       const result = await jsonp('status', { guestId: candidate });
-      if (!result || !result.ok) throw new Error((result && result.error) || 'IDを確認できませんでした。');
+      if (!result || !result.ok) throw new Error((result && result.error) || 'IDを確認できませんでした');
 
       guestId = normalizeGuestId(result.guestId || candidate);
       latestStatus = {
@@ -295,7 +295,7 @@
       } catch (_) {
         // 何もしません。
       }
-      setAuthStatus(`IDを確認できませんでした。${error.message || '入力内容をご確認ください。'}`, 'error');
+      setAuthStatus(`IDを確認できませんでした${error.message || '入力内容をご確認ください'}`, 'error');
       if (els.guestIdEntry) {
         els.guestIdEntry.select();
         els.guestIdEntry.focus();
@@ -322,7 +322,7 @@
     puzzleRequestPending = true;
     try {
       const result = await jsonp('lastPuzzle', { guestId });
-      if (!result || !result.ok) throw new Error('公開設定を取得できませんでした。');
+      if (!result || !result.ok) throw new Error('公開設定を取得できませんでした');
       countdownStart = Date.parse(result.startAt);
       countdownServerTime = Date.parse(result.serverTime);
       countdownSyncTime = performance.now();
@@ -737,7 +737,7 @@
   function setAuthStatus(message, type) {
     if (!els.authStatus) return;
     els.authStatus.textContent = message || '';
-    els.authStatus.classList.toggle('auth-status-single-line', ['IDを半角英数字で正しく入力してください。', 'そのIDは...少し待ってくださいね。'].includes(message));
+    els.authStatus.classList.toggle('auth-status-single-line', ['IDを半角英数字で正しく入力してください', 'そのIDは...少し待ってくださいね'].includes(message));
     els.authStatus.classList.toggle('is-error', type === 'error');
     els.authStatus.classList.toggle('is-success', type === 'success');
   }
@@ -750,8 +750,8 @@
   function syncResponsiveCopy() {
     if (!els.guestMessageInput) return;
     els.guestMessageInput.placeholder = window.matchMedia('(max-width: 600px)').matches
-      ? '新郎新婦へのメッセージがあれば\nご入力ください。'
-      : '新郎新婦へのメッセージがあればご入力ください。';
+      ? '新郎新婦へのメッセージがあれば\nご入力ください'
+      : '新郎新婦へのメッセージがあればご入力ください';
   }
 
   function isGasConfigured() {
@@ -838,8 +838,8 @@
             ? '<span class="gift-complete-title-line">当日の現金での</span><span class="gift-complete-title-line">お預かりを承りました</span>'
             : '<span class="gift-complete-title-line">ご送金を</span><span class="gift-complete-title-line">確認いたしました</span>'}</strong>
           <p>${isCash
-            ? '<span>結婚式当日に</span><span>受付でお預かりいたします。</span><span>送金先情報は今後</span><span>表示されません。</span>'
-            : '<span>確認メールをお送りしました。</span><span>お心遣いをいただき、</span><span>誠にありがとうございます。</span>'}</p>
+            ? '<span>結婚式当日に</span><span>受付でお預かりいたします</span><span>送金先情報は今後</span><span>表示されません</span>'
+            : '<span>確認メールをお送りしました</span><span>お心遣いをいただき </span><span>誠にありがとうございます</span>'}</p>
         </div>
       </div>
     `;
@@ -851,7 +851,7 @@
           <span class="gift-complete-mark" aria-hidden="true">…</span>
           <div>
             <strong><span class="gift-complete-title-line">送金完了のご連絡を</span><span class="gift-complete-title-line">受け付けました</span></strong>
-            <p><span>新郎新婦が着金を確認後、</span><span>確認メールをお送りします。</span></p>
+            <p><span>新郎新婦が着金を確認後 </span><span>確認メールをお送りします</span></p>
             <button class="gift-report-cancel-button" type="button" data-cancel-gift-report>送金できていなかった</button>
           </div>
         </div>
@@ -862,8 +862,8 @@
       <h2 id="gift-information-title" class="gift-information-title">ご祝儀について</h2>
       ${isIssue ? `
         <div class="gift-issue-card" aria-live="polite">
-          <strong><span>現在、該当するご送金を</span><span>確認できておりません。</span></strong>
-          <p><span>行き違いでしたら申し訳ございません。</span><span>送金履歴をご確認のうえ、</span><span>必要な場合は送金先を再度表示してください。</span></p>
+          <strong><span>現在 該当するご送金を</span><span>確認できておりません</span></strong>
+          <p><span>行き違いでしたら申し訳ございません</span><span>送金履歴をご確認のうえ </span><span>必要な場合は送金先を再度表示してください</span></p>
         </div>
       ` : ''}
       <details class="gift-details"${isIssue ? ' open' : ''}>
@@ -876,34 +876,34 @@
         </summary>
         <div class="gift-details-body">
           <p class="gift-introduction">
-            <span class="gift-copy-line"><span>当日は現金のほか、</span><span>事前の送金もお選びいただけます。</span></span>
-            <span class="gift-copy-line">ご都合のよい方法をご利用ください。</span>
-            <strong class="gift-copy-note"><span>事前のご送金は</span><span>必須ではございません。</span></strong>
+            <span class="gift-copy-line"><span>当日は現金のほか </span><span>事前の送金もお選びいただけます</span></span>
+            <span class="gift-copy-line">ご都合のよい方法をご利用ください</span>
+            <strong class="gift-copy-note"><span>事前のご送金は</span><span>必須ではございません</span></strong>
           </p>
           <div class="gift-method-grid">
             <article class="gift-method-card">
               <span class="gift-method-number number-font">01</span>
               <h3>ことら送金</h3>
-              <p><span>ことら送金を利用し、</span><span>指定のゆうちょ銀行口座へ</span><span>お送りいただけます。</span></p>
+              <p><span>ことら送金を利用し </span><span>指定のゆうちょ銀行口座へ</span><span>お送りいただけます</span></p>
               <button class="gift-show-button" type="button" data-gift-method="yucho">送金先を表示する</button>
               <button class="gift-guide-button" type="button" data-cotra-guide>初めての方へ　ことら送金ガイド</button>
             </article>
             <article class="gift-method-card">
               <span class="gift-method-number number-font">02</span>
               <h3>銀行振込</h3>
-              <p><span>指定の楽天銀行口座へ</span><span>お振り込みいただけます。</span></p>
+              <p><span>指定の楽天銀行口座へ</span><span>お振り込みいただけます</span></p>
               <button class="gift-show-button" type="button" data-gift-method="rakuten">送金先を表示する</button>
             </article>
             <article class="gift-method-card">
               <span class="gift-method-number number-font">03</span>
               <h3>PayPay</h3>
-              <p><span>PayPayから</span><span>お送りいただけます。</span></p>
+              <p><span>PayPayから</span><span>お送りいただけます</span></p>
               <button class="gift-show-button" type="button" data-gift-method="paypay">送金先を表示する</button>
             </article>
             <article class="gift-method-card">
               <span class="gift-method-number number-font">04</span>
               <h3>当日に現金</h3>
-              <p><span>結婚式当日、受付にて</span><span>現金でお預かりいたします。</span></p>
+              <p><span>結婚式当日 受付にて</span><span>現金でお預かりいたします</span></p>
               <button class="gift-show-button gift-cash-button" type="button" data-gift-cash>当日に現金で持参する</button>
             </article>
           </div>
@@ -987,14 +987,14 @@
     try {
       const result = await jsonp('giftInfo', { guestId: guestId, method: method });
       if (requestId !== giftRequestSequence || els.giftModal.hidden) return;
-      if (!result || !result.ok) throw new Error((result && result.error) || '送金先情報を取得できませんでした。');
-      if (!canShowGiftInformation(latestStatus.giftStatus)) throw new Error('現在、送金先情報は表示できません。');
+      if (!result || !result.ok) throw new Error((result && result.error) || '送金先情報を取得できませんでした');
+      if (!canShowGiftInformation(latestStatus.giftStatus)) throw new Error('現在 送金先情報は表示できません');
       renderGiftAccountInformation(result.information || {});
     } catch (error) {
       if (requestId !== giftRequestSequence || els.giftModal.hidden) return;
       clearGiftAccountInformation();
-      if (els.giftModalDescription) els.giftModalDescription.textContent = '送金先情報を表示できませんでした。';
-      setGiftModalStatus(error.message || '時間をおいて、もう一度お試しください。', 'error');
+      if (els.giftModalDescription) els.giftModalDescription.textContent = '送金先情報を表示できませんでした';
+      setGiftModalStatus(error.message || '時間をおいて もう一度お試しください', 'error');
     }
   }
 
@@ -1007,7 +1007,7 @@
     document.body.classList.add('gift-modal-open');
     setGiftModalTitle('当日に現金で持参する');
     if (els.giftModalDescription) {
-      els.giftModalDescription.textContent = 'この方法を選ぶと、今後この招待状では送金先情報を表示できません。';
+      els.giftModalDescription.textContent = 'この方法を選ぶと 今後この招待状では送金先情報を表示できません';
     }
     setGiftModalStatus('', '');
     if (els.giftModalCard) els.giftModalCard.focus();
@@ -1023,15 +1023,15 @@
     }
     if (els.giftConfirmMessage) {
       els.giftConfirmMessage.textContent = isCash
-        ? '「現金」として記録すると、今後この招待状では送金先情報を表示できません。'
-        : '銀行アプリなどの送金履歴が「完了」になっていることをご確認ください。着金確認後に確認メールをお送りします。';
+        ? '「現金」として記録すると 今後この招待状では送金先情報を表示できません'
+        : '銀行アプリなどの送金履歴が「完了」になっていることをご確認ください着金確認後に確認メールをお送りします';
     }
     if (els.giftDeclarationFields) els.giftDeclarationFields.classList.toggle('is-hidden', isCash);
     if (els.giftConfirmCancel) {
       els.giftConfirmCancel.textContent = isCash ? 'まだ決めていません' : 'まだ送金していません';
     }
     if (els.giftConfirmSubmit) {
-      els.giftConfirmSubmit.textContent = isCash ? 'はい、当日持参します' : '送金完了を連絡する';
+      els.giftConfirmSubmit.textContent = isCash ? 'はい 当日持参します' : '送金完了を連絡する';
     }
     if (els.giftConfirmPanel) els.giftConfirmPanel.classList.remove('is-hidden');
     if (!isCash && els.giftSenderName) els.giftSenderName.focus();
@@ -1041,8 +1041,8 @@
   function renderGiftAccountInformation(information) {
     const fields = Array.isArray(information.fields) ? information.fields : [];
     setGiftModalTitle(String(information.title || '送金先情報'));
-    if (els.giftModalDescription) els.giftModalDescription.textContent = String(information.description || '以下の送金先をご確認ください。');
-    if (els.giftModalNote) els.giftModalNote.textContent = String(information.note || '送金前に受取人名をご確認ください。');
+    if (els.giftModalDescription) els.giftModalDescription.textContent = String(information.description || '以下の送金先をご確認ください');
+    if (els.giftModalNote) els.giftModalNote.textContent = String(information.note || '送金前に受取人名をご確認ください');
     if (els.giftAccountFields) {
       els.giftAccountFields.replaceChildren(...fields.map(field => {
         const row = document.createElement('div');
@@ -1092,7 +1092,7 @@
       button.textContent = 'コピーしました';
       window.setTimeout(() => { if (button.isConnected) button.textContent = previous; }, 1600);
     } catch (_) {
-      setGiftModalStatus('コピーできませんでした。長押ししてコピーしてください。', 'error');
+      setGiftModalStatus('コピーできませんでした長押ししてコピーしてください', 'error');
     }
   }
 
@@ -1104,11 +1104,11 @@
     const senderName = els.giftSenderName ? els.giftSenderName.value.trim() : '';
     const declarationNote = els.giftDeclarationNote ? els.giftDeclarationNote.value.trim() : '';
     if (!isCash && senderName.length > 100) {
-      setGiftModalStatus('送金元のお名前は100文字以内で入力してください。', 'error');
+      setGiftModalStatus('送金元のお名前は100文字以内で入力してください', 'error');
       return;
     }
     if (!isCash && declarationNote.length > 200) {
-      setGiftModalStatus('送金についてのメモは200文字以内で入力してください。', 'error');
+      setGiftModalStatus('送金についてのメモは200文字以内で入力してください', 'error');
       return;
     }
     if (els.giftConfirmSubmit) {
@@ -1121,7 +1121,7 @@
     } else {
       setGiftModalTitle(['送金完了のご連絡を', '送信しています']);
     }
-    if (els.giftModalDescription) els.giftModalDescription.textContent = '画面を閉じずにお待ちください。';
+    if (els.giftModalDescription) els.giftModalDescription.textContent = '画面を閉じずにお待ちください';
     setGiftModalStatus('', '');
 
     try {
@@ -1132,7 +1132,7 @@
         declarationNote: isCash ? undefined : declarationNote
       });
       if (!result || !result.ok) {
-        throw new Error((result && result.error) || 'ご祝儀のお渡し方法を記録できませんでした。');
+        throw new Error((result && result.error) || 'ご祝儀のお渡し方法を記録できませんでした');
       }
       latestStatus.giftStatus = normalizeGiftStatus(result.giftStatus || expectedStatus, true);
       latestStatus.giftSent = isGiftLocked(latestStatus.giftStatus);
@@ -1146,15 +1146,15 @@
         els.giftConfirmSubmit.textContent = 'もう一度記録する';
       }
       setGiftModalTitle('ご祝儀のお渡し方法を記録できませんでした');
-      if (els.giftModalDescription) els.giftModalDescription.textContent = '通信状況をご確認のうえ、もう一度お試しください。';
+      if (els.giftModalDescription) els.giftModalDescription.textContent = '通信状況をご確認のうえ もう一度お試しください';
       if (els.giftConfirmPanel) els.giftConfirmPanel.classList.remove('is-hidden');
-      setGiftModalStatus(error.message || '時間をおいて、もう一度お試しください。', 'error');
+      setGiftModalStatus(error.message || '時間をおいて もう一度お試しください', 'error');
     }
   }
 
   async function cancelGiftReport(button) {
     if (!guestId || !authenticated || latestStatus.giftStatus !== GIFT_STATUS.reported) return;
-    const confirmed = window.confirm('送金完了のご連絡を取り消し、送金先を再度表示しますか？');
+    const confirmed = window.confirm('送金完了のご連絡を取り消し 送金先を再度表示しますか？');
     if (!confirmed) return;
 
     const previousText = button.textContent;
@@ -1162,7 +1162,7 @@
     button.textContent = '取り消しています…';
     try {
       const result = await jsonp('cancelGiftReport', { guestId: guestId });
-      if (!result || !result.ok) throw new Error((result && result.error) || '送金完了のご連絡を取り消せませんでした。');
+      if (!result || !result.ok) throw new Error((result && result.error) || '送金完了のご連絡を取り消せませんでした');
       latestStatus.giftStatus = normalizeGiftStatus(result.giftStatus);
       latestStatus.giftSent = isGiftLocked(latestStatus.giftStatus);
       renderGiftInformation(true, latestStatus.giftStatus);
@@ -1171,7 +1171,7 @@
     } catch (error) {
       button.disabled = false;
       button.textContent = previousText;
-      window.alert(error.message || '時間をおいて、もう一度お試しください。');
+      window.alert(error.message || '時間をおいて もう一度お試しください');
     }
   }
 
@@ -1227,61 +1227,61 @@
       about: `
         <p class="cotra-answer-label">ことら送金とは</p>
         <h3>専用アプリではありません</h3>
-        <p class="cotra-answer-copy"><span>対応する銀行アプリや送金アプリの中にある、</span><span>個人間送金のサービスです。</span></p>
-        <p class="cotra-answer-copy"><span>受取人の口座番号を指定して送る場合は、</span><span>受け取る側で新しいアプリを準備する必要はありません。</span></p>
+        <p class="cotra-answer-copy"><span>対応する銀行アプリや送金アプリの中にある </span><span>個人間送金のサービスです</span></p>
+        <p class="cotra-answer-copy"><span>受取人の口座番号を指定して送る場合は </span><span>受け取る側で新しいアプリを準備する必要はありません</span></p>
         <a class="cotra-official-link" href="https://www.cotra.ne.jp/manual/" target="_blank" rel="noopener">ことら公式の使い方を見る</a>
       `,
       supported: `
         <p class="cotra-answer-label">対応状況の確認</p>
         <h3>利用中の銀行・アプリを検索できます</h3>
-        <p class="cotra-answer-copy"><span>ことら送金を送れるアプリは金融機関ごとに異なります。</span><span>最新の対応状況は、ことら公式サイトでご確認ください。</span></p>
+        <p class="cotra-answer-copy"><span>ことら送金を送れるアプリは金融機関ごとに異なります</span><span>最新の対応状況は ことら公式サイトでご確認ください</span></p>
         <a class="cotra-official-link" href="https://www.cotra.ne.jp/member/?tab=apuri" target="_blank" rel="noopener">対応する銀行・アプリを確認する</a>
       `,
       steps: `
         <p class="cotra-answer-label">一般的な送金手順</p>
         <h3>口座番号を使って送金します</h3>
         <ol class="cotra-step-list">
-          <li><strong>対応アプリを開く</strong><span>メニューから「ことら送金」を選びます。</span></li>
-          <li><strong>口座番号で送る</strong><span>送金先に「ゆうちょ銀行」を選びます。</span></li>
-          <li><strong>振込用の情報を入力する</strong><span>この招待状に表示される店名・預金種目・口座番号を使います。</span></li>
-          <li><strong>受取人名義を確認する</strong><span>表示された名義が送金先情報と一致することを必ず確認します。</span></li>
-          <li><strong>送金完了後に連絡する</strong><span>招待状へ戻り「送金完了を連絡する」を押します。</span></li>
+          <li><strong>対応アプリを開く</strong><span>メニューから「ことら送金」を選びます</span></li>
+          <li><strong>口座番号で送る</strong><span>送金先に「ゆうちょ銀行」を選びます</span></li>
+          <li><strong>振込用の情報を入力する</strong><span>この招待状に表示される店名・預金種目・口座番号を使います</span></li>
+          <li><strong>受取人名義を確認する</strong><span>表示された名義が送金先情報と一致することを必ず確認します</span></li>
+          <li><strong>送金完了後に連絡する</strong><span>招待状へ戻り「送金完了を連絡する」を押します</span></li>
         </ol>
-        <p class="cotra-guide-caution"><strong>ゆうちょ銀行宛ての注意</strong><span>「記号・番号」ではなく、振込用の店名・預金種目・口座番号をご利用ください。</span></p>
+        <p class="cotra-guide-caution"><strong>ゆうちょ銀行宛ての注意</strong><span>「記号・番号」ではなく 振込用の店名・預金種目・口座番号をご利用ください</span></p>
       `,
       missing: `
         <p class="cotra-answer-label">メニューが見つからないとき</p>
         <h3>アプリの対応状況をご確認ください</h3>
-        <p class="cotra-answer-copy"><span>同じ金融機関でも、利用するアプリによって</span><span>ことら送金を利用できない場合があります。</span></p>
-        <p class="cotra-answer-copy"><span>見つからない場合は、公式一覧を確認するか、</span><span>銀行振込・PayPay・当日現金をご利用ください。</span></p>
+        <p class="cotra-answer-copy"><span>同じ金融機関でも 利用するアプリによって</span><span>ことら送金を利用できない場合があります</span></p>
+        <p class="cotra-answer-copy"><span>見つからない場合は 公式一覧を確認するか </span><span>銀行振込・PayPay・当日現金をご利用ください</span></p>
         <a class="cotra-official-link" href="https://www.cotra.ne.jp/member/?tab=apuri" target="_blank" rel="noopener">対応アプリを確認する</a>
       `,
       error: `
         <p class="cotra-answer-label">エラー・未完了のとき</p>
         <h3>送金履歴が「完了」か確認します</h3>
         <ul class="cotra-check-list">
-          <li>少し時間を空けてから、もう一度お試しください。</li>
-          <li>送金先の名義や入力内容に誤りがないか確認してください。</li>
-          <li>解決しない場合は、利用中の金融機関へお問い合わせください。</li>
-          <li>銀行振込・PayPay・当日現金へ変更しても問題ありません。</li>
+          <li>少し時間を空けてから もう一度お試しください</li>
+          <li>送金先の名義や入力内容に誤りがないか確認してください</li>
+          <li>解決しない場合は 利用中の金融機関へお問い合わせください</li>
+          <li>銀行振込・PayPay・当日現金へ変更しても問題ありません</li>
         </ul>
-        <p class="cotra-guide-caution"><span>送金が完了していない場合は、</span><span>「送金完了を連絡する」を押さないでください。</span></p>
+        <p class="cotra-guide-caution"><span>送金が完了していない場合は </span><span>「送金完了を連絡する」を押さないでください</span></p>
       `,
       alternatives: `
         <p class="cotra-answer-label">別の送金方法</p>
         <h3>ご都合のよい方法をお選びください</h3>
         <ul class="cotra-check-list">
-          <li><strong>銀行振込</strong>：楽天銀行の送金先を表示できます。</li>
-          <li><strong>PayPay</strong>：PayPay IDを表示できます。</li>
-          <li><strong>当日に現金</strong>：結婚式当日に受付でお預かりします。</li>
+          <li><strong>銀行振込</strong>：楽天銀行の送金先を表示できます</li>
+          <li><strong>PayPay</strong>：PayPay IDを表示できます</li>
+          <li><strong>当日に現金</strong>：結婚式当日に受付でお預かりします</li>
         </ul>
-        <p class="cotra-answer-copy"><span>事前のご送金は必須ではございません。</span><span>無理のない方法をご利用ください。</span></p>
+        <p class="cotra-answer-copy"><span>事前のご送金は必須ではございません</span><span>無理のない方法をご利用ください</span></p>
       `,
       mistake: `
         <p class="cotra-answer-label">間違えて送金したとき</p>
         <h3>送金先の金融機関へご連絡ください</h3>
-        <p class="cotra-answer-copy"><span>ことら送金は、送金完了後に取り消すことができません。</span><span>誤った送金先へ送った場合は、利用した金融機関へ速やかにお問い合わせください。</span></p>
-        <p class="cotra-guide-caution"><strong>追加の送金は行わず、</strong><span>金融機関からの案内をお待ちください。</span></p>
+        <p class="cotra-answer-copy"><span>ことら送金は 送金完了後に取り消すことができません</span><span>誤った送金先へ送った場合は 利用した金融機関へ速やかにお問い合わせください</span></p>
+        <p class="cotra-guide-caution"><strong>追加の送金は行わず </strong><span>金融機関からの案内をお待ちください</span></p>
         <a class="cotra-official-link" href="https://www.cotra.ne.jp/faq/" target="_blank" rel="noopener">ことら公式のよくある質問を見る</a>
       `
     };
@@ -1314,13 +1314,13 @@
     currentGiftMethod = '';
     clearGiftAccountInformation();
     setGiftModalTitle('送金先情報');
-    if (els.giftModalDescription) els.giftModalDescription.textContent = '送金先情報を確認しています。';
+    if (els.giftModalDescription) els.giftModalDescription.textContent = '送金先情報を確認しています';
     if (els.giftModalNote) els.giftModalNote.textContent = '';
     if (els.giftModalActions) els.giftModalActions.classList.add('is-hidden');
     if (els.giftConfirmPanel) els.giftConfirmPanel.classList.add('is-hidden');
     if (els.giftConfirmTitle) els.giftConfirmTitle.textContent = '送金は完了していますか？';
     if (els.giftConfirmMessage) {
-      els.giftConfirmMessage.textContent = '銀行アプリなどの送金履歴が「完了」になっていることをご確認ください。';
+      els.giftConfirmMessage.textContent = '銀行アプリなどの送金履歴が「完了」になっていることをご確認ください';
     }
     if (els.giftDeclarationFields) els.giftDeclarationFields.classList.remove('is-hidden');
     if (els.giftSenderName) els.giftSenderName.value = '';
@@ -1431,14 +1431,14 @@
       submit.textContent = '投票しています…';
       try {
         const result = await jsonp('submitPredictions', { guestId, answers: JSON.stringify(answers) });
-        if (!result || !result.ok) throw new Error((result && result.error) || '投票を記録できませんでした。');
+        if (!result || !result.ok) throw new Error((result && result.error) || '投票を記録できませんでした');
         latestStatus.prediction = result.prediction;
         predictionSelections.clear();
         renderPrediction(latestStatus.completed && latestStatus.receptionAttending, latestStatus.prediction);
       } catch (error) {
         els.predictionList.querySelectorAll('button').forEach(button => { button.disabled = false; });
         submit.textContent = '回答内容を確認する';
-        setPredictionCardStatus(els.predictionList, error.message || '時間をおいて、もう一度お試しください。', 'error');
+        setPredictionCardStatus(els.predictionList, error.message || '時間をおいて もう一度お試しください', 'error');
       } finally { predictionSubmitting = false; }
     });
   }
@@ -1465,7 +1465,7 @@
     if (!questions.length) {
       const message = document.createElement('p');
       message.className = 'prediction-loading';
-      message.textContent = 'アンケートを準備しています。ページを再読み込みしてください。';
+      message.textContent = 'アンケートを準備していますページを再読み込みしてください';
       els.predictionList.replaceChildren(message);
       return;
     }
@@ -1499,7 +1499,7 @@
           const percent = Math.max(0, Math.min(100, Number(item.percent) || 0));
           result.className = `prediction-result${selected ? ' is-selected' : ''}`;
           result.setAttribute('role', 'listitem');
-          result.setAttribute('aria-label', `${label} ${percent}%${Number.isFinite(item.count) ? `、${item.count}票` : ''}${selected ? '、あなたの投票' : ''}`);
+          result.setAttribute('aria-label', `${label} ${percent}%${Number.isFinite(item.count) ? ` ${item.count}票` : ''}${selected ? ' あなたの投票' : ''}`);
           const bar = document.createElement('span');
           bar.className = 'prediction-result-bar';
           bar.style.width = `${percent}%`;
@@ -1581,7 +1581,7 @@
       secondLine.className = 'prediction-complete-line';
       const score = questions.filter(question => question.correct === true).length;
       secondLine.textContent = published
-        ? score === 0 ? '全問不正解...。残念！'
+        ? score === 0 ? '全問不正解...残念！'
           : score === 3 ? '全問正解！素晴らしい！' : `3問中${score}問正解でした！`
         : phase === 'today' ? '本日お楽しみに！' : '当日お楽しみに！';
       thanks.append(firstLine, mobileBreak, secondLine);
@@ -1885,13 +1885,13 @@
       setText(els.quizScore, state.score);
 
       let title = 'ナイスチャレンジ！';
-      let message = 'もう一度挑戦すると、違う問題が出るかもしれません。ぜひ再挑戦してみてください。';
+      let message = 'もう一度挑戦すると 違う問題が出るかもしれませんぜひ再挑戦してみてください';
       if (state.score === QUIZ_QUESTION_COUNT) {
         title = '全問正解！ ふたりマスターです';
-        message = 'さすがの満点です。当日もふたりとの思い出話で盛り上がりましょう！';
+        message = 'さすがの満点です当日もふたりとの思い出話で盛り上がりましょう！';
       } else if (state.score >= 3) {
         title = 'お見事！ ふたり通です';
-        message = 'ふたりのことをよく知っていますね。満点を目指してもう一度どうぞ！';
+        message = 'ふたりのことをよく知っていますね満点を目指してもう一度どうぞ！';
       }
       setText(els.quizResultTitle, title);
       setText(els.quizResultMessage, message);
@@ -1983,16 +1983,16 @@
       event.preventDefault();
       if (submitting) return;
       if (!guestId || !authenticated) {
-        setStatus('IDの認証情報がありません。IDを再入力してください。', 'error');
+        setStatus('IDの認証情報がありませんIDを再入力してください', 'error');
         return;
       }
       if (!isGasConfigured()) {
-        setStatus('GASのWebアプリURLが未設定です。', 'error');
+        setStatus('GASのWebアプリURLが未設定です', 'error');
         return;
       }
       if (!els.form.checkValidity()) {
         els.form.reportValidity();
-        setStatus('必須項目を入力・選択してください。', 'error');
+        setStatus('必須項目を入力・選択してください', 'error');
         return;
       }
 
@@ -2006,7 +2006,7 @@
       payload.allergy = payload.allergyChoice === 'なし' ? 'なし' : payload.allergyDetails;
 
       if (payload.allergyChoice === 'あり' && !payload.allergyDetails) {
-        setStatus('アレルギーの詳細を入力してください。', 'error');
+        setStatus('アレルギーの詳細を入力してください', 'error');
         if (els.allergyDetailsInput) els.allergyDetailsInput.focus();
         return;
       }
@@ -2019,10 +2019,10 @@
       ], 'この内容で送信する');
       if (!confirmed) { submitting = false; return; }
       setLoading(true);
-      setStatus(['送信しています。', '画面を閉じずにお待ちください。'], '');
+      setStatus(['送信しています', '画面を閉じずにお待ちください'], '');
       try {
         const result = await jsonp('submit', payload);
-        if (!result || !result.ok) throw new Error((result && result.error) || '送信に失敗しました。');
+        if (!result || !result.ok) throw new Error((result && result.error) || '送信に失敗しました');
         const displayName = String(result.displayName || payload.name || 'ゲスト').trim();
         if (els.nameInput) els.nameInput.value = displayName;
         document.body.dataset.defaultName = displayName;
@@ -2034,11 +2034,11 @@
           prediction: result.prediction || null
         });
         refreshLastPuzzle();
-        setStatus('ご回答ありがとうございました。確認メールをご確認ください。', 'success');
+        setStatus('ご回答ありがとうございました確認メールをご確認ください', 'success');
         const target = document.getElementById('rsvp');
         if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
       } catch (error) {
-        setStatus(`送信できませんでした。${error.message || 'GASの設定を確認してください。'}`, 'error');
+        setStatus(`送信できませんでした${error.message || 'GASの設定を確認してください'}`, 'error');
       } finally {
         setLoading(false);
         submitting = false;

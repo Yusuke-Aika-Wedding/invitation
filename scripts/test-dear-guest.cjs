@@ -11,7 +11,7 @@ let count=0;const select=c.window.WeddingDearGuest.selectMessage;
 for(const completed of [false,true])for(const attending of [false,true])for(const text of ['', '個別メッセージ\n改行'])for(const phase of ['early','eve','today','during','after'])for(const thanksVisited of [false,true]){
  const status={completed,attending,invitationMessage:text,dearGuest:{thanksVisited}},r=select(status,phase),out=JSON.stringify(r);
  assert.equal(r.custom,!!(completed&&attending&&phase==='early'&&text));
- if(!completed)assert.match(out,/ご入力・ご回答/);else if(!attending)assert.match(out,/またお会いできる日/);else if(phase==='after')assert.match(out,thanksVisited?/さすがです/:/隠されているよう/);
+ if(!completed)assert.match(out,/ぜひご出席いただきたく ご案内申し上げます/);else if(!attending)assert.match(out,/またお会いできる日/);else if(phase==='after')assert.match(out,thanksVisited?/さすがです/:/隠されているよう/);
  count++;
 }
 // Case-sensitive persisted visits; unknown visits never count for a guest.
@@ -21,9 +21,9 @@ c.PUZZLE_SETTINGS_SHEET='公開設定';c.THANKS_VISITS_SHEET='来場感謝サイ
 assert.equal(c.getDearGuestState_('Case_ID',end).thanksVisited,true);assert.equal(c.getDearGuestState_('case_id',end).thanksVisited,false);
 console.log(`PASS ${count} message combinations, JST calendar boundaries, invalid settings, persisted case-sensitive visits`);
 const expectedRsvp = {
- early: '当日お会いできますことを、心より楽しみにしております。',
- eve: '明日お会いできますことを、心より楽しみにしております。',
- today: '本日お会いできますことを、心より楽しみにしております。',
+ early: '当日お会いできますことを 心より楽しみにしております',
+ eve: '明日お会いできますことを 心より楽しみにしております',
+ today: '本日お会いできますことを 心より楽しみにしております',
  during: 'ついに始まりましたね！楽しみましょう！',
  after: 'ご来場ありがとうございました！\n楽しんでいただけましたか？'
 };
@@ -31,7 +31,7 @@ for (const [phase, text] of Object.entries(expectedRsvp)) {
  for (const completed of [false, true]) for (const attending of [false, true]) {
   const result = c.window.WeddingDearGuest.selectRsvp({ completed, attending }, phase);
   assert.equal(result.hidden, !completed && ['during', 'after'].includes(phase));
-  assert.equal(result.text, attending ? text : 'またお会いできる日を楽しみにしております。');
+  assert.equal(result.text, attending ? text : 'またお会いできる日を楽しみにしております');
  }
 }
 console.log('PASS RSVP exact copy and visibility across 20 response/phase combinations');

@@ -65,7 +65,7 @@
       try {
         url = new URL(window.WEDDING_CONFIG.gasWebAppUrl);
       } catch (_) {
-        reject(new Error('GASのWebアプリURLが正しくありません。'));
+        reject(new Error('GASのWebアプリURLが正しくありません'));
         return;
       }
       const callbackName = `__weddingJsonp_${Date.now()}_${Math.random().toString(36).slice(2)}`;
@@ -77,9 +77,9 @@
       });
 
       const script = document.createElement('script');
-      const timer = window.setTimeout(() => cleanup(new Error('通信がタイムアウトしました。')), 22000);
+      const timer = window.setTimeout(() => cleanup(new Error('通信がタイムアウトしました')), 22000);
       window[callbackName] = data => cleanup(null, data);
-      script.onerror = () => cleanup(new Error('GASと通信できませんでした。'));
+      script.onerror = () => cleanup(new Error('GASと通信できませんでした'));
       script.src = url.toString();
       document.body.appendChild(script);
 

@@ -94,7 +94,7 @@ const PREDICTION_QUESTIONS = [
   },
   {
     id: 'Q3',
-    question: '披露宴で、新郎新婦の退場時に流れる曲は誰の曲？',
+    question: '披露宴で 新郎新婦の退場時に流れる曲は誰の曲？',
     options: ['サザンオールスターズ', 'Mr.Children', '嵐', 'その他'],
     answer: 'その他'
   }
@@ -174,7 +174,7 @@ function setup() {
     lock.releaseLock();
   }
   resetTriggers_();
-  Logger.log('Setup complete. Webアプリとしてデプロイし、URLをGitHub側の js/config.js に貼り付けてください。');
+  Logger.log('Setup complete. Webアプリとしてデプロイし URLをGitHub側の js/config.js に貼り付けてください');
 }
 
 function doGetInvitation_(e) {
@@ -206,12 +206,12 @@ function doPost(e) {
 
 function getStatus_(guestIdRaw) {
   const guestId = normalizeGuestId_(guestIdRaw);
-  if (!guestId) throw new Error('guestIdがありません。');
+  if (!guestId) throw new Error('guestIdがありません');
 
   const sheet = getMainSheet_();
   ensureHeaders_(sheet);
   const record = findGuestRecord_(sheet, guestId);
-  if (!record) throw new Error('ゲスト情報が見つかりません。');
+  if (!record) throw new Error('ゲスト情報が見つかりません');
 
   const values = record.values;
   const completed = isCompleted_(values);
@@ -248,27 +248,27 @@ function submitResponse_(params) {
     const allergyDetails = String(params.allergyDetails || '').trim();
     const message = String(params.message || '').trim();
 
-    if (!guestId) throw new Error('guestIdがありません。');
-    if (!name) throw new Error('氏名を入力してください。');
-    if (name.length > 100) throw new Error('氏名は100文字以内で入力してください。');
-    if (!isValidEmail_(email)) throw new Error('メールアドレスを確認してください。');
-    if (!ceremonyAttendance) throw new Error('挙式の出欠を選択してください。');
-    if (!receptionAttendance) throw new Error('披露宴の出欠を選択してください。');
+    if (!guestId) throw new Error('guestIdがありません');
+    if (!name) throw new Error('氏名を入力してください');
+    if (name.length > 100) throw new Error('氏名は100文字以内で入力してください');
+    if (!isValidEmail_(email)) throw new Error('メールアドレスを確認してください');
+    if (!ceremonyAttendance) throw new Error('挙式の出欠を選択してください');
+    if (!receptionAttendance) throw new Error('披露宴の出欠を選択してください');
 
     let allergy = '';
     if (allergyChoice === 'なし') {
       allergy = 'なし';
     } else if (allergyChoice === 'あり') {
-      if (!allergyDetails) throw new Error('アレルギーの詳細を入力してください。');
+      if (!allergyDetails) throw new Error('アレルギーの詳細を入力してください');
       allergy = allergyDetails;
     } else {
-      throw new Error('アレルギーの「あり」「なし」を選択してください。');
+      throw new Error('アレルギーの「あり」「なし」を選択してください');
     }
 
     const sheet = getMainSheet_();
     ensureHeaders_(sheet);
     const record = findGuestRecord_(sheet, guestId);
-    if (!record) throw new Error('ゲスト情報が見つかりません。');
+    if (!record) throw new Error('ゲスト情報が見つかりません');
     const storedGuestId = record.values.id || guestId;
 
     // 回答を書き込む前に、実行アカウント・メール権限・残り送信枠を確認する。
@@ -327,21 +327,21 @@ function submitPrediction_(params) {
     const guestId = normalizeGuestId_(params && params.guestId);
     const questionId = String((params && params.questionId) || '').trim();
     const option = String((params && params.option) || '').trim();
-    if (!guestId) throw new Error('guestIdがありません。');
+    if (!guestId) throw new Error('guestIdがありません');
 
     const question = getPredictionQuestion_(questionId);
-    if (!question) throw new Error('アンケートの質問が見つかりません。');
-    if (!question.options.includes(option)) throw new Error('選択肢を確認してください。');
+    if (!question) throw new Error('アンケートの質問が見つかりません');
+    if (!question.options.includes(option)) throw new Error('選択肢を確認してください');
 
     const guestSheet = getMainSheet_();
     ensureHeaders_(guestSheet);
     const guestRecord = findGuestRecord_(guestSheet, guestId);
-    if (!guestRecord) throw new Error('ゲスト情報が見つかりません。');
+    if (!guestRecord) throw new Error('ゲスト情報が見つかりません');
     if (!isCompleted_(guestRecord.values)) {
-      throw new Error('WEDDING PREDICTIONは、RSVPの回答後に投票できます。');
+      throw new Error('WEDDING PREDICTIONは RSVPの回答後に投票できます');
     }
     if (normalizeAttendance_(guestRecord.values.reception) !== '出席') {
-      throw new Error('WEDDING PREDICTIONは、披露宴にご出席の方だけ投票できます。');
+      throw new Error('WEDDING PREDICTIONは 披露宴にご出席の方だけ投票できます');
     }
 
     const storedGuestId = guestRecord.values.id || guestId;
@@ -357,7 +357,7 @@ function submitPrediction_(params) {
       };
     }
 
-    if (getPredictionTiming_().published) throw new Error('正解発表後の投票はできません。');
+    if (getPredictionTiming_().published) throw new Error('正解発表後の投票はできません');
     const rowNumber = Math.max(predictionSheet.getLastRow() + 1, 2);
     predictionSheet.getRange(rowNumber, 1, 1, PREDICTION_HEADERS.length).setValues([[
       storedGuestId,
@@ -387,26 +387,26 @@ function submitPredictions_(params) {
     const guestId = normalizeGuestId_(params && params.guestId);
     const guestSheet = getMainSheet_();
     const guest = guestId ? findGuestRecord_(guestSheet, guestId) : null;
-    if (!guest) throw new Error('ゲスト情報が見つかりません。');
+    if (!guest) throw new Error('ゲスト情報が見つかりません');
     if (!isCompleted_(guest.values) || normalizeAttendance_(guest.values.reception) !== '出席') {
-      throw new Error('WEDDING PREDICTIONは、RSVPで披露宴への出席をご回答後に投票できます。');
+      throw new Error('WEDDING PREDICTIONは RSVPで披露宴への出席をご回答後に投票できます');
     }
     let answers;
-    try { answers = JSON.parse(String(params.answers || '')); } catch (_) { throw new Error('3問すべての予想を選んでください。'); }
-    if (!Array.isArray(answers) || answers.length !== PREDICTION_QUESTIONS.length) throw new Error('3問すべての予想を選んでください。');
+    try { answers = JSON.parse(String(params.answers || '')); } catch (_) { throw new Error('3問すべての予想を選んでください'); }
+    if (!Array.isArray(answers) || answers.length !== PREDICTION_QUESTIONS.length) throw new Error('3問すべての予想を選んでください');
     const sheet = getPredictionSheet_();
     const votes = readPredictionVotes_(sheet).filter(vote => normalizeGuestId_(vote.guestId) === guest.values.id);
     const now = new Date();
     const rows = [];
     PREDICTION_QUESTIONS.forEach(question => {
       const matches = answers.filter(answer => answer && answer.questionId === question.id);
-      if (matches.length !== 1 || !question.options.includes(matches[0].option)) throw new Error('選択肢を確認してください。');
+      if (matches.length !== 1 || !question.options.includes(matches[0].option)) throw new Error('選択肢を確認してください');
       if (!votes.some(vote => vote.questionId === question.id)) rows.push([
         guest.values.id, guest.values.name || 'ゲスト', question.id, matches[0].option, now
       ]);
     });
     if (rows.length) {
-      if (getPredictionTiming_(now).published) throw new Error('正解発表後の投票はできません。');
+      if (getPredictionTiming_(now).published) throw new Error('正解発表後の投票はできません');
       const firstRow = Math.max(sheet.getLastRow() + 1, 2);
       sheet.getRange(firstRow, 1, rows.length, PREDICTION_HEADERS.length).setValues(rows);
       sheet.getRange(firstRow, 5, rows.length, 1).setNumberFormat('yyyy/mm/dd hh:mm:ss');
@@ -517,8 +517,8 @@ function readPredictionVotes_(sheet) {
 function getGiftInformation_(guestIdRaw, methodRaw) {
   const guestId = normalizeGuestId_(guestIdRaw);
   const method = String(methodRaw || '').trim().toLowerCase();
-  if (!guestId) throw new Error('guestIdがありません。');
-  if (!['yucho', 'rakuten', 'paypay', 'unknown'].includes(method)) throw new Error('送金方法を確認してください。');
+  if (!guestId) throw new Error('guestIdがありません');
+  if (!['yucho', 'rakuten', 'paypay', 'unknown'].includes(method)) throw new Error('送金方法を確認してください');
 
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
@@ -526,7 +526,7 @@ function getGiftInformation_(guestIdRaw, methodRaw) {
     const sheet = getMainSheet_();
     ensureHeaders_(sheet);
     const record = findGuestRecord_(sheet, guestId);
-    if (!record) throw new Error('ゲスト情報が見つかりません。');
+    if (!record) throw new Error('ゲスト情報が見つかりません');
     assertGiftInformationAvailable_(record.values);
 
     return {
@@ -548,12 +548,12 @@ function reportGiftSent_(params) {
   const method = String((params && params.method) || '').trim().toLowerCase();
   const senderName = String((params && params.senderName) || '').trim();
   const declarationNote = String((params && params.declarationNote) || '').trim();
-  if (!guestId) throw new Error('guestIdがありません。');
+  if (!guestId) throw new Error('guestIdがありません');
   // `unknown` is accepted only for the legacy confirmGiftSent endpoint so that
   // guests with an older cached version of the invitation can still report safely.
-  if (!['yucho', 'rakuten', 'paypay', 'unknown'].includes(method)) throw new Error('送金方法を確認してください。');
-  if (senderName.length > 100) throw new Error('送金元のお名前は100文字以内で入力してください。');
-  if (declarationNote.length > 200) throw new Error('送金についてのメモは200文字以内で入力してください。');
+  if (!['yucho', 'rakuten', 'paypay', 'unknown'].includes(method)) throw new Error('送金方法を確認してください');
+  if (senderName.length > 100) throw new Error('送金元のお名前は100文字以内で入力してください');
+  if (declarationNote.length > 200) throw new Error('送金についてのメモは200文字以内で入力してください');
 
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
@@ -561,16 +561,16 @@ function reportGiftSent_(params) {
     const sheet = getMainSheet_();
     ensureHeaders_(sheet);
     const record = findGuestRecord_(sheet, guestId);
-    if (!record) throw new Error('ゲスト情報が見つかりません。');
+    if (!record) throw new Error('ゲスト情報が見つかりません');
     if (!isCompleted_(record.values) || !isAttending_(record.values.ceremony, record.values.reception)) {
-      throw new Error('送金情報の確認対象ではありません。');
+      throw new Error('送金情報の確認対象ではありません');
     }
 
     const giftStatus = normalizeGiftStatus_(record.values.giftStatus);
     if (giftStatus === GIFT_STATUS.reported) {
       return buildGiftStatusResponse_(giftStatus);
     }
-    if (!canShowGiftInformation_(giftStatus)) throw new Error('ご祝儀のお渡し方法はすでに確定しています。');
+    if (!canShowGiftInformation_(giftStatus)) throw new Error('ご祝儀のお渡し方法はすでに確定しています');
 
     const now = new Date();
     sheet.getRange(record.rowNumber, COL.giftStatus).setValue(GIFT_STATUS.reported);
@@ -601,11 +601,11 @@ function reportGiftSent_(params) {
       });
       const notifiedAt = new Date();
       sheet.getRange(record.rowNumber, COL.giftHostNotifiedAt).setValue(notifiedAt);
-      sheet.getRange(record.rowNumber, COL.giftAdminNote).setValue('送金申告通知メールを送信しました。');
+      sheet.getRange(record.rowNumber, COL.giftAdminNote).setValue('送金申告通知メールを送信しました');
       hostNotified = true;
     } catch (error) {
       sheet.getRange(record.rowNumber, COL.giftAdminNote)
-        .setValue(`送金申告通知メールの送信に失敗しました。自動再送します: ${error.message || error}`);
+        .setValue(`送金申告通知メールの送信に失敗しました自動再送します: ${error.message || error}`);
       console.error(error && error.stack ? error.stack : error);
     }
 
@@ -617,7 +617,7 @@ function reportGiftSent_(params) {
 
 function cancelGiftReport_(guestIdRaw) {
   const guestId = normalizeGuestId_(guestIdRaw);
-  if (!guestId) throw new Error('guestIdがありません。');
+  if (!guestId) throw new Error('guestIdがありません');
 
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
@@ -625,9 +625,9 @@ function cancelGiftReport_(guestIdRaw) {
     const sheet = getMainSheet_();
     ensureHeaders_(sheet);
     const record = findGuestRecord_(sheet, guestId);
-    if (!record) throw new Error('ゲスト情報が見つかりません。');
+    if (!record) throw new Error('ゲスト情報が見つかりません');
     const giftStatus = normalizeGiftStatus_(record.values.giftStatus);
-    if (giftStatus !== GIFT_STATUS.reported) throw new Error('送金完了の連絡は取り消せません。');
+    if (giftStatus !== GIFT_STATUS.reported) throw new Error('送金完了の連絡は取り消せません');
 
     const cancelledAt = new Date();
     const previousSummary = [
@@ -665,7 +665,7 @@ function cancelGiftReport_(guestIdRaw) {
 
 function recordGiftCash_(guestIdRaw) {
   const guestId = normalizeGuestId_(guestIdRaw);
-  if (!guestId) throw new Error('guestIdがありません。');
+  if (!guestId) throw new Error('guestIdがありません');
 
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
@@ -673,12 +673,12 @@ function recordGiftCash_(guestIdRaw) {
     const sheet = getMainSheet_();
     ensureHeaders_(sheet);
     const record = findGuestRecord_(sheet, guestId);
-    if (!record) throw new Error('ゲスト情報が見つかりません。');
+    if (!record) throw new Error('ゲスト情報が見つかりません');
     if (!isCompleted_(record.values) || !isAttending_(record.values.ceremony, record.values.reception)) {
-      throw new Error('送金情報の確認対象ではありません。');
+      throw new Error('送金情報の確認対象ではありません');
     }
     const giftStatus = normalizeGiftStatus_(record.values.giftStatus);
-    if (!canShowGiftInformation_(giftStatus)) throw new Error('ご祝儀のお渡し方法はすでに確定しています。');
+    if (!canShowGiftInformation_(giftStatus)) throw new Error('ご祝儀のお渡し方法はすでに確定しています');
 
     const now = new Date();
     sheet.getRange(record.rowNumber, COL.giftStatus).setValue(GIFT_STATUS.cash);
@@ -706,10 +706,10 @@ function buildGiftStatusResponse_(giftStatusRaw) {
 
 function assertGiftInformationAvailable_(values) {
   if (!isCompleted_(values) || !isAttending_(values.ceremony, values.reception)) {
-    throw new Error('送金情報の確認対象ではありません。');
+    throw new Error('送金情報の確認対象ではありません');
   }
   if (!canShowGiftInformation_(values.giftStatus)) {
-    throw new Error('ご祝儀のお渡し方法が確定済みのため、送金先情報は表示できません。');
+    throw new Error('ご祝儀のお渡し方法が確定済みのため 送金先情報は表示できません');
   }
 }
 
@@ -718,7 +718,7 @@ function buildGiftInformationResponse_(method) {
   if (method === 'yucho') {
     return {
       title: 'ことら送金（ゆうちょ銀行）',
-      description: 'ことら送金では、振込用の店名・預金種目・口座番号をご指定ください。',
+      description: 'ことら送金では 振込用の店名・預金種目・口座番号をご指定ください',
       fields: [
         giftField_('金融機関名', config.yucho.bankName),
         giftField_('金融機関コード', config.yucho.bankCode),
@@ -730,13 +730,13 @@ function buildGiftInformationResponse_(method) {
         giftField_('記号（ゆうちょ間）', config.yucho.symbol),
         giftField_('番号（ゆうちょ間）', config.yucho.number)
       ],
-      note: 'ことら送金は1件10万円以下です。送金前に表示された受取人名を必ずご確認ください。'
+      note: 'ことら送金は1件10万円以下です送金前に表示された受取人名を必ずご確認ください'
     };
   }
   if (method === 'rakuten') {
     return {
       title: '銀行振込（楽天銀行）',
-      description: '銀行アプリやATMで、以下の振込先をご指定ください。',
+      description: '銀行アプリやATMで 以下の振込先をご指定ください',
       fields: [
         giftField_('金融機関名', config.rakuten.bankName),
         giftField_('銀行コード', config.rakuten.bankCode),
@@ -746,17 +746,17 @@ function buildGiftInformationResponse_(method) {
         giftField_('口座番号', config.rakuten.accountNumber),
         giftField_('口座名義', config.rakuten.holderKana)
       ],
-      note: '送金前に表示された受取人名を必ずご確認ください。振込手数料はご利用の金融機関により異なります。'
+      note: '送金前に表示された受取人名を必ずご確認ください振込手数料はご利用の金融機関により異なります'
     };
   }
   return {
     title: 'PayPay',
-    description: 'PayPayアプリの「送る」から、以下のPayPay IDを検索してください。',
+    description: 'PayPayアプリの「送る」から 以下のPayPay IDを検索してください',
     fields: [
       giftField_('PayPay ID', config.paypay.paypayId),
       giftField_('表示名', config.paypay.displayName)
     ],
-    note: '送金前に、PayPayアプリに表示された名前を必ずご確認ください。'
+    note: '送金前に PayPayアプリに表示された名前を必ずご確認ください'
   };
 }
 
@@ -771,7 +771,7 @@ function getGiftInformationConfig_() {
       paypay: mergeGiftMethodConfig_(PLACEHOLDER_GIFT_INFORMATION.paypay, stored.paypay)
     };
   } catch (error) {
-    throw new Error('送金先情報の設定形式に誤りがあります。新郎新婦へお問い合わせください。');
+    throw new Error('送金先情報の設定形式に誤りがあります新郎新婦へお問い合わせください');
   }
 }
 
@@ -862,15 +862,15 @@ function sendRequestedEmailPreviews() {
 function sendEmailPreviewsForGuest_(guestIdRaw, recipientRaw) {
   const guestId = normalizeGuestId_(guestIdRaw);
   const recipient = String(recipientRaw || '').trim();
-  if (!guestId) throw new Error('guestIdがありません。');
-  if (!isValidEmail_(recipient)) throw new Error('確認用メールアドレスを確認してください。');
+  if (!guestId) throw new Error('guestIdがありません');
+  if (!isValidEmail_(recipient)) throw new Error('確認用メールアドレスを確認してください');
 
   const sheet = getMainSheet_();
   ensureHeaders_(sheet);
   const record = findGuestRecord_(sheet, guestId);
-  if (!record) throw new Error('ゲスト情報が見つかりません。');
+  if (!record) throw new Error('ゲスト情報が見つかりません');
   const v = record.values;
-  if (!isCompleted_(v)) throw new Error('指定ゲストの出欠回答が完了していません。');
+  if (!isCompleted_(v)) throw new Error('指定ゲストの出欠回答が完了していません');
 
   const reminderData = {
     to: recipient,
@@ -915,13 +915,13 @@ function sendGiftEmailPreviews() {
 function sendGiftEmailPreviewsForGuest_(guestIdRaw, recipientRaw) {
   const guestId = normalizeGuestId_(guestIdRaw);
   const recipient = String(recipientRaw || '').trim();
-  if (!guestId) throw new Error('guestIdがありません。');
-  if (!isValidEmail_(recipient)) throw new Error('確認用メールアドレスを確認してください。');
+  if (!guestId) throw new Error('guestIdがありません');
+  if (!isValidEmail_(recipient)) throw new Error('確認用メールアドレスを確認してください');
 
   const sheet = getMainSheet_();
   ensureHeaders_(sheet);
   const record = findGuestRecord_(sheet, guestId);
-  if (!record) throw new Error('ゲスト情報が見つかりません。');
+  if (!record) throw new Error('ゲスト情報が見つかりません');
   const v = record.values;
   const previewData = {
     to: recipient,
@@ -929,7 +929,7 @@ function sendGiftEmailPreviewsForGuest_(guestIdRaw, recipientRaw) {
     guestEmail: v.email || '',
     method: v.giftMethod || 'yucho',
     senderName: v.giftSenderName || v.name || '',
-    declarationNote: v.giftDeclarationNote || '出席する家族3人分送金しました。',
+    declarationNote: v.giftDeclarationNote || '出席する家族3人分送金しました',
     reportedAt: v.giftReportedAt || new Date(),
     invitationUrl: getInvitationUrl_(),
     spreadsheetUrl: getSpreadsheetUrl_(sheet)
@@ -959,8 +959,8 @@ function handleGiftMailAction(e) {
     const rowNumber = e.range.getRow();
     const row = sheet.getRange(rowNumber, 1, 1, HEADERS.length).getValues()[0];
     const values = rowToObject_(row);
-    if (!values.id) throw new Error('ゲストIDがない行ではメールを送信できません。');
-    if (!isValidEmail_(values.email)) throw new Error('ゲストのメールアドレスを確認してください。');
+    if (!values.id) throw new Error('ゲストIDがない行ではメールを送信できません');
+    if (!isValidEmail_(values.email)) throw new Error('ゲストのメールアドレスを確認してください');
 
     const commonData = {
       to: values.email,
@@ -973,25 +973,25 @@ function handleGiftMailAction(e) {
     const now = new Date();
 
     if (action === GIFT_ACTION.confirm) {
-      if (values.giftConfirmationSentAt) throw new Error('着金確認メールはすでに送信済みです。');
+      if (values.giftConfirmationSentAt) throw new Error('着金確認メールはすでに送信済みです');
       if (![GIFT_STATUS.reported, GIFT_STATUS.issue].includes(values.giftStatus)) {
-        throw new Error('ステータスが「確認待ち」または「要確認」のゲストを選択してください。');
+        throw new Error('ステータスが「確認待ち」または「要確認」のゲストを選択してください');
       }
       sendGiftConfirmationEmail_(commonData);
       sheet.getRange(rowNumber, COL.giftStatus).setValue(GIFT_STATUS.confirmed);
       sheet.getRange(rowNumber, COL.giftConfirmedAt).setValue(now);
       sheet.getRange(rowNumber, COL.giftConfirmationSentAt).setValue(now);
-      sheet.getRange(rowNumber, COL.giftAdminNote).setValue('着金確認メールを送信しました。');
+      sheet.getRange(rowNumber, COL.giftAdminNote).setValue('着金確認メールを送信しました');
       setGiftStatusCellStyle_(sheet, rowNumber, GIFT_STATUS.confirmed);
     } else {
-      if (values.giftIssueSentAt) throw new Error('送金状況確認メールはすでに送信済みです。');
+      if (values.giftIssueSentAt) throw new Error('送金状況確認メールはすでに送信済みです');
       if (values.giftStatus !== GIFT_STATUS.reported) {
-        throw new Error('ステータスが「確認待ち」のゲストを選択してください。');
+        throw new Error('ステータスが「確認待ち」のゲストを選択してください');
       }
       sendGiftIssueEmail_(commonData);
       sheet.getRange(rowNumber, COL.giftStatus).setValue(GIFT_STATUS.issue);
       sheet.getRange(rowNumber, COL.giftIssueSentAt).setValue(now);
-      sheet.getRange(rowNumber, COL.giftAdminNote).setValue('送金状況確認メールを送信しました。送金先を再表示できます。');
+      sheet.getRange(rowNumber, COL.giftAdminNote).setValue('送金状況確認メールを送信しました送金先を再表示できます');
       setGiftStatusCellStyle_(sheet, rowNumber, GIFT_STATUS.issue);
     }
     sheet.getRange(rowNumber, COL.updatedAt).setValue(now);
@@ -1027,7 +1027,7 @@ function sendPendingGiftReportNotifications() {
       });
       const now = new Date();
       sheet.getRange(record.rowNumber, COL.giftHostNotifiedAt).setValue(now);
-      sheet.getRange(record.rowNumber, COL.giftAdminNote).setValue('未送信だった送金申告通知メールを自動送信しました。');
+      sheet.getRange(record.rowNumber, COL.giftAdminNote).setValue('未送信だった送金申告通知メールを自動送信しました');
       sentCount++;
     } catch (error) {
       sheet.getRange(record.rowNumber, COL.giftAdminNote)
@@ -1200,7 +1200,7 @@ function testConfirmationEmailToSender() {
     ceremonyAttendance: '出席',
     receptionAttendance: '出席',
     allergy: 'なし',
-    message: '確認メールの動作確認です。ゲストの回答内容は変更していません。',
+    message: '確認メールの動作確認ですゲストの回答内容は変更していません',
     invitationUrl: getInvitationUrl_()
   });
   Logger.log('確認メール1通の送信完了: ' + APP_CONFIG.senderEmail);
@@ -1211,7 +1211,7 @@ function assertConfirmationEmailReady_(recipient) {
   const bcc = String(APP_CONFIG.bccEmail || '').trim().toLowerCase();
   const required = bcc && bcc !== String(recipient || '').trim().toLowerCase() ? 2 : 1;
   if (MailApp.getRemainingDailyQuota() < required) {
-    throw new Error('確認メールの送信上限に達しています。時間をおいて、もう一度お試しください。');
+    throw new Error('確認メールの送信上限に達しています時間をおいて もう一度お試しください');
   }
 }
 
@@ -1220,43 +1220,43 @@ function assertDedicatedExecutionAccount_() {
   const effectiveEmail = String(Session.getEffectiveUser().getEmail() || '').trim().toLowerCase();
   if (effectiveEmail !== expectedEmail) {
     const actual = effectiveEmail || '取得できませんでした';
-    throw new Error(`GASの実行アカウントが正しくありません。期待値: ${expectedEmail} / 実行中: ${actual}`);
+    throw new Error(`GASの実行アカウントが正しくありません期待値: ${expectedEmail} / 実行中: ${actual}`);
   }
 }
 
 function buildConfirmationText_(data) {
   const messageParagraph = data.message ? `\n\n【メッセージ】\n${data.message}` : '';
-  return `${data.name} 様\n\n結婚式へのご出欠について、\nご回答いただき、\n誠にありがとうございます。\n以下の内容で承りました。\n\n【挙式】${data.ceremonyAttendance}\n【披露宴】${data.receptionAttendance}\n【アレルギー】${data.allergy || 'なし'}${messageParagraph}\n\n【日時】${APP_CONFIG.weddingDateLabel}\n受付 ${APP_CONFIG.checkInTimeLabel}\n挙式 ${APP_CONFIG.ceremonyTimeLabel}\n披露宴 ${APP_CONFIG.receptionTimeLabel}\n\n【会場】${APP_CONFIG.venueName}\n${APP_CONFIG.venueUrl}\n\nGoogle Map：${APP_CONFIG.mapUrl}\n\n招待状URL：\n${data.invitationUrl}\n\n当日お会いできますことを、\n心より楽しみにしております！\n\nYusuke & Aika`;
+  return `${data.name} 様\n\n結婚式へのご出欠について \nご回答いただき \n誠にありがとうございます\n以下の内容で承りました\n\n【挙式】${data.ceremonyAttendance}\n【披露宴】${data.receptionAttendance}\n【アレルギー】${data.allergy || 'なし'}${messageParagraph}\n\n【日時】${APP_CONFIG.weddingDateLabel}\n受付 ${APP_CONFIG.checkInTimeLabel}\n挙式 ${APP_CONFIG.ceremonyTimeLabel}\n披露宴 ${APP_CONFIG.receptionTimeLabel}\n\n【会場】${APP_CONFIG.venueName}\n${APP_CONFIG.venueUrl}\n\nGoogle Map：${APP_CONFIG.mapUrl}\n\n招待状URL：\n${data.invitationUrl}\n\n当日お会いできますことを \n心より楽しみにしております！\n\nYusuke & Aika`;
 }
 
 function buildReminderText_(data) {
   const timing = data.daysBefore === 7 ? '1週間前' : '前日';
   const meetingDay = data.daysBefore === 1 ? '明日' : '当日';
-  return `${data.name} 様\n\n結婚式${timing}のリマインドです。\n${meetingDay}はお気をつけて\nお越しください！\n\n【日時】${APP_CONFIG.weddingDateLabel}\n受付 ${APP_CONFIG.checkInTimeLabel}\n挙式 ${APP_CONFIG.ceremonyTimeLabel}\n披露宴 ${APP_CONFIG.receptionTimeLabel}\n\n【会場】${APP_CONFIG.venueName}\n${APP_CONFIG.venueUrl}\n\nGoogle Map：${APP_CONFIG.mapUrl}\n\n【ご回答内容】\n挙式：${data.ceremonyAttendance}\n披露宴：${data.receptionAttendance}\nアレルギー：${data.allergy || 'なし'}\n\n招待状URL：\n${data.invitationUrl}\n\n皆様と${meetingDay}お会いできますことを、\n心より楽しみにしております！\n\nYusuke & Aika`;
+  return `${data.name} 様\n\n結婚式${timing}のリマインドです\n${meetingDay}はお気をつけて\nお越しください！\n\n【日時】${APP_CONFIG.weddingDateLabel}\n受付 ${APP_CONFIG.checkInTimeLabel}\n挙式 ${APP_CONFIG.ceremonyTimeLabel}\n披露宴 ${APP_CONFIG.receptionTimeLabel}\n\n【会場】${APP_CONFIG.venueName}\n${APP_CONFIG.venueUrl}\n\nGoogle Map：${APP_CONFIG.mapUrl}\n\n【ご回答内容】\n挙式：${data.ceremonyAttendance}\n披露宴：${data.receptionAttendance}\nアレルギー：${data.allergy || 'なし'}\n\n招待状URL：\n${data.invitationUrl}\n\n皆様と${meetingDay}お会いできますことを \n心より楽しみにしております！\n\nYusuke & Aika`;
 }
 
 function buildAfterReceptionThanksText_(data) {
-  return `${data.name} 様\n\n本日は私たちの結婚式に\nご参加いただき、\n誠にありがとうございました！\n皆様と大切な時間を過ごすことができ、\n心より感謝しております！\n\n今後ともどうぞ\nよろしくお願いいたします！\n\n\n\n\n\n\n\nあれ、どうやら結婚式はまだ\n\n終わっていないようですよ...？\n\nもう一度招待状を開いて、\n\n最後の謎に挑戦しましょう！\n\n招待状URL：\n${data.invitationUrl}\n\nYusuke & Aika`;
+  return `${data.name} 様\n\n本日は私たちの結婚式に\nご参加いただき \n誠にありがとうございました！\n皆様と大切な時間を過ごすことができ \n心より感謝しております！\n\n今後ともどうぞ\nよろしくお願いいたします！\n\n\n\n\n\n\n\nあれ どうやら結婚式はまだ\n\n終わっていないようですよ...？\n\nもう一度招待状を開いて \n\n最後の謎に挑戦しましょう！\n\n招待状URL：\n${data.invitationUrl}\n\nYusuke & Aika`;
 }
 
 function buildGiftReportNotificationText_(data) {
-  const senderLine = data.senderName || 'ゲスト名と同じ、または未入力';
+  const senderLine = data.senderName || 'ゲスト名と同じ または未入力';
   const noteLine = data.declarationNote || 'なし';
-  return `送金完了のご連絡がありました。\n口座・PayPayの着金をご確認ください。\n\n【ゲスト名】${data.name}\n【ゲストのメールアドレス】${data.guestEmail || '未登録'}\n【送金方法】${getGiftMethodLabel_(data.method)}\n【送金元名義】${senderLine}\n【送金についてのメモ】${noteLine}\n【申告日時】${formatDateTime_(data.reportedAt)}\n\n現在のステータスは「確認待ち」です。\n着金を確認できた場合は、ゲスト一覧の「メール操作」で\n「${GIFT_ACTION.confirm}」を選択してください。\n確認できない場合は「${GIFT_ACTION.issue}」を選択してください。\n\nYusuke & Aika Wedding Invitation`;
+  return `送金完了のご連絡がありました\n口座・PayPayの着金をご確認ください\n\n【ゲスト名】${data.name}\n【ゲストのメールアドレス】${data.guestEmail || '未登録'}\n【送金方法】${getGiftMethodLabel_(data.method)}\n【送金元名義】${senderLine}\n【送金についてのメモ】${noteLine}\n【申告日時】${formatDateTime_(data.reportedAt)}\n\n現在のステータスは「確認待ち」です\n着金を確認できた場合は ゲスト一覧の「メール操作」で\n「${GIFT_ACTION.confirm}」を選択してください\n確認できない場合は「${GIFT_ACTION.issue}」を選択してください\n\nYusuke & Aika Wedding Invitation`;
 }
 
 function buildGiftReportCancellationNotificationText_(data) {
-  return `${data.name} 様が、送金完了のご連絡を取り消しました。\n\n【ゲスト名】${data.name}\n【ゲストのメールアドレス】${data.guestEmail || '未登録'}\n【取消日時】${formatDateTime_(data.cancelledAt)}\n${data.previousSummary ? `【取消前の内容】${data.previousSummary}\n` : ''}\nステータスは「未送金」に戻り、ゲストは送金先を再度表示できます。\n\nYusuke & Aika Wedding Invitation`;
+  return `${data.name} 様が 送金完了のご連絡を取り消しました\n\n【ゲスト名】${data.name}\n【ゲストのメールアドレス】${data.guestEmail || '未登録'}\n【取消日時】${formatDateTime_(data.cancelledAt)}\n${data.previousSummary ? `【取消前の内容】${data.previousSummary}\n` : ''}\nステータスは「未送金」に戻り ゲストは送金先を再度表示できます\n\nYusuke & Aika Wedding Invitation`;
 }
 
 function buildGiftConfirmationText_(data) {
   const details = buildGiftDeclarationDetailsText_(data);
-  return `${data.name} 様\n\nご送金を確認いたしました。\nお心遣いをいただき、誠にありがとうございます。${details}\n\n万一、お心当たりの内容と異なる場合は、\nこのメールへご返信ください。\n\n招待状URL：\n${data.invitationUrl}\n\n当日お会いできますことを、\n心より楽しみにしております。\n\nYusuke & Aika`;
+  return `${data.name} 様\n\nご送金を確認いたしました\nお心遣いをいただき 誠にありがとうございます${details}\n\n万一 お心当たりの内容と異なる場合は \nこのメールへご返信ください\n\n招待状URL：\n${data.invitationUrl}\n\n当日お会いできますことを \n心より楽しみにしております\n\nYusuke & Aika`;
 }
 
 function buildGiftIssueText_(data) {
   const details = buildGiftDeclarationDetailsText_(data);
-  return `${data.name} 様\n\n招待状から送金完了のご連絡をいただきましたが、\n現時点では該当する入金を確認できておりません。\n行き違いでしたら申し訳ございません。${details}\n\nお手数ですが、送金アプリの履歴が「完了」に\nなっているか、送金先名義に誤りがないかを\nご確認いただけますでしょうか。\n\n送金が完了していなかった場合は、\n招待状から送金先を再度表示していただけます。\n銀行振込・PayPay・当日現金もお選びいただけます。\n\n招待状URL：\n${data.invitationUrl}\n\nご不明な点がございましたら、\nこのメールへご返信ください。\n\nYusuke & Aika`;
+  return `${data.name} 様\n\n招待状から送金完了のご連絡をいただきましたが \n現時点では該当する入金を確認できておりません\n行き違いでしたら申し訳ございません${details}\n\nお手数ですが 送金アプリの履歴が「完了」に\nなっているか 送金先名義に誤りがないかを\nご確認いただけますでしょうか\n\n送金が完了していなかった場合は \n招待状から送金先を再度表示していただけます\n銀行振込・PayPay・当日現金もお選びいただけます\n\n招待状URL：\n${data.invitationUrl}\n\nご不明な点がございましたら \nこのメールへご返信ください\n\nYusuke & Aika`;
 }
 
 function buildGiftDeclarationDetailsText_(data) {
@@ -1319,9 +1319,9 @@ function buildHtmlMailParagraphs_(textBody) {
 function buildHtmlMailLine_(line) {
   // Keep natural Japanese phrases together on narrow email screens.
   const phrases = {
-    '皆様と大切な時間を過ごすことができ、': ['皆様と大切な時間を', '過ごすことができ、'],
-    '結婚式1週間前のリマインドです。': ['結婚式1週間前の', 'リマインドです。'],
-    '結婚式前日のリマインドです。': ['結婚式前日の', 'リマインドです。']
+    '皆様と大切な時間を過ごすことができ ': ['皆様と大切な時間を', '過ごすことができ '],
+    '結婚式1週間前のリマインドです': ['結婚式1週間前の', 'リマインドです'],
+    '結婚式前日のリマインドです': ['結婚式前日の', 'リマインドです']
   };
   if (!phrases[line]) return escapeHtml_(line);
   return phrases[line].map(phrase =>
@@ -1362,7 +1362,7 @@ function getPredictionSheet_() {
   const sheet = SpreadsheetApp.openById(APP_CONFIG.spreadsheetId)
     .getSheetByName(APP_CONFIG.predictionSheetName);
   if (!sheet) {
-    throw new Error('WEDDING PREDICTIONシートがありません。GASエディタからsetupを実行してください。');
+    throw new Error('WEDDING PREDICTIONシートがありませんGASエディタからsetupを実行してください');
   }
   return sheet;
 }
@@ -1415,7 +1415,7 @@ function ensureHeaders_(sheet) {
   const legacyInvitationUrlColumn = 12;
   const legacyHeader = String(sheet.getRange(1, legacyInvitationUrlColumn).getValue() || '').trim();
   if (legacyHeader === '招待状URL') {
-    throw new Error('スプレッドシートが旧形式です。GASエディタからsetupを実行してください。');
+    throw new Error('スプレッドシートが旧形式ですGASエディタからsetupを実行してください');
   }
   const current = sheet.getRange(1, 1, 1, HEADERS.length).getValues()[0];
   const needsUpdate = HEADERS.some((header, index) => String(current[index] || '') !== header);
@@ -1478,7 +1478,7 @@ function ensureGiftActionColumn_(sheet) {
   const validation = SpreadsheetApp.newDataValidation()
     .requireValueInList([GIFT_ACTION.confirm, GIFT_ACTION.issue], true)
     .setAllowInvalid(false)
-    .setHelpText('メールを送信する場合だけ操作を選択してください。送信後は自動で空欄に戻ります。')
+    .setHelpText('メールを送信する場合だけ操作を選択してください送信後は自動で空欄に戻ります')
     .build();
   const availableRows = Math.max(sheet.getMaxRows() - 1, 1);
   sheet.getRange(2, COL.giftAction, availableRows, 1).setDataValidation(validation);

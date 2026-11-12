@@ -20,7 +20,7 @@
         return;
       }
       if (!result || !result.ok || !Number.isSafeInteger(result.rank) || result.rank < 1) {
-        throw new Error('順位を確認できませんでした。');
+        throw new Error('順位を確認できませんでした');
       }
       // サーバーが公開を許可するまでは感謝本文を表示しない。
       if (result.published !== true) {

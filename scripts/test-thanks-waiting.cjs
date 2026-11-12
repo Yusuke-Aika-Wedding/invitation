@@ -25,7 +25,7 @@ function fixture({ known = true, published = false, restored = false } = {}) {
 (async()=>{
   let f=fixture(); await f.c.authenticateGuest('joy');
   assert.equal(f.stats().revealed,0); assert.equal(f.stats().statusCalls,0);
-  assert.equal(f.entry.value,''); assert.equal(f.nodes.thanksEntryHint.textContent,'そのIDは...少し待ってくださいね。');
+  assert.equal(f.entry.value,''); assert.equal(f.nodes.thanksEntryHint.textContent,'そのIDは...少し待ってくださいね');
   assert.equal(f.entry.nextElementSibling,f.nodes.thanksEntryHint);
   assert.equal(f.stats().saved.waitingForInvitationId,true); assert.equal(f.storage.size,0);
   assert.match(f.c.location.hash,/thanks-entry/);

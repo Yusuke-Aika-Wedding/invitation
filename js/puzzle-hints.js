@@ -59,10 +59,10 @@
           const speech = document.createElement('p');
           // サーバーの本文を保ったまま、意味の区切りで折り返せるようにします。
           const readable = hint.text
-            .replace('文字列、どこか', '文字列、\nどこか')
+            .replace('文字列 どこか', '文字列 \nどこか')
             .replace('3つずつに区切ると', '3つずつに\n区切ると')
             .replace('A → 10, B → 11, C → 12, ... , J → 19', 'A → 10, B → 11,\nC → 12, ... , J → 19')
-            .replace('16進法... いや、G, H, I, Jが含まれている人も\nいるみたいだから20進法の考え方だね。', '16進法... いや、\nG, H, I, Jが含まれている人も\nいるみたいだから\n20進法の考え方だね。')
+            .replace('16進法... いや G, H, I, Jが含まれている人も\nいるみたいだから20進法の考え方だね', '16進法... いや \nG, H, I, Jが含まれている人も\nいるみたいだから\n20進法の考え方だね')
             .replace('　「ab2」', '\n「ab2」')
             .replace('文字列をそのまま', '文字列を\nそのまま');
           readable.split('\n').forEach((line, index) => {
@@ -95,12 +95,12 @@
       status.textContent = hint ? 'ヒントを開いています…' : '時間を確認しています…';
       try {
         const result = await window.WeddingAccess.request('puzzleHints', { guestId, hint });
-        if (!result?.ok) throw new Error(result?.error || '時間を確認できませんでした。');
+        if (!result?.ok) throw new Error(result?.error || '時間を確認できませんでした');
         state = result; syncedAt = performance.now();
         status.textContent = '';
         return true;
       } catch (error) {
-        status.textContent = `${error.message} 「ヒントを見る」を開き直すと再確認できます。`;
+        status.textContent = `${error.message} 「ヒントを見る」を開き直すと再確認できます`;
         return false;
       } finally { pending = false; update(); }
     }

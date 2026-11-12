@@ -1,4 +1,4 @@
-/** 公開日時は「公開設定」のDear Guest 結婚式終了日時（日本時間）です。 */
+/** 公開日時は「公開設定」のDear Guest 結婚式終了日時（日本時間）です */
 const PUZZLE_SETTINGS_SHEET = '公開設定';
 const THANKS_VISITS_SHEET = '来場感謝サイト訪問記録';
 const THANKS_VISIT_HEADERS = ['訪問日時', 'ID', 'ゲスト名', '入力された合言葉', '紐付け方法', '訪問ID', '公開後訪問日時', '使用ヒント数'];
@@ -32,11 +32,11 @@ function setupLastPuzzle() {
       const sheet = book.insertSheet(PUZZLE_SETTINGS_SHEET);
       sheet.getRange('A1:C3').setValues([
         ['設定項目', '設定値（日本時間）', '説明'],
-        ['Dear Guest 結婚式開始日時', new Date(APP_CONFIG.weddingDateIso), 'Dear Guestの切替とCountdownの終了・非表示に使用します。'],
-        ['Dear Guest 結婚式終了日時', new Date(APP_CONFIG.receptionEndIso), 'Dear Guestの切替、The Last Puzzleと来場感謝サイトの公開に使用します。空欄は非公開。']
+        ['Dear Guest 結婚式開始日時', new Date(APP_CONFIG.weddingDateIso), 'Dear Guestの切替とCountdownの終了・非表示に使用します'],
+        ['Dear Guest 結婚式終了日時', new Date(APP_CONFIG.receptionEndIso), 'Dear Guestの切替 The Last Puzzleと来場感謝サイトの公開に使用します空欄は非公開']
       ]);
       sheet.getRange('B2:B3').setNumberFormat('yyyy/mm/dd hh:mm');
-      sheet.getRange('B2:B3').setNote('日本時間。編集後は通常30秒以内に反映します。メール送信日時には影響しません。');
+      sheet.getRange('B2:B3').setNote('日本時間編集後は通常30秒以内に反映しますメール送信日時には影響しません');
       sheet.getRange('A1:C1').setBackground('#eeeeee').setFontWeight('bold');
       sheet.setFrozenRows(1);
       sheet.setColumnWidth(1, 245);
@@ -52,7 +52,7 @@ function setupLastPuzzle() {
       sheet.setColumnWidth(5, 260);
       sheet.setColumnWidth(6, 310);
       sheet.getRange('A:A').setNumberFormat('yyyy/mm/dd hh:mm:ss');
-      sheet.getRange('B1').setNote('同じタブで直前に認証したIDです。本人確認・来場証明ではありません。認証履歴がない場合はID入力後に記録します。');
+      sheet.getRange('B1').setNote('同じタブで直前に認証したIDです本人確認・来場証明ではありません認証履歴がない場合はID入力後に記録します');
     }
     SpreadsheetApp.flush();
   } finally {
@@ -75,7 +75,7 @@ function puzzleReleaseDate_(value) {
 function getLastPuzzle_(guestIdRaw) {
   const guestId = normalizeGuestId_(guestIdRaw);
   const record = guestId ? findGuestRecord_(getMainSheet_(), guestId) : null;
-  if (!record) throw new Error('ゲスト情報が見つかりません。');
+  if (!record) throw new Error('ゲスト情報が見つかりません');
   const { start, end: release } = getWeddingSchedule_();
   const now = new Date();
   const published = Boolean(release && now.getTime() >= release.getTime());
@@ -90,16 +90,16 @@ function getLastPuzzle_(guestIdRaw) {
       { name: '白戸祐輔 の場合', code: 'b5w4d9qE → game' },
       { name: '大貫愛佳 の場合', code: 'y3pBfDk8 → bass' }
     ];
-    response.question = 'では、あなたは？';
+    response.question = 'では あなたは？';
   }
   return response;
 }
 
 function recordThanksVisit_(params) {
   const keyword = String(params.keyword || '').replace(/\s+/g, '').toLowerCase();
-  if (['joy', 'love', 'happy'].indexOf(keyword) === -1) throw new Error('合言葉を確認してください。');
+  if (['joy', 'love', 'happy'].indexOf(keyword) === -1) throw new Error('合言葉を確認してください');
   const eventId = String(params.eventId || '');
-  if (!/^[a-zA-Z0-9-]{16,64}$/.test(eventId)) throw new Error('訪問IDが不正です。');
+  if (!/^[a-zA-Z0-9-]{16,64}$/.test(eventId)) throw new Error('訪問IDが不正です');
   const guestId = normalizeGuestId_(params.guestId);
   const record = guestId ? findGuestRecord_(getMainSheet_(), guestId) : null;
   if (!record) {
@@ -110,7 +110,7 @@ function recordThanksVisit_(params) {
   lock.waitLock(10000);
   try {
     const sheet = SpreadsheetApp.openById(APP_CONFIG.spreadsheetId).getSheetByName(THANKS_VISITS_SHEET);
-    if (!sheet) throw new Error('訪問記録の準備ができていません。');
+    if (!sheet) throw new Error('訪問記録の準備ができていません');
     const lastRow = sheet.getLastRow();
     const visits = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, 8).getValues() : [];
     const { end } = getWeddingSchedule_();
@@ -158,7 +158,7 @@ function thanksVisitRank_(visits, targetIndex) {
     if (!ranks.has(key)) ranks.set(key, ranks.size + 1);
     if (index === targetIndex) return ranks.get(key);
   }
-  throw new Error('解答順位を確認できませんでした。');
+  throw new Error('解答順位を確認できませんでした');
 }
 
 // 公開前の解答も先に記録する。再訪時は同じゲストの初回到達日時で判定する。
@@ -197,9 +197,9 @@ function getThanksVisitState_(guestId, end, now) {
 
 const PUZZLE_HINTS_SHEET = '謎解きヒント記録';
 const PUZZLE_HINT_TEXTS = [
-  'アルファベットと数字の列、\nどこかで使ったような...。',
+  'アルファベットと数字の列 \nどこかで使ったような...',
   '2つずつ区切って考えるといいみたい！',
-  '大文字は次のように変換してみよう。\nA → 10, B → 11, C → 12, ... , J → 19\n16進法... いや、G, H, I, Jが含まれている人も\nいるみたいだから20進法の考え方だね。',
+  '大文字は次のように変換してみよう\nA → 10, B → 11, C → 12, ... , J → 19\n16進法... いや G, H, I, Jが含まれている人も\nいるみたいだから20進法の考え方だね',
   '「a1」→「b」\n「a2」→「c」だよ！\nもうそろそろ分かったかな？',
   '変換してできた文字列をそのままIDに入力してみて！'
 ];
@@ -216,13 +216,13 @@ function readPuzzleHints_(guestId) {
 // 閲覧開始とヒント開封はサーバー時刻で記録し、端末を変えても引き継ぎます。
 function puzzleHints_(params) {
   const guestId = normalizeGuestId_(params.guestId);
-  if (!guestId || !findGuestRecord_(getMainSheet_(), guestId)) throw new Error('ゲスト情報が見つかりません。');
+  if (!guestId || !findGuestRecord_(getMainSheet_(), guestId)) throw new Error('ゲスト情報が見つかりません');
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
     const now = new Date();
     const { end } = getWeddingSchedule_();
-    if (!end || now.getTime() < end.getTime()) throw new Error('まだ公開されていません。');
+    if (!end || now.getTime() < end.getTime()) throw new Error('まだ公開されていません');
     const state = readPuzzleHints_(guestId);
     if (!state.sheet) {
       state.sheet = SpreadsheetApp.openById(APP_CONFIG.spreadsheetId).insertSheet(PUZZLE_HINTS_SHEET);
@@ -237,8 +237,8 @@ function puzzleHints_(params) {
     }
     const hint = Number(params.hint);
     if (hint) {
-      if (!Number.isInteger(hint) || hint < 1 || hint > 5) throw new Error('ヒントを確認してください。');
-      if (now.getTime() - state.firstSeen.getTime() < hint * 5 * 60 * 1000) throw new Error('ヒントの解禁までお待ちください。');
+      if (!Number.isInteger(hint) || hint < 1 || hint > 5) throw new Error('ヒントを確認してください');
+      if (now.getTime() - state.firstSeen.getTime() < hint * 5 * 60 * 1000) throw new Error('ヒントの解禁までお待ちください');
       if (!state.opened.includes(hint)) {
         state.opened.push(hint);
         state.opened.sort((a, b) => a - b);

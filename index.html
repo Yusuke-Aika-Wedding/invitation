@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&amp;family=Noto+Serif+JP:wght@400;500;600;700&amp;family=Old+Standard+TT:wght@400;700&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20261109-base20-puzzle">
+  <link rel="stylesheet" href="css/style.css?v=20261113-invitation-copy">
 </head>
 <body class="auth-locked">
   <div id="thanksLoading" class="thanks-loading" role="status" aria-live="polite" hidden>
@@ -35,7 +35,7 @@
         <p class="auth-kicker">Private Invitation</p>
         <h1 id="authTitle">Welcome</h1>
         <p class="auth-copy">
-          IDを入力してください。
+          IDを入力してください
         </p>
         <form id="authForm" class="auth-form" novalidate>
           <label for="guestIdEntry">Guest ID</label>
@@ -43,7 +43,7 @@
           <button id="authButton" class="primary-button" type="submit">Open Invitation</button>
           <p id="authStatus" class="form-status" aria-live="polite"></p>
         </form>
-        <p class="auth-note">一度認証すると、この端末では<br class="auth-note-break">次回からID入力を省略できます。</p>
+        <p class="auth-note">一度認証すると この端末では<br class="auth-note-break">次回からID入力を省略できます</p>
       </div>
     </div>
   </section>
@@ -70,8 +70,8 @@
           <p class="script-label handwriting-text">Wedding Invitation</p>
           <h1 class="handwriting-text">Yusuke &amp; Aika</h1>
           <p class="lead">
-            <span class="copy-line">平素より温かく見守ってくださり、<br class="mobile-only">ありがとうございます。</span>
-            <span class="copy-line">皆様への感謝を込めて、<br class="mobile-only">ささやかながら結婚式を執り行います。</span>
+            <span class="copy-line">平素より温かく見守ってくださり <br class="mobile-only">ありがとうございます</span>
+            <span class="copy-line">皆様への感謝を込めて <br class="mobile-only">ささやかながら結婚式を執り行います</span>
           </p>
         </div>
       </section>
@@ -105,8 +105,9 @@
         <div class="venue-layout">
           <article class="venue-card">
             <h3 class="venue-name"><a href="https://www.kimptonshinjukuwedding.com/" target="_blank" rel="noopener">キンプトン新宿東京</a></h3>
-            <p>会場名をタップすると、公式HPを開けます。</p>
-            <p class="venue-arrival-note">当日はお気をつけて<br class="mobile-only">お越しください。</p>
+            <p>東京都新宿区西新宿三丁目4-7<br>TEL：03-3299-4534</p>
+            <p>会場名をタップすると 公式HPを開けます</p>
+            <p class="venue-arrival-note">当日はお気をつけて<br class="mobile-only">お越しください</p>
             <a class="button-link" href="https://www.google.com/maps/search/?api=1&amp;query=%E3%82%AD%E3%83%B3%E3%83%97%E3%83%88%E3%83%B3%E6%96%B0%E5%AE%BF%E6%9D%B1%E4%BA%AC" target="_blank" rel="noopener">Open Google Maps</a>
           </article>
           <div class="map-card" aria-label="Google Map">
@@ -118,7 +119,7 @@
       <section id="rsvp" class="section fade-in" aria-labelledby="rsvp-title">
         <p class="section-kicker handwriting-text">RSVP</p>
         <h2 id="rsvp-title" class="handwriting-text">Reply Form</h2>
-        <p id="rsvpInstruction" class="section-note">恐れ入りますが、挙式・披露宴それぞれの<br class="mobile-only">ご出欠をご回答ください。</p>
+        <p id="rsvpInstruction" class="section-note">恐れ入りますが 挙式・披露宴それぞれの<br class="mobile-only">ご出欠を<span class="rsvp-deadline">2027年1月25日</span>までにご回答ください</p>
         <div class="rsvp-shell">
           <form id="rsvpForm" class="rsvp-form" novalidate>
             <input type="hidden" id="guestId" name="guestId" value="">
@@ -139,25 +140,25 @@
             </fieldset>
             <div id="allergyDetailsField" class="field allergy-details is-hidden">
               <label for="allergyDetails">アレルギーの詳細 <span class="required">*</span></label>
-              <textarea id="allergyDetails" name="allergyDetails" placeholder="例：えび、かに、落花生"></textarea>
+              <textarea id="allergyDetails" name="allergyDetails" placeholder="例：えび かに 落花生"></textarea>
             </div>
-            <div class="field"><label for="guestMessage">メッセージ</label><textarea id="guestMessage" name="message" placeholder="新郎新婦へのメッセージがあればご入力ください。"></textarea></div>
+            <div class="field"><label for="guestMessage">メッセージ</label><textarea id="guestMessage" name="message" placeholder="新郎新婦へのメッセージがあればご入力ください"></textarea></div>
             <div class="submit-area"><button id="submitButton" class="primary-button" type="submit">Send Reply</button><p id="formStatus" class="form-status" aria-live="polite"></p></div>
           </form>
-          <div id="thanksMessage" class="thanks-card is-hidden" aria-live="polite"><strong>ご回答ありがとうございました！</strong><p>当日お会いできますことを、心より楽しみにしております。</p></div>
+          <div id="thanksMessage" class="thanks-card is-hidden" aria-live="polite"><strong>ご回答ありがとうございました！</strong><p>当日お会いできますことを 心より楽しみにしております</p></div>
         </div>
       </section>
 
       <section id="onlineGift" class="section online-gift is-hidden" aria-labelledby="online-gift-title">
         <h2 id="online-gift-title">オンラインご祝儀のご案内</h2>
-        <p class="section-note">ご祝儀はオンラインでも<br class="mobile-only">お贈りいただけます。<br>ご利用の方は、<br class="mobile-only">下記のページへお進みください。</p>
+        <p class="section-note">ご祝儀はオンラインでも<br class="mobile-only">お贈りいただけます<br>ご利用の方は <br class="mobile-only">下記のページへお進みください</p>
         <a class="button-link" href="https://app.goshugi-pay.jp/s/bmz42rZF?openExternalBrowser=1" target="_blank" rel="noopener noreferrer">オンラインご祝儀のページへ</a>
       </section>
 
       <section id="prediction" class="section wedding-prediction fade-in is-hidden" aria-labelledby="prediction-title">
         <p id="prediction-title" class="section-kicker handwriting-text">Wedding Prediction</p>
         <p class="section-note prediction-introduction">結婚式当日のことを予想しよう！</p>
-        <p class="prediction-rule">3問すべての予想を選んで、まとめて回答してください。<br>各質問につき、予想できるのは一度だけ。</p>
+        <p class="prediction-rule">3問すべての予想を選んで まとめて回答してください<br>各質問につき 予想できるのは一度だけ</p>
         <div id="predictionList" class="prediction-list" aria-live="polite"></div>
       </section>
 
@@ -171,12 +172,12 @@
     </div>
   </main>
 
-  <script src="js/config.js?v=20260927-timed-hints"></script>
-  <script src="js/puzzle-hints.js?v=20261109-base20-puzzle"></script>
-  <script src="js/guest-access.js?v=20261109-base20-puzzle"></script>
-  <script src="js/handwriting-paths.js?v=20260919-golden-thanks"></script>
-  <script src="js/handwriting-guides.js?v=20260919-golden-thanks"></script>
-  <script src="js/dear-guest.js?v=20260928-guest-polish"></script>
-  <script src="js/script.js?v=20261109-prediction-copy"></script>
+  <script src="js/config.js?v=20261113-invitation-copy"></script>
+  <script src="js/puzzle-hints.js?v=20261113-invitation-copy"></script>
+  <script src="js/guest-access.js?v=20261113-invitation-copy"></script>
+  <script src="js/handwriting-paths.js?v=20261113-invitation-copy"></script>
+  <script src="js/handwriting-guides.js?v=20261113-invitation-copy"></script>
+  <script src="js/dear-guest.js?v=20261113-invitation-copy"></script>
+  <script src="js/script.js?v=20261113-invitation-copy"></script>
 </body>
 </html>
