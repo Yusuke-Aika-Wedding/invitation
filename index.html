@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&amp;family=Noto+Serif+JP:wght@400;500;600;700&amp;family=Old+Standard+TT:wght@400;700&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20261113-invitation-copy-4">
+  <link rel="stylesheet" href="css/style.css?v=20261113-layout-phase">
 </head>
 <body class="auth-locked">
   <div id="thanksLoading" class="thanks-loading" role="status" aria-live="polite" hidden>
@@ -51,11 +51,13 @@
   <div id="messageOverlay" class="message-overlay" role="button" tabindex="0" aria-label="招待状を開く" hidden>
     <div class="message-shade" aria-hidden="true"></div>
     <article class="message-card" aria-live="polite">
+      <div class="message-card-content">
       <p class="script-label handwriting-text">Dear Guest</p>
       <h2 id="messageGuestName" class="message-name">ゲスト 様</h2>
       <p id="messageBody" class="message-text"></p>
       <p class="message-signature handwriting-text">Yusuke &amp; Aika</p>
       <div class="tap-guide">Tap to open</div>
+      </div>
     </article>
   </div>
 
@@ -105,8 +107,8 @@
         <div class="venue-layout">
           <article class="venue-card">
             <h3 class="venue-name"><a href="https://www.kimptonshinjukuwedding.com/" target="_blank" rel="noopener">キンプトン新宿東京</a></h3>
-            <p>東京都新宿区西新宿三丁目4-7<br>TEL：03-3299-4534</p>
-            <p>会場名をタップすると 公式HPを開けます</p>
+            <p>東京都新宿区<br>西新宿三丁目4-7<br>TEL：03-3299-4534</p>
+            <p>会場名をタップすると<br>公式HPを開けます</p>
             <p class="venue-arrival-note">当日はお気をつけて<br class="mobile-only">お越しください</p>
             <a class="button-link" href="https://www.google.com/maps/search/?api=1&amp;query=%E3%82%AD%E3%83%B3%E3%83%97%E3%83%88%E3%83%B3%E6%96%B0%E5%AE%BF%E6%9D%B1%E4%BA%AC" target="_blank" rel="noopener">Open Google Maps</a>
           </article>
@@ -119,7 +121,7 @@
       <section id="rsvp" class="section fade-in" aria-labelledby="rsvp-title">
         <p class="section-kicker handwriting-text">RSVP</p>
         <h2 id="rsvp-title" class="handwriting-text">Reply Form</h2>
-        <p id="rsvpInstruction" class="section-note"><span class="rsvp-phrase">恐れ入りますが </span><span class="rsvp-phrase">挙式・披露宴それぞれの</span><br class="mobile-only"><span class="rsvp-phrase">ご出欠を2027年1月25日までに</span><span class="rsvp-phrase">ご回答ください</span></p>
+        <p id="rsvpInstruction" class="section-note">恐れ入りますが<br>挙式・披露宴それぞれのご出欠を<br><span class="rsvp-date">2027年1月25日(月)</span> までにご回答ください</p>
         <div class="rsvp-shell">
           <form id="rsvpForm" class="rsvp-form" novalidate>
             <input type="hidden" id="guestId" name="guestId" value="">
@@ -142,7 +144,7 @@
               <label for="allergyDetails">アレルギーの詳細 <span class="required">*</span></label>
               <textarea id="allergyDetails" name="allergyDetails" placeholder="例：えび かに 落花生"></textarea>
             </div>
-            <div class="field"><label for="guestMessage">メッセージ</label><textarea id="guestMessage" name="message" placeholder="新郎新婦へのメッセージがあればご入力ください"></textarea></div>
+            <div class="field"><label for="guestMessage">メッセージ</label><textarea id="guestMessage" name="message" placeholder="新郎新婦へのメッセージがありましたらご入力ください"></textarea></div>
             <div class="submit-area"><button id="submitButton" class="primary-button" type="submit">Send Reply</button><p id="formStatus" class="form-status" aria-live="polite"></p></div>
           </form>
           <div id="thanksMessage" class="thanks-card is-hidden" aria-live="polite"><strong>ご回答ありがとうございました！</strong><p>当日お会いできますことを 心より楽しみにしております</p></div>
@@ -177,7 +179,7 @@
   <script src="js/guest-access.js?v=20261113-invitation-copy"></script>
   <script src="js/handwriting-paths.js?v=20261113-invitation-copy"></script>
   <script src="js/handwriting-guides.js?v=20261113-invitation-copy"></script>
-  <script src="js/dear-guest.js?v=20261113-invitation-copy"></script>
-  <script src="js/script.js?v=20261113-invitation-copy-3"></script>
+  <script src="js/dear-guest.js?v=20261113-layout-phase"></script>
+  <script src="js/script.js?v=20261113-layout-phase"></script>
 </body>
 </html>

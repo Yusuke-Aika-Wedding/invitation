@@ -382,6 +382,8 @@
     let stamp = content.querySelector('.puzzle-solved-stamp');
     const solved = result.solved && Number.isInteger(result.rank) && result.rank > 0;
     content.classList.toggle('has-solved-stamp', Boolean(solved));
+    const puzzleQuestion = content.querySelector('.puzzle-question');
+    if (puzzleQuestion) puzzleQuestion.dataset.clearLabel = solved ? window.WeddingHints.clearLabel(result.hintCount) : '';
     if (!solved) {
       if (stamp) { stamp._observer?.disconnect(); stamp.remove(); }
       return;
@@ -750,8 +752,8 @@
   function syncResponsiveCopy() {
     if (!els.guestMessageInput) return;
     els.guestMessageInput.placeholder = window.matchMedia('(max-width: 600px)').matches
-      ? '新郎新婦へのメッセージがあれば\nご入力ください'
-      : '新郎新婦へのメッセージがあればご入力ください';
+      ? '新郎新婦へのメッセージがありましたら\nご入力ください'
+      : '新郎新婦へのメッセージがありましたらご入力ください';
   }
 
   function isGasConfigured() {
@@ -781,6 +783,16 @@
     if (els.messageGuestName) els.messageGuestName.textContent = `${displayName} 様`;
 
     const phase = latestStatus.dearGuest ? latestStatus.dearGuest.phase : 'early';
+    const arrival = document.querySelector('.venue-arrival-note');
+    if (arrival) {
+      const text = window.WeddingDearGuest.selectArrival(phase);
+      arrival.replaceChildren(document.createTextNode(text[0]));
+      if (text[1]) {
+        const br = document.createElement('br');
+        br.className = 'mobile-only';
+        arrival.append(br, document.createTextNode(text[1]));
+      }
+    }
     const copy = window.WeddingDearGuest.selectMessage(latestStatus, phase);
     const sentences = copy.custom
       ? [[{ text: copy.text.replace(/\r\n?/g, '\n'), custom: true }]]
@@ -1438,7 +1450,7 @@
       const answers = questions.map(q => ({ questionId: q.id, option: q.voted ? q.selectedOption : predictionSelections.get(q.id) }));
       if (answers.some(answer => !answer.option)) return;
       predictionSubmitting = true;
-      const confirmed = await confirmAnswers(questions.map((q, i) => [q.question, answers[i].option]), 'この内容で投票する');
+      const confirmed = await confirmAnswers(questions.map((q, i) => [predictionQuestionText(q, true), answers[i].option]), 'この内容で投票する');
       if (!confirmed) { predictionSubmitting = false; return; }
       els.predictionList.querySelectorAll('button').forEach(button => { button.disabled = true; });
       submit.textContent = '投票しています…';
@@ -1456,6 +1468,13 @@
     });
   }
 
+  function predictionQuestionText(question, confirmation = false) {
+    if (question.id !== 'Q3') return String(question.question || '');
+    return confirmation
+      ? '披露宴の最後で 新郎新婦の退場時\nに流れる曲は誰の曲？'
+      : '披露宴の最後で 新郎新婦の\n退場時に流れる曲は誰の曲？';
+  }
+
   function renderPrediction(show, prediction) {
     if (!els.predictionSection || !els.predictionList) return;
     const wasHidden = els.predictionSection.classList.contains('is-hidden');
@@ -1470,7 +1489,8 @@
     }
 
     const published = Boolean(prediction && prediction.published);
-    const phase = prediction && prediction.phase;
+    const phase = prediction && prediction.phase === 'before' && latestStatus.dearGuest?.phase === 'eve'
+      ? 'eve' : prediction && prediction.phase;
     els.predictionSection.querySelector('.prediction-introduction').hidden = phase === 'today' || phase === 'after';
     const questions = prediction && Array.isArray(prediction.questions)
       ? prediction.questions
@@ -1495,14 +1515,14 @@
       number.className = 'prediction-number number-font';
       number.textContent = String(index + 1).padStart(2, '0');
       const heading = document.createElement('h3');
-      heading.textContent = String(question.question || '');
+      heading.textContent = predictionQuestionText(question);
       header.append(number, heading);
       card.append(header);
 
       const options = document.createElement('div');
       options.className = question.voted || published ? 'prediction-results' : 'prediction-options';
       options.setAttribute('role', question.voted || published ? 'list' : 'group');
-      options.setAttribute('aria-label', `${question.question || 'アンケート'}の選択肢`);
+      options.setAttribute('aria-label', `${predictionQuestionText(question).replace(/\n/g, '') || 'アンケート'}の選択肢`);
 
       (Array.isArray(question.options) ? question.options : []).forEach(item => {
         const label = String((item && item.label) || item || '');
@@ -1596,7 +1616,7 @@
       secondLine.textContent = published
         ? score === 0 ? '全問不正解...残念！'
           : score === 3 ? '全問正解！素晴らしい！' : `3問中${score}問正解でした！`
-        : phase === 'today' ? '本日お楽しみに！' : '当日お楽しみに！';
+        : phase === 'today' ? '本日お楽しみに！' : phase === 'eve' ? '明日お楽しみに！' : '当日お楽しみに！';
       thanks.append(firstLine, mobileBreak, secondLine);
       cards.push(thanks);
     }

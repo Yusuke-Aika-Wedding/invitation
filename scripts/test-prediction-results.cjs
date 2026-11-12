@@ -41,10 +41,11 @@ class Element {
 }
 const intro=new Element('p'),rule=new Element('p'),section=new Element('section'),list=new Element('div');
 section.querySelector=s=>s==='.prediction-rule'?rule:intro;
+c.latestStatus={dearGuest:{phase:"early"}};
 c.els={predictionSection:section,predictionList:list};c.predictionSelections=new Map();
 c.document={createElement:t=>new Element(t),createTextNode:t=>({textContent:t})};
 const source=fs.readFileSync('js/script.js','utf8');
-vm.runInContext(source.slice(source.indexOf('  function renderPrediction('),source.indexOf('  function setPredictionCardStatus(')),c);
+vm.runInContext(source.slice(source.indexOf('  function predictionQuestionText('),source.indexOf('  function setPredictionCardStatus(')),c);
 for (score=0;score<=3;score++) {
  c.renderPrediction(true,c.buildPredictionState_('Case_ID'));
  const expected=score===0?'全問不正解...残念！':score===3?'全問正解！素晴らしい！':`3問中${score}問正解でした！`;
@@ -59,3 +60,10 @@ for (const phase of ['before','today']) {
  assert.equal(intro.hidden,phase==='today');assert.equal(list.textContent.includes('正解は'),false);
 }
 console.log('PASS B3/JST boundaries, invalid dates, answer secrecy, counts, all scores, exact phase copy, unanswered guests');
+
+c.latestStatus.dearGuest.phase='eve';
+const eve=c.buildPredictionState_('Case_ID');eve.phase='before';c.renderPrediction(true,eve);
+assert.ok(list.textContent.includes('明日お楽しみに！'));
+assert.equal(c.predictionQuestionText({id:'Q3'}), '披露宴の最後で 新郎新婦の\n退場時に流れる曲は誰の曲？');
+assert.equal(c.predictionQuestionText({id:'Q3'},true), '披露宴の最後で 新郎新婦の退場時\nに流れる曲は誰の曲？');
+console.log('PASS eve completion and question/confirmation line breaks');

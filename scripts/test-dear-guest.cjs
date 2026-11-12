@@ -43,3 +43,6 @@ for (const [early, after] of [[false,false],[true,false],[true,true],[false,true
  assert.equal(copy.includes('さすがです'),after);
 }
 console.log('PASS early-only guests receive the exact revisit reminder; post-release visitors receive solved copy');
+
+for(const [phase,expected] of Object.entries({early:'当日はお気をつけてお越しください',eve:'明日はお気をつけてお越しください',today:'本日はお気をつけてお越しください',during:'本日はお気をつけてお越しください',after:'ご来場ありがとうございました'}))assert.equal(c.window.WeddingDearGuest.selectArrival(phase).join(''),expected);
+console.log('PASS Access copy in all five wedding phases');

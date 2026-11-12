@@ -60,5 +60,10 @@
       text: status.attending ? (text[phase] || text.early) : 'またお会いできる日を楽しみにしております'
     };
   }
-  window.WeddingDearGuest = { selectMessage, selectRsvp };
+  function selectArrival(phase) {
+    if (phase === 'after') return ['ご来場ありがとうございました'];
+    const day = phase === 'eve' ? '明日' : ['today', 'during'].includes(phase) ? '本日' : '当日';
+    return [`${day}はお気をつけて`, 'お越しください'];
+  }
+  window.WeddingDearGuest = { selectMessage, selectRsvp, selectArrival };
 })();

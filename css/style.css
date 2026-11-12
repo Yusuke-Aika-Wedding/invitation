@@ -157,7 +157,7 @@ img { max-width: 100%; }
   max-height: calc(100svh - 48px);
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: clamp(32px, 5vw, 60px) clamp(24px, 5vw, 58px);
+
   color: #fffdfb;
   text-align: center;
   border: 1px solid rgba(255, 255, 255, .58);
@@ -168,7 +168,8 @@ img { max-width: 100%; }
   animation: cardIn .9s ease .1s forwards;
 }
 @keyframes cardIn { to { transform: translateY(0); } }
-.message-card::before {
+.message-card-content { position: relative; padding: clamp(32px, 5vw, 60px) clamp(24px, 5vw, 58px); }
+.message-card-content::before {
   content: "";
   position: absolute;
   inset: 13px;
@@ -196,7 +197,9 @@ img { max-width: 100%; }
   line-height: 2.16;
   text-wrap: pretty;
 }
-.rsvp-phrase { display: inline-block; white-space: pre; }
+.rsvp-date { white-space: nowrap; }
+@media (max-width: 380px) { #rsvpInstruction { font-size: clamp(.8rem, 4vw, 1rem); } }
+.prediction-card h3, .answer-confirmation dt { white-space: pre-line; }
 .message-phrase { display: inline-block; white-space: pre; }
 .message-sentence { display: block; text-wrap: pretty; overflow-wrap: anywhere; }
 .message-sentence + .message-sentence { margin-top: .7em; }
@@ -1302,10 +1305,11 @@ textarea::placeholder { white-space: pre-wrap; }
   .message-card {
     width: min(94vw, 660px);
     max-height: calc(100svh - max(8px, env(safe-area-inset-top)) - max(8px, env(safe-area-inset-bottom)));
-    padding: clamp(18px, 3.5svh, 28px) 18px clamp(20px, 3.8svh, 30px);
+
     border-radius: 24px;
   }
-  .message-card::before { inset: 8px; border-radius: 18px; }
+  .message-card-content { padding: clamp(18px, 3.5svh, 28px) 18px clamp(20px, 3.8svh, 30px); }
+  .message-card-content::before { inset: 8px; border-radius: 18px; }
   .message-card .script-label { margin-bottom: 4px; font-size: clamp(2.15rem, 11vw, 3rem); }
   .message-name { margin: 10px 0 12px; font-size: clamp(1.08rem, 4.6vw, 1.3rem); line-height: 1.5; }
   .message-text { font-size: clamp(.84rem, 3.6vw, .94rem); line-height: 1.68; }
@@ -1520,8 +1524,13 @@ textarea::placeholder { white-space: pre-wrap; }
   .puzzle-hint-dialogue p { padding: 12px; font-size: .92rem; }
 }
 @media (max-width: 600px) {
-  .puzzle-content.has-solved-stamp { margin-bottom: 55px; }
-  .puzzle-stamp-hints { top: calc(50% + 190px); }
+  .puzzle-content.has-solved-stamp { margin-bottom: 20px; }
+  .puzzle-stamp-hints { display: none; }
+  .has-solved-stamp .puzzle-question::after {
+    content: attr(data-clear-label); position: absolute; top: calc(100% + 4px); left: 55%;
+    transform: rotate(-9deg); transform-origin: left center; white-space: nowrap;
+    color: #601c2d; font-size: clamp(11px, 3vw, 16px); font-weight: 700;
+  }
 }
 
 .puzzle-hint-dialogue p::before { content: ''; position: absolute; left: -10px; top: 50%; transform: translateY(-50%); border-top: 9px solid transparent; border-bottom: 9px solid transparent; border-right: 11px solid #f5ede0; }
