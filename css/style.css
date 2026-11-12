@@ -196,7 +196,7 @@ img { max-width: 100%; }
   line-height: 2.16;
   text-wrap: pretty;
 }
-.rsvp-deadline { white-space: nowrap; }
+.rsvp-phrase { display: inline-block; white-space: pre; }
 .message-phrase { display: inline-block; white-space: pre; }
 .message-sentence { display: block; text-wrap: pretty; overflow-wrap: anywhere; }
 .message-sentence + .message-sentence { margin-top: .7em; }
