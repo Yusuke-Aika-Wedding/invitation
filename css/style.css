@@ -197,7 +197,8 @@ img { max-width: 100%; }
   text-wrap: pretty;
 }
 .rsvp-deadline { white-space: nowrap; }
-.message-sentence { display: block; text-wrap: balance; overflow-wrap: anywhere; }
+.message-phrase { display: inline-block; white-space: pre; }
+.message-sentence { display: block; text-wrap: pretty; overflow-wrap: anywhere; }
 .message-sentence + .message-sentence { margin-top: .7em; }
 .message-sentence.is-custom { white-space: pre-wrap; }
 .message-signature {

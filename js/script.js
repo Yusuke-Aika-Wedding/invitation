@@ -792,7 +792,20 @@
         line.className = 'message-sentence';
         if (parts.some(part => part.custom)) line.classList.add('is-custom');
         parts.forEach(part => {
-          line.append(document.createTextNode(part.text));
+          const greetingPhrases = {
+            '年の瀬も押し迫り 寒さが一段と増してまいりましたが': ['年の瀬も押し迫り ', '寒さが一段と増してまいりましたが'],
+            'このたび 私たちは結婚式を挙げる運びとなりました': ['このたび 私たちは', '結婚式を挙げる運びとなりました']
+          };
+          if (!part.custom && greetingPhrases[part.text]) {
+            greetingPhrases[part.text].forEach(text => {
+              const phrase = document.createElement('span');
+              phrase.className = 'message-phrase';
+              phrase.textContent = text;
+              line.append(phrase);
+            });
+          } else {
+            line.append(document.createTextNode(part.text));
+          }
           if (part.breakAfter) {
             const lineBreak = document.createElement('br');
             if (part.breakAfter === 'mobile') lineBreak.className = 'mobile-only';
