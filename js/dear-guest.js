@@ -38,7 +38,11 @@
     if (phase === 'after') return paragraphs(
       ['結婚式は楽しんでいただけましたか？'],
       ['皆様と過ごした時間は ', 'ふたりにとって大切な宝物です', 'これからも どうぞよろしくお願いいたします'],
-      ['ちなみに 謎はこの招待状にも', '隠されているようですよ…',
+      [...(status.puzzleViewed && Number.isInteger(status.dearGuest?.solvedCount) && status.dearGuest.solvedCount >= 0
+        ? [status.dearGuest.solvedCount === 0
+          ? '現在 まだ誰も最後の謎を解き明かしていません！'
+          : `現在 ${status.dearGuest.solvedCount}人が最後の謎を解き明かしました！`]
+        : ['ちなみに 謎はこの招待状にも', '隠されているようですよ…']),
         ...(status.dearGuest && status.dearGuest.thanksVisitedBefore ? ['あのときのIDをもう一度入力してください！'] : [])]
     );
     if (String(status.invitationMessage || '').trim()) return { custom: true, text: status.invitationMessage.trim().replace(/、/g, ' ').replace(/。/g, '') };

@@ -46,3 +46,29 @@ console.log('PASS early-only guests receive the exact revisit reminder; post-rel
 
 for(const [phase,expected] of Object.entries({early:'当日はお気をつけてお越しください',eve:'明日はお気をつけてお越しください',today:'本日はお気をつけてお越しください',during:'本日はお気をつけてお越しください',after:'ご来場ありがとうございました'}))assert.equal(c.window.WeddingDearGuest.selectArrival(phase).join(''),expected);
 console.log('PASS Access copy in all five wedding phases');
+
+const afterStatus={completed:true,attending:true,dearGuest:{thanksVisited:false,solvedCount:0}};
+assert.match(JSON.stringify(select(afterStatus,'after')),/隠されているよう/);
+assert.match(JSON.stringify(select({...afterStatus,puzzleViewed:true},'after')),/現在 まだ誰も最後の謎を解き明かしていません！/);
+assert.match(JSON.stringify(select({...afterStatus,puzzleViewed:true,dearGuest:{solvedCount:12}},'after')),/現在 12人が最後の謎を解き明かしました！/);
+const visited={...afterStatus,dearGuest:{thanksVisited:true,solvedCount:12}};
+assert.equal(JSON.stringify(select({...visited,puzzleViewed:true},'after')),JSON.stringify(select(visited,'after')));
+assert.match(JSON.stringify(select({...afterStatus,puzzleViewed:true,dearGuest:{}},'after')),/隠されているよう/);
+const visitRows=[[end,'One','','','','event1'],[end,'One','','','','event2'],[end,'one','','','','event3'],[end,'ID不明','','','','event4'],[new Date(end.getTime()+1),'Future','','','','event5']];
+c.SpreadsheetApp={openById:()=>({getSheetByName:()=>({getLastRow:()=>visitRows.length+1,getRange:()=>({getValues:()=>visitRows})})})};
+assert.equal(c.getThanksVisitState_('viewer',end,end).solvedCount,2);
+visitRows.length=0;assert.equal(c.getThanksVisitState_('viewer',end,end).solvedCount,0);
+console.log('PASS zero/multiple solvers, duplicate and unknown exclusion, missing count fallback, visited copy unchanged');
+
+const source=fs.readFileSync(root+'js/script.js','utf8');
+const saved=new Map();let rect={top:900,bottom:1200,height:300},renders=0;
+const state=vm.createContext({Set,localStorage:{getItem:k=>saved.get(k),setItem:(k,v)=>saved.set(k,v)},guestId:'Viewer',latestStatus:{dearGuest:{phase:'after',releaseAt:'release1'}},els:{overlay:{hidden:true}},window:{innerHeight:800},document:{hidden:false,getElementById:id=>id==='lastPuzzle'?{classList:{contains:()=>false}}:{children:[1],getBoundingClientRect:()=>rect}},renderMessage:()=>renders++});
+vm.runInContext(source.slice(source.indexOf('  const viewedPuzzles'),source.indexOf('  let puzzleTimer')),state);
+state.checkPuzzleViewed();assert.equal(state.hasViewedPuzzle(),false);
+rect={top:400,bottom:700,height:300};state.els.overlay.hidden=false;state.checkPuzzleViewed();assert.equal(state.hasViewedPuzzle(),false);
+state.els.overlay.hidden=true;state.checkPuzzleViewed();assert.equal(state.hasViewedPuzzle(),true);assert.equal(renders,1);
+state.checkPuzzleViewed();assert.equal(renders,1);
+vm.runInContext('viewedPuzzles.clear()',state);assert.equal(state.hasViewedPuzzle(),true);
+state.guestId='Other';assert.equal(state.hasViewedPuzzle(),false);
+state.guestId='Viewer';state.latestStatus.dearGuest.releaseAt='release2';assert.equal(state.hasViewedPuzzle(),false);
+console.log('PASS visibility gate, overlay exclusion, reload persistence, guest and release isolation');

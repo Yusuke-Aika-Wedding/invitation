@@ -192,7 +192,11 @@ function getThanksVisitState_(guestId, end, now) {
     const date = puzzleReleaseDate_(value);
     return Boolean(end && date && date.getTime() >= end.getTime() && date.getTime() <= now.getTime());
   }));
-  return { hintCount: firstIndex < 0 ? null : Number(rows[firstIndex][7]) || 0, thanksVisited: after, thanksVisitedBefore: before, puzzleRank: firstIndex < 0 ? null : thanksVisitRank_(rows, firstIndex) };
+  const solvedGuests = new Set(rows.filter(row => {
+    const date = puzzleReleaseDate_(row[0]);
+    return row[1] && row[1] !== 'ID不明' && row[5] && date && date.getTime() <= now.getTime();
+  }).map(row => String(row[1])));
+  return { solvedCount: solvedGuests.size, hintCount: firstIndex < 0 ? null : Number(rows[firstIndex][7]) || 0, thanksVisited: after, thanksVisitedBefore: before, puzzleRank: firstIndex < 0 ? null : thanksVisitRank_(rows, firstIndex) };
 }
 
 const PUZZLE_HINTS_SHEET = '謎解きヒント記録';

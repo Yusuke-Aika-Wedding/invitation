@@ -1572,3 +1572,5 @@ textarea::placeholder { white-space: pre-wrap; }
   .puzzle-hint-dialogue p { flex: none; padding: 14px 12px; line-height: 1.95; }
   .puzzle-hint-dialogue p::before { left: 50%; top: -10px; transform: translateX(-50%); border: 0; border-left: 9px solid transparent; border-right: 9px solid transparent; border-bottom: 11px solid #f5ede0; }
 }
+
+.venue-link-note span { white-space: nowrap; }

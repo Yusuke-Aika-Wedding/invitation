@@ -59,6 +59,8 @@
     prepareHandwriting();
     setupAuth();
     setupOverlay();
+    window.addEventListener('scroll', checkPuzzleViewed, { passive: true });
+    window.addEventListener('resize', checkPuzzleViewed, { passive: true });
     setupFadeIn();
     setupCountdown();
     setupCarousel();
@@ -305,6 +307,31 @@
     }
   }
 
+  const viewedPuzzles = new Set();
+  function puzzleViewKey() {
+    const state = latestStatus.dearGuest;
+    return guestId && state?.phase === 'after' && state.releaseAt
+      ? `wedding-puzzle-viewed:${guestId}:${state.releaseAt}` : '';
+  }
+  function hasViewedPuzzle() {
+    const key = puzzleViewKey();
+    if (!key) return false;
+    if (viewedPuzzles.has(key)) return true;
+    try { return localStorage.getItem(key) === '1'; } catch (_) { return false; }
+  }
+  function checkPuzzleViewed() {
+    const key = puzzleViewKey();
+    const section = document.getElementById('lastPuzzle');
+    const content = document.getElementById('lastPuzzleContent');
+    if (!key || hasViewedPuzzle() || document.hidden || !els.overlay?.hidden
+      || !section || section.classList.contains('is-hidden') || !content?.children.length) return;
+    const rect = content.getBoundingClientRect();
+    if (rect.height <= 0 || rect.top >= window.innerHeight * .85 || rect.bottom <= 0) return;
+    viewedPuzzles.add(key);
+    try { localStorage.setItem(key, '1'); } catch (_) { /* Keep the in-memory state. */ }
+    renderMessage(latestStatus, { messageOnly: true });
+  }
+
   let puzzleTimer = null;
   let puzzleRequestPending = false;
   let puzzleReleaseTimer = null;
@@ -369,6 +396,7 @@
         restartHandwriting(section);
       }
       renderPuzzleStamp(content, result);
+      checkPuzzleViewed();
       window.WeddingHints.mount(section, guestId);
 
     } catch (_) {
@@ -793,7 +821,7 @@
         arrival.append(br, document.createTextNode(text[1]));
       }
     }
-    const copy = window.WeddingDearGuest.selectMessage(latestStatus, phase);
+    const copy = window.WeddingDearGuest.selectMessage({ ...latestStatus, puzzleViewed: hasViewedPuzzle() }, phase);
     const sentences = copy.custom
       ? [[{ text: copy.text.replace(/\r\n?/g, '\n'), custom: true }]]
       : copy.paragraphs.map(parts => parts.map((text, index) => ({ text, breakAfter: index < parts.length - 1 ? 'always' : null })));

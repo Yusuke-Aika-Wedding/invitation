@@ -30,5 +30,7 @@ function getDearGuestState_(guestId, now) {
   const visits = getThanksVisitState_(guestId, end, currentTime);
   return { phase: phase, thanksVisited: phase === 'after' && visits.thanksVisited,
     thanksVisitedBefore: visits.thanksVisitedBefore, puzzleRank: visits.puzzleRank,
+    solvedCount: phase === 'after' ? visits.solvedCount : null,
+    releaseAt: end ? end.toISOString() : '',
     settingsValid: Boolean(start && end && end.getTime() > start.getTime()) };
 }
