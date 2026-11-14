@@ -779,9 +779,7 @@
 
   function syncResponsiveCopy() {
     if (!els.guestMessageInput) return;
-    els.guestMessageInput.placeholder = window.matchMedia('(max-width: 600px)').matches
-      ? '新郎新婦へのメッセージがありましたら\nご入力ください'
-      : '新郎新婦へのメッセージがありましたらご入力ください';
+    els.guestMessageInput.placeholder = '新郎新婦へのメッセージが\nありましたら ご入力ください';
   }
 
   function isGasConfigured() {
