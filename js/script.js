@@ -1744,11 +1744,18 @@
       7: { file: 145, alt: '竹林の中で斜め上を見上げる新郎新婦', portrait: true },
       8: { file: 147, alt: '竹林の中で正面を向く新郎新婦', position: '53% 55%' },
       9: { file: 210, alt: '白い傘を持ち話しながら歩く新郎新婦', position: '67% 60%' },
-      10: { file: 212, alt: '白い傘を持ち正面を向く新郎新婦', position: '36% 55%' }
+      10: { file: 212, alt: '白い傘を持ち正面を向く新郎新婦', position: '36% 55%' },
+      11: { file: 172, alt: '手を繋いでこちらを振り返る新郎新婦', position: '57% 60%' }
     };
     // Choose once per page load, then repeat that pattern in the requested order.
-    const pattern = Math.random() < 0.5 ? 'A' : 'B';
-    const order = pattern === 'A' ? [2, 3, 4, 6, 7, 10] : [2, 3, 4, 6, 8, 9];
+    const patterns = {
+      A: [2, 3, 4, 6, 7, 10],
+      B: [2, 3, 4, 6, 8, 9],
+      C: [2, 3, 4, 6, 11]
+    };
+    const patternNames = Object.keys(patterns);
+    const pattern = patternNames[Math.floor(Math.random() * patternNames.length)];
+    const order = patterns[pattern];
     slider.dataset.pattern = pattern;
     const dotContainer = slider.querySelector('.slider-dots');
     slider.querySelectorAll('.hero-slide').forEach(slide => slide.remove());
