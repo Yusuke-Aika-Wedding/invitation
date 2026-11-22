@@ -1541,26 +1541,16 @@
       return;
     }
 
-    const cards = questions.map((question, index) => {
+    const cards = questions.map(question => {
       const card = document.createElement('article');
       card.className = 'prediction-card';
       card.dataset.predictionQuestion = String(question.id || '');
       card.dataset.voted = String(Boolean(question.voted));
 
-      const header = document.createElement('div');
-      header.className = 'prediction-card-header';
-      const number = document.createElement('span');
-      number.className = 'prediction-number number-font';
-      number.textContent = String(index + 1).padStart(2, '0');
-      const heading = document.createElement('h3');
-      heading.textContent = predictionQuestionText(question);
-      header.append(number, heading);
-      card.append(header);
-
       const options = document.createElement('div');
       options.className = published ? 'prediction-results' : 'prediction-options';
       options.setAttribute('role', published ? 'list' : 'group');
-      options.setAttribute('aria-label', `${predictionQuestionText(question).replace(/\n/g, '') || 'アンケート'}の選択肢`);
+      options.setAttribute('aria-label', '投票の選択肢');
 
       (Array.isArray(question.options) ? question.options : []).forEach(item => {
         const label = String((item && item.label) || item || '');
