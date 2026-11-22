@@ -1476,7 +1476,7 @@
       const answers = questions.map(q => ({ questionId: q.id, option: q.voted ? q.selectedOption : predictionSelections.get(q.id) }));
       if (answers.some(answer => !answer.option)) return;
       predictionSubmitting = true;
-      const confirmed = await confirmAnswers(questions.map((q, i) => [predictionQuestionText(q, true), answers[i].option]), 'この内容で投票する');
+      const confirmed = await confirmAnswers(answers.map(answer => ['', answer.option]), 'この内容で投票する');
       if (!confirmed) { predictionSubmitting = false; return; }
       els.predictionList.querySelectorAll('button').forEach(button => { button.disabled = true; });
       submit.textContent = '投票しています…';
@@ -2002,11 +2002,14 @@
       title.autofocus = true;
       const list = document.createElement('dl');
       entries.forEach(([label, value]) => {
-        const term = document.createElement('dt');
-        term.textContent = label;
+        if (label) {
+          const term = document.createElement('dt');
+          term.textContent = label;
+          list.append(term);
+        }
         const detail = document.createElement('dd');
         detail.textContent = String(value || 'なし');
-        list.append(term, detail);
+        list.append(detail);
       });
       const actions = document.createElement('div');
       actions.className = 'answer-confirmation-actions';

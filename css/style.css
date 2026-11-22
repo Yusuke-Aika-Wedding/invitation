@@ -1575,3 +1575,7 @@ textarea::placeholder { white-space: pre-wrap; }
 }
 
 .venue-link-note span { white-space: nowrap; }
+
+/* Keep the first and last song equally inset from the card border. */
+.prediction-card > .prediction-options:first-child,
+.prediction-card > .prediction-results:first-child { margin-top: 0; }
