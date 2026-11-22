@@ -520,8 +520,8 @@ textarea::placeholder { white-space: pre-wrap; }
 .prediction-option {
   display: grid;
   width: 100%;
-  min-height: 52px;
-  padding: 11px 16px;
+  min-height: 54px;
+  padding: 0 16px;
   grid-template-columns: 24px minmax(0, 1fr);
   align-items: center;
   gap: 12px;
@@ -1321,7 +1321,7 @@ textarea::placeholder { white-space: pre-wrap; }
   .prediction-number { width: 42px; height: 42px; font-size: .82rem; }
   .prediction-card h3 { margin-top: 1px; font-size: clamp(.94rem, 4.2vw, 1.08rem); line-height: 1.72; letter-spacing: .045em; }
   .prediction-options, .prediction-results { margin-top: 18px; gap: 8px; }
-  .prediction-option { min-height: 49px; padding: 10px 13px; font-size: .84rem; }
+  .prediction-option { min-height: 52px; padding: 0 13px; font-size: .84rem; }
   .prediction-submit { width: 100%; min-width: 0; }
   .prediction-result-copy { min-height: 48px; padding: 9px 13px; }
   .prediction-result-label { font-size: .82rem; }
