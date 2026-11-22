@@ -12,7 +12,7 @@
 const APP_CONFIG = {
   spreadsheetId: '1micDJFsf6ktwZrq_tlIz9TiC4PjbBbv-7dlWgbhMjbs',
   sheetName: 'ゲスト一覧',
-  predictionSheetName: 'WEDDING PREDICTION',
+  predictionSheetName: 'WEDDING SONG VOTE',
   timeZone: 'Asia/Tokyo',
   weddingDateYmd: '2027-03-21',
   weddingDateIso: '2027-03-21T10:00:00+09:00',
@@ -74,29 +74,16 @@ const COL = {
 const PREDICTION_HEADERS = [
   'ID',
   'ゲスト名',
-  '質問ID',
-  '投票',
+  '投票企画',
+  '選択曲',
   '投票日時'
 ];
 
 const PREDICTION_QUESTIONS = [
   {
-    id: 'Q1',
-    question: '新郎新婦が入刀するのは？',
-    options: ['ケーキ', 'シュークリーム', 'エクレア', 'その他'],
-    answer: 'ケーキ'
-  },
-  {
-    id: 'Q2',
-    question: '新婦のお色直し後のドレスの色は？',
-    options: ['ピンク', '水色', '黄色', 'その他'],
-    answer: 'ピンク'
-  },
-  {
-    id: 'Q3',
-    question: '披露宴で 新郎新婦の退場時に流れる曲は誰の曲？',
-    options: ['サザンオールスターズ', 'Mr.Children', '嵐', 'その他'],
-    answer: 'その他'
+    id: 'SONG',
+    question: 'アイドルグループ「嵐」が大好きな新婦は、\n大好きすぎてお色直し入場のときに\n流す曲を決められません！\nみなさんのお力を貸してください！\n最も票を集めた曲が当日流れます！',
+    options: ['愛を叫べ', '迷宮ラブソング', 'Love so sweet', 'One Love']
   }
 ];
 
@@ -338,10 +325,10 @@ function submitPrediction_(params) {
     const guestRecord = findGuestRecord_(guestSheet, guestId);
     if (!guestRecord) throw new Error('ゲスト情報が見つかりません');
     if (!isCompleted_(guestRecord.values)) {
-      throw new Error('WEDDING PREDICTIONは RSVPの回答後に投票できます');
+      throw new Error('Wedding Song Voteは RSVPの回答後に投票できます');
     }
     if (normalizeAttendance_(guestRecord.values.reception) !== '出席') {
-      throw new Error('WEDDING PREDICTIONは 披露宴にご出席の方だけ投票できます');
+      throw new Error('Wedding Song Voteは 披露宴にご出席の方だけ投票できます');
     }
 
     const storedGuestId = guestRecord.values.id || guestId;
@@ -357,7 +344,7 @@ function submitPrediction_(params) {
       };
     }
 
-    if (getPredictionTiming_().published) throw new Error('正解発表後の投票はできません');
+    if (getPredictionTiming_().published) throw new Error('投票期間終了後の投票はできません');
     const rowNumber = Math.max(predictionSheet.getLastRow() + 1, 2);
     predictionSheet.getRange(rowNumber, 1, 1, PREDICTION_HEADERS.length).setValues([[
       storedGuestId,
@@ -389,11 +376,11 @@ function submitPredictions_(params) {
     const guest = guestId ? findGuestRecord_(guestSheet, guestId) : null;
     if (!guest) throw new Error('ゲスト情報が見つかりません');
     if (!isCompleted_(guest.values) || normalizeAttendance_(guest.values.reception) !== '出席') {
-      throw new Error('WEDDING PREDICTIONは RSVPで披露宴への出席をご回答後に投票できます');
+      throw new Error('Wedding Song Voteは RSVPで披露宴への出席をご回答後に投票できます');
     }
     let answers;
-    try { answers = JSON.parse(String(params.answers || '')); } catch (_) { throw new Error('3問すべての予想を選んでください'); }
-    if (!Array.isArray(answers) || answers.length !== PREDICTION_QUESTIONS.length) throw new Error('3問すべての予想を選んでください');
+    try { answers = JSON.parse(String(params.answers || '')); } catch (_) { throw new Error('曲を1つ選んでください'); }
+    if (!Array.isArray(answers) || answers.length !== PREDICTION_QUESTIONS.length) throw new Error('曲を1つ選んでください');
     const sheet = getPredictionSheet_();
     const votes = readPredictionVotes_(sheet).filter(vote => normalizeGuestId_(vote.guestId) === guest.values.id);
     const now = new Date();
@@ -406,7 +393,7 @@ function submitPredictions_(params) {
       ]);
     });
     if (rows.length) {
-      if (getPredictionTiming_(now).published) throw new Error('正解発表後の投票はできません');
+      if (getPredictionTiming_(now).published) throw new Error('投票期間終了後の投票はできません');
       const firstRow = Math.max(sheet.getLastRow() + 1, 2);
       sheet.getRange(firstRow, 1, rows.length, PREDICTION_HEADERS.length).setValues(rows);
       sheet.getRange(firstRow, 5, rows.length, 1).setNumberFormat('yyyy/mm/dd hh:mm:ss');
@@ -419,7 +406,7 @@ function submitPredictions_(params) {
 function getPredictionTiming_(now) {
   const current = now || new Date();
   const sheet = SpreadsheetApp.openById(APP_CONFIG.spreadsheetId).getSheetByName('公開設定');
-  // 正解の公開は項目名ではなく、指定されたB3セルを参照します。
+  // 投票結果の公開は「公開設定」B3（結婚式終了時刻）を参照します。
   const release = puzzleReleaseDate_(sheet && sheet.getRange('B3').getValue());
   const { start } = getWeddingSchedule_();
   const weddingStart = start || new Date(APP_CONFIG.weddingDateIso);
@@ -460,17 +447,16 @@ function buildPredictionState_(guestIdRaw, predictionSheet) {
       const totalVotes = counts.reduce((sum, count) => sum + count, 0);
       const percentages = calculatePercentages_(counts);
       const ownVote = uniqueVotes.get(`${guestId}\u0000${question.id}`) || null;
+      const winnerIndex = counts.reduce((best, count, index) => count > counts[best] ? index : best, 0);
       return {
         id: question.id,
         question: question.question,
         voted: Boolean(ownVote),
         selectedOption: ownVote ? ownVote.option : '',
-        ...(timing.published ? { answer: question.answer, correct: ownVote ? ownVote.option === question.answer : null } : {}),
-        totalVotes: totalVotes,
+        ...(timing.published ? { winner: totalVotes ? question.options[winnerIndex] : '' } : {}),
         options: question.options.map((label, index) => ({
           label: label,
-          percent: ownVote || timing.published ? percentages[index] : 0,
-          count: ownVote || timing.published ? counts[index] : 0
+          percent: timing.published ? percentages[index] : 0
         }))
       };
     })
@@ -1359,10 +1345,23 @@ function getMainSheet_() {
 }
 
 function getPredictionSheet_() {
-  const sheet = SpreadsheetApp.openById(APP_CONFIG.spreadsheetId)
-    .getSheetByName(APP_CONFIG.predictionSheetName);
+  const spreadsheet = SpreadsheetApp.openById(APP_CONFIG.spreadsheetId);
+  let sheet = spreadsheet.getSheetByName(APP_CONFIG.predictionSheetName);
   if (!sheet) {
-    throw new Error('WEDDING PREDICTIONシートがありませんGASエディタからsetupを実行してください');
+    sheet = spreadsheet.getSheetByName('WEDDING PREDICTION');
+    if (sheet) {
+      sheet.setName(APP_CONFIG.predictionSheetName);
+      if (sheet.getLastRow() > 1) sheet.getRange(2, 1, sheet.getLastRow() - 1, PREDICTION_HEADERS.length).clearContent();
+      sheet.getRange(1, 1, 1, PREDICTION_HEADERS.length).setValues([PREDICTION_HEADERS]);
+      const validation = SpreadsheetApp.newDataValidation()
+        .requireValueInList(PREDICTION_QUESTIONS.map(question => question.id), true)
+        .setAllowInvalid(false)
+        .build();
+      sheet.getRange(2, 3, Math.max(sheet.getMaxRows() - 1, 1), 1).setDataValidation(validation);
+    }
+  }
+  if (!sheet) {
+    throw new Error('Wedding Song VoteシートがありませんGASエディタからsetupを実行してください');
   }
   return sheet;
 }
@@ -1370,7 +1369,15 @@ function getPredictionSheet_() {
 function ensurePredictionSheet_() {
   const spreadsheet = SpreadsheetApp.openById(APP_CONFIG.spreadsheetId);
   let sheet = spreadsheet.getSheetByName(APP_CONFIG.predictionSheetName);
-  if (!sheet) sheet = spreadsheet.insertSheet(APP_CONFIG.predictionSheetName);
+  if (!sheet) {
+    sheet = spreadsheet.getSheetByName('WEDDING PREDICTION');
+    if (sheet) {
+      sheet.setName(APP_CONFIG.predictionSheetName);
+      if (sheet.getLastRow() > 1) sheet.getRange(2, 1, sheet.getLastRow() - 1, Math.min(sheet.getMaxColumns(), PREDICTION_HEADERS.length)).clearContent();
+    } else {
+      sheet = spreadsheet.insertSheet(APP_CONFIG.predictionSheetName);
+    }
+  }
 
   const oldHeaderWidth = Math.min(sheet.getMaxColumns(), 7);
   const oldHeaders = sheet.getRange(1, 1, 1, oldHeaderWidth).getValues()[0];

@@ -1495,10 +1495,24 @@
   }
 
   function predictionQuestionText(question, confirmation = false) {
-    if (question.id !== 'Q3') return String(question.question || '');
-    return confirmation
-      ? '披露宴の最後で 新郎新婦の退場時\nに流れる曲は誰の曲？'
-      : '披露宴の最後で 新郎新婦の\n退場時に流れる曲は誰の曲？';
+    return String(question.question || '').replace(/\\n/g, '\n');
+  }
+
+  function appendSongTitle(container, title) {
+    const redPart = title === '愛を叫べ' ? '愛'
+      : title === '迷宮ラブソング' ? 'ラブ'
+        : title === 'Love so sweet' ? 'Love'
+          : title === 'One Love' ? 'Love' : '';
+    if (!redPart) {
+      container.append(document.createTextNode(title));
+      return;
+    }
+    const index = title.indexOf(redPart);
+    container.append(document.createTextNode(title.slice(0, index)));
+    const highlight = document.createElement('span');
+    highlight.className = 'song-vote-highlight';
+    highlight.textContent = redPart;
+    container.append(highlight, document.createTextNode(title.slice(index + redPart.length)));
   }
 
   function renderPrediction(show, prediction) {
@@ -1515,9 +1529,7 @@
     }
 
     const published = Boolean(prediction && prediction.published);
-    const phase = prediction && prediction.phase === 'before' && latestStatus.dearGuest?.phase === 'eve'
-      ? 'eve' : prediction && prediction.phase;
-    els.predictionSection.querySelector('.prediction-introduction').hidden = phase === 'today' || phase === 'after';
+    els.predictionSection.querySelector('.prediction-introduction').hidden = published;
     const questions = prediction && Array.isArray(prediction.questions)
       ? prediction.questions
       : [];
@@ -1546,19 +1558,19 @@
       card.append(header);
 
       const options = document.createElement('div');
-      options.className = question.voted || published ? 'prediction-results' : 'prediction-options';
-      options.setAttribute('role', question.voted || published ? 'list' : 'group');
+      options.className = published ? 'prediction-results' : 'prediction-options';
+      options.setAttribute('role', published ? 'list' : 'group');
       options.setAttribute('aria-label', `${predictionQuestionText(question).replace(/\n/g, '') || 'アンケート'}の選択肢`);
 
       (Array.isArray(question.options) ? question.options : []).forEach(item => {
         const label = String((item && item.label) || item || '');
-        if (question.voted || published) {
+        if (published) {
           const result = document.createElement('div');
           const selected = label === String(question.selectedOption || '');
           const percent = Math.max(0, Math.min(100, Number(item.percent) || 0));
           result.className = `prediction-result${selected ? ' is-selected' : ''}`;
           result.setAttribute('role', 'listitem');
-          result.setAttribute('aria-label', `${label} ${percent}%${Number.isFinite(item.count) ? ` ${item.count}票` : ''}${selected ? ' あなたの投票' : ''}`);
+          result.setAttribute('aria-label', `${label} ${percent}%`);
           const bar = document.createElement('span');
           bar.className = 'prediction-result-bar';
           bar.style.width = `${percent}%`;
@@ -1572,16 +1584,10 @@
             selectedMark.setAttribute('aria-hidden', 'true');
             optionLabel.append(selectedMark);
           }
-          optionLabel.append(document.createTextNode(label));
+          appendSongTitle(optionLabel, label);
           const percentage = document.createElement('strong');
           percentage.className = 'prediction-percentage number-font';
           percentage.textContent = `${percent}%`;
-          if (Number.isFinite(item.count)) {
-            const count = document.createElement('small');
-            count.className = 'prediction-vote-count';
-            count.textContent = `${item.count}票`;
-            percentage.append(count);
-          }
           copy.append(optionLabel, percentage);
           result.append(bar, copy);
           options.append(result);
@@ -1590,31 +1596,27 @@
           button.className = 'prediction-option';
           button.type = 'button';
           button.dataset.predictionOption = label;
-          const selected = predictionSelections.get(question.id) === label;
+          const selected = question.voted
+            ? question.selectedOption === label
+            : predictionSelections.get(question.id) === label;
           button.setAttribute('aria-pressed', String(selected));
           button.classList.toggle('is-selected', selected);
+          button.disabled = Boolean(question.voted);
           const mark = document.createElement('span');
           mark.className = 'prediction-option-mark';
           mark.setAttribute('aria-hidden', 'true');
           const copy = document.createElement('span');
-          copy.textContent = label;
+          appendSongTitle(copy, label);
           button.append(mark, copy);
           options.append(button);
         }
       });
       card.append(options);
 
-      if (published) {
-        const verdict = document.createElement('p');
-        verdict.className = `prediction-verdict${question.correct ? ' is-correct' : ''}`;
-        verdict.textContent = `${question.voted ? (question.correct ? '正解！' : '不正解') : '未回答'}　正解は「${question.answer}」`;
-        card.append(verdict);
-      }
-      if (question.voted || published) {
+      if (question.voted && !published) {
         const summary = document.createElement('p');
         summary.className = 'prediction-voted-note';
-        const totalVotes = Number(question.totalVotes) || 0;
-        summary.textContent = `${question.voted ? '投票済み' : '未回答'}・全${totalVotes}票`;
+        summary.textContent = '投票済み';
         card.append(summary);
       }
 
@@ -1627,23 +1629,26 @@
 
     const allQuestionsVoted = questions.every(question => Boolean(question.voted));
     els.predictionSection.querySelector('.prediction-rule').hidden = allQuestionsVoted || published;
-    if (allQuestionsVoted) {
+    if (allQuestionsVoted || published) {
       const thanks = document.createElement('p');
       thanks.className = 'prediction-complete-message';
       thanks.setAttribute('role', 'status');
       const firstLine = document.createElement('span');
       firstLine.className = 'prediction-complete-line';
-      firstLine.textContent = published ? 'ご来場ありがとうございました！' : '投票ありがとうございました！';
+      firstLine.textContent = published ? '' : '投票ありがとうございました！';
       const mobileBreak = document.createElement('br');
-      mobileBreak.className = published ? '' : 'mobile-only';
+      mobileBreak.className = 'mobile-only';
       const secondLine = document.createElement('span');
       secondLine.className = 'prediction-complete-line';
-      const score = questions.filter(question => question.correct === true).length;
-      secondLine.textContent = published
-        ? score === 0 ? '全問不正解...残念！'
-          : score === 3 ? '全問正解！素晴らしい！' : `3問中${score}問正解でした！`
-        : phase === 'today' ? '本日お楽しみに！' : phase === 'eve' ? '明日お楽しみに！' : '当日お楽しみに！';
-      thanks.append(firstLine, mobileBreak, secondLine);
+      if (published) {
+        const winner = questions[0] && questions[0].winner;
+        appendSongTitle(firstLine, winner || '投票結果');
+        firstLine.append(document.createTextNode('が選ばれました！！'));
+        thanks.append(firstLine);
+      } else {
+        secondLine.textContent = '当日お楽しみに！';
+        thanks.append(firstLine, mobileBreak, secondLine);
+      }
       cards.push(thanks);
     }
     if (!allQuestionsVoted && !published) {
