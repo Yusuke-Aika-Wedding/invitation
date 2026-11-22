@@ -479,7 +479,9 @@ textarea::placeholder { white-space: pre-wrap; }
 .thanks-card strong { display: block; color: var(--wine-dark); font-size: 1.18rem; margin-bottom: 8px; text-wrap: balance; }
 .thanks-card p { text-wrap: pretty; }
 .wedding-prediction { padding-bottom: clamp(36px, 6vw, 68px); }
-.prediction-introduction { text-wrap: balance; }
+.prediction-introduction { container-type: inline-size; }
+.prediction-introduction-line { display: block; font-size: min(.95rem, 4.5cqi); line-height: 1.85; white-space: nowrap; }
+.prediction-introduction-request { margin-top: .5lh; }
 .prediction-rule {
   width: fit-content;
   max-width: 100%;
