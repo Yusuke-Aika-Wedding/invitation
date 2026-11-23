@@ -79,7 +79,7 @@ function getLastPuzzle_(guestIdRaw) {
   const { start, end: release } = getWeddingSchedule_();
   const now = new Date();
   const published = Boolean(release && now.getTime() >= release.getTime());
-  const response = { ok: true, startAt: start ? start.toISOString() : '', published: published, releaseAt: release ? release.toISOString() : '', serverTime: now.toISOString(), dearGuest: getDearGuestState_(guestId, now), invitationMessage: record.values.invitationMessage || '' };
+  const response = { ok: true, startAt: start ? start.toISOString() : '', published: published, releaseAt: release ? release.toISOString() : '', serverTime: now.toISOString(), dearGuest: getDearGuestState_(guestId, now), invitationMessage: record.values.invitationMessage || '', goshugiPayCompleted: record.values.goshugiPay === '振込完了' };
   response.prediction = isCompleted_(record.values) && normalizeAttendance_(record.values.reception) === '出席'
     ? buildPredictionState_(guestId) : null;
   response.solved = published && response.dearGuest.thanksVisited;

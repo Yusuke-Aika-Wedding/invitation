@@ -6,7 +6,7 @@
  * A ID / B ゲスト名 / C メールアドレス / D 挙式出欠 / E 披露宴出欠 / F アレルギー
  * G 回答日時 / H 確認メール送信日時 / I 1週間前リマインド送信日時
  * J 前日リマインド送信日時 / K 更新日時 / L メッセージ
- * M 参加ありがとうメール送信日時 / N Dear Guestメッセージ
+ * M 参加ありがとうメール送信日時 / N Dear Guestメッセージ / O ご祝儀Pay
  */
 
 const APP_CONFIG = {
@@ -18,7 +18,8 @@ const APP_CONFIG = {
   weddingDateIso: '2027-03-21T10:00:00+09:00',
   receptionEndIso: '2027-03-21T14:00:00+09:00',
   weddingDateLabel: '2027年3月21日（日）',
-  checkInTimeLabel: '9:00〜10:00',
+  checkInTimeLabel: '9:30〜9:45',
+  songVoteClosesAtIso: '2027-02-01T00:00:00+09:00',
   ceremonyTimeLabel: '10:00〜10:30',
   receptionTimeLabel: '11:00〜14:00',
   groomFullName: '白戸祐輔',
@@ -51,7 +52,8 @@ const HEADERS = [
   '更新日時',
   'メッセージ',
   '参加ありがとうメール送信日時',
-  'Dear Guestメッセージ'
+  'Dear Guestメッセージ',
+  'ご祝儀Pay'
 ];
 
 const COL = {
@@ -68,7 +70,8 @@ const COL = {
   updatedAt: 11,
   message: 12,
   thanksSentAt: 13,
-  invitationMessage: 14
+  invitationMessage: 14,
+  goshugiPay: 15
 };
 
 const PREDICTION_HEADERS = [
@@ -154,6 +157,7 @@ function setup() {
     removeLegacyInvitationUrlColumn_(sheet);
     removeLegacyGiftColumns_(sheet);
     ensureHeaders_(sheet);
+    setupGoshugiPayColumn_(sheet);
     formatSheet_(sheet);
     ensurePredictionSheet_();
     SpreadsheetApp.flush();
@@ -215,6 +219,7 @@ function getStatus_(guestIdRaw) {
     allergy: values.allergy || '',
     message: values.message || '',
     invitationMessage: values.invitationMessage || '',
+    goshugiPayCompleted: values.goshugiPay === '振込完了',
     prediction: completed && normalizeAttendance_(values.reception) === '出席'
       ? buildPredictionState_(values.id)
       : null,
@@ -262,7 +267,8 @@ function submitResponse_(params) {
     assertConfirmationEmailReady_(email);
     const now = new Date();
     const invitationUrl = getInvitationUrl_();
-    sheet.getRange(record.rowNumber, 1, 1, HEADERS.length).setValues([[
+    // RSVP writes only A:N; never overwrite the independently managed payment status in O.
+    sheet.getRange(record.rowNumber, 1, 1, COL.invitationMessage).setValues([[
       storedGuestId,
       name,
       email,
@@ -300,6 +306,7 @@ function submitResponse_(params) {
       receptionAttending: receptionAttendance === '出席',
       displayName: name,
       invitationMessage: record.values.invitationMessage || '',
+      goshugiPayCompleted: record.values.goshugiPay === '振込完了',
       prediction: receptionAttendance === '出席' ? buildPredictionState_(storedGuestId) : null
     };
   } finally {
@@ -344,7 +351,7 @@ function submitPrediction_(params) {
       };
     }
 
-    if (getPredictionTiming_().published) throw new Error('投票期間終了後の投票はできません');
+    if (getPredictionTiming_().closed) throw new Error('回答は締め切りました');
     const rowNumber = Math.max(predictionSheet.getLastRow() + 1, 2);
     predictionSheet.getRange(rowNumber, 1, 1, PREDICTION_HEADERS.length).setValues([[
       storedGuestId,
@@ -393,7 +400,7 @@ function submitPredictions_(params) {
       ]);
     });
     if (rows.length) {
-      if (getPredictionTiming_(now).published) throw new Error('投票期間終了後の投票はできません');
+      if (getPredictionTiming_(now).closed) throw new Error('回答は締め切りました');
       const firstRow = Math.max(sheet.getLastRow() + 1, 2);
       sheet.getRange(firstRow, 1, rows.length, PREDICTION_HEADERS.length).setValues(rows);
       sheet.getRange(firstRow, 5, rows.length, 1).setNumberFormat('yyyy/mm/dd hh:mm:ss');
@@ -414,6 +421,8 @@ function getPredictionTiming_(now) {
   const published = Boolean(release && current.getTime() >= release.getTime());
   return {
     published: published,
+    closed: published || current.getTime() >= new Date(APP_CONFIG.songVoteClosesAtIso).getTime(),
+    closesAt: new Date(APP_CONFIG.songVoteClosesAtIso).toISOString(),
     phase: published ? 'after' : day(current) >= day(weddingStart) ? 'today' : 'before',
     releaseAt: release ? release.toISOString() : '',
     dayAt: new Date(day(weddingStart) * 86400000 - 9 * 60 * 60 * 1000).toISOString()
@@ -1211,8 +1220,11 @@ function assertDedicatedExecutionAccount_() {
 }
 
 function buildConfirmationText_(data) {
+  const closing = isAttending_(data.ceremonyAttendance, data.receptionAttendance)
+    ? '当日お会いできますことを \n心より楽しみにしております！'
+    : 'またお会いできる日を楽しみにしております';
   const messageParagraph = data.message ? `\n\n【メッセージ】\n${data.message}` : '';
-  return `${data.name} 様\n\n結婚式へのご出欠について \nご回答いただき \n誠にありがとうございます\n以下の内容で承りました\n\n【挙式】${data.ceremonyAttendance}\n【披露宴】${data.receptionAttendance}\n【アレルギー】${data.allergy || 'なし'}${messageParagraph}\n\n【日時】${APP_CONFIG.weddingDateLabel}\n受付 ${APP_CONFIG.checkInTimeLabel}\n挙式 ${APP_CONFIG.ceremonyTimeLabel}\n披露宴 ${APP_CONFIG.receptionTimeLabel}\n\n【会場】${APP_CONFIG.venueName}\n${APP_CONFIG.venueUrl}\n\nGoogle Map：${APP_CONFIG.mapUrl}\n\n招待状URL：\n${data.invitationUrl}\n\n当日お会いできますことを \n心より楽しみにしております！\n\nYusuke & Aika`;
+  return `${data.name} 様\n\n結婚式へのご出欠について \nご回答いただき \n誠にありがとうございます\n以下の内容で承りました\n\n【挙式】${data.ceremonyAttendance}\n【披露宴】${data.receptionAttendance}\n【アレルギー】${data.allergy || 'なし'}${messageParagraph}\n\n【日時】${APP_CONFIG.weddingDateLabel}\n受付 ${APP_CONFIG.checkInTimeLabel}\n挙式 ${APP_CONFIG.ceremonyTimeLabel}\n披露宴 ${APP_CONFIG.receptionTimeLabel}\n\n【会場】${APP_CONFIG.venueName}\n${APP_CONFIG.venueUrl}\n\nGoogle Map：${APP_CONFIG.mapUrl}\n\n招待状URL：\n${data.invitationUrl}\n\n${closing}\n\nYusuke & Aika`;
 }
 
 function buildReminderText_(data) {
@@ -1419,6 +1431,9 @@ function ensurePredictionSheet_() {
 }
 
 function ensureHeaders_(sheet) {
+  if (sheet.getMaxColumns() < HEADERS.length) {
+    sheet.insertColumnsAfter(sheet.getMaxColumns(), HEADERS.length - sheet.getMaxColumns());
+  }
   const legacyInvitationUrlColumn = 12;
   const legacyHeader = String(sheet.getRange(1, legacyInvitationUrlColumn).getValue() || '').trim();
   if (legacyHeader === '招待状URL') {
@@ -1427,6 +1442,12 @@ function ensureHeaders_(sheet) {
   const current = sheet.getRange(1, 1, 1, HEADERS.length).getValues()[0];
   const needsUpdate = HEADERS.some((header, index) => String(current[index] || '') !== header);
   if (needsUpdate) sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
+}
+
+function setupGoshugiPayColumn_(sheet) {
+  const validation = SpreadsheetApp.newDataValidation()
+    .requireValueInList(['振込完了'], true).setAllowInvalid(false).build();
+  sheet.getRange(2, COL.goshugiPay, Math.max(sheet.getMaxRows() - 1, 1), 1).setDataValidation(validation);
 }
 
 function removeLegacyInvitationUrlColumn_(sheet) {
@@ -1527,7 +1548,8 @@ function rowToObject_(row) {
     updatedAt: row[COL.updatedAt - 1],
     message: String(row[COL.message - 1] || '').trim(),
     thanksSentAt: row[COL.thanksSentAt - 1],
-    invitationMessage: String(row[COL.invitationMessage - 1] || '').trim()
+    invitationMessage: String(row[COL.invitationMessage - 1] || '').trim(),
+    goshugiPay: String(row[COL.goshugiPay - 1] || '').trim()
   };
 }
 

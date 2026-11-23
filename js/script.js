@@ -269,6 +269,7 @@
         attending: Boolean(result.attending),
         receptionAttending: Boolean(result.receptionAttending) || result.receptionAttendance === '出席',
         invitationMessage: String(result.invitationMessage || '').trim(),
+        goshugiPayCompleted: Boolean(result.goshugiPayCompleted),
         dearGuest: result.dearGuest || null,
         prediction: result.prediction || null
       };
@@ -359,7 +360,7 @@
         }).format(new Date(countdownStart)) + ' まで';
       }
       updateCountdown();
-      if (result.dearGuest) renderMessage({ ...latestStatus, dearGuest: result.dearGuest, invitationMessage: result.invitationMessage }, { messageOnly: true });
+      if (result.dearGuest) renderMessage({ ...latestStatus, dearGuest: result.dearGuest, invitationMessage: result.invitationMessage, goshugiPayCompleted: result.goshugiPayCompleted }, { messageOnly: true });
       if (result.prediction && !predictionSubmitting) {
         latestStatus.prediction = result.prediction;
         renderPrediction(latestStatus.completed && latestStatus.receptionAttending, result.prediction);
@@ -368,7 +369,7 @@
       const content = document.getElementById('lastPuzzleContent');
       window.clearTimeout(puzzleReleaseTimer);
       const serverNow = Date.parse(result.serverTime);
-      const untilRelease = Math.min(...[result.startAt, result.releaseAt, result.prediction?.releaseAt, result.prediction?.dayAt].map(value => Date.parse(value) - serverNow).filter(value => value > 0));
+      const untilRelease = Math.min(...[result.startAt, result.releaseAt, result.prediction?.closesAt, result.prediction?.releaseAt, result.prediction?.dayAt].map(value => Date.parse(value) - serverNow).filter(value => value > 0));
       if (untilRelease > 0 && untilRelease <= 30000) {
         puzzleReleaseTimer = window.setTimeout(refreshLastPuzzle, untilRelease + 100);
       }
@@ -801,6 +802,7 @@
       receptionAttending: Boolean(status && status.receptionAttending)
         || String((status && status.receptionAttendance) || '').trim() === '出席',
       invitationMessage: String(status && status.invitationMessage !== undefined ? status.invitationMessage : latestStatus.invitationMessage || '').trim(),
+      goshugiPayCompleted: status?.goshugiPayCompleted === undefined ? Boolean(latestStatus.goshugiPayCompleted) : Boolean(status.goshugiPayCompleted),
       dearGuest: (status && status.dearGuest) || latestStatus.dearGuest || null,
       prediction: (status && status.prediction) || latestStatus.prediction || null
     };
@@ -854,9 +856,28 @@
       }));
     }
     setFormCompleted(latestStatus.completed, latestStatus.attending);
-    document.getElementById('onlineGift')?.classList.toggle('is-hidden', !(latestStatus.completed && latestStatus.attending && latestStatus.dearGuest?.phase !== 'after'));
+    renderOnlineGift();
     if (options.messageOnly) return;
     renderPrediction(latestStatus.completed && latestStatus.receptionAttending, latestStatus.prediction);
+  }
+
+  function renderOnlineGift() {
+    const section = document.getElementById('onlineGift');
+    if (!section) return;
+    section.classList.toggle('is-hidden', !(latestStatus.completed && latestStatus.attending && latestStatus.dearGuest?.phase !== 'after'));
+    const note = section.querySelector('.section-note');
+    if (!note.dataset.originalHtml) note.dataset.originalHtml = note.innerHTML;
+    if (latestStatus.goshugiPayCompleted) {
+      note.replaceChildren(document.createTextNode('オンラインご祝儀のご利用'), document.createElement('br'), document.createTextNode('誠にありがとうございました'));
+    } else {
+      note.innerHTML = note.dataset.originalHtml;
+    }
+    section.querySelector('.button-link').hidden = latestStatus.goshugiPayCompleted;
+  }
+
+  function isPredictionClosed(prediction) {
+    const now = countdownServerTime ? countdownServerTime + performance.now() - countdownSyncTime : Date.now();
+    return Boolean(prediction?.closed || prediction?.published || now >= Date.parse(prediction?.closesAt || '2027-02-01T00:00:00+09:00'));
   }
 
   function renderGiftInformation(show, giftStatus = GIFT_STATUS.unsent) {
@@ -1455,8 +1476,19 @@
 
   function setupPrediction() {
     if (!els.predictionList) return;
+    window.setInterval(() => {
+      const prediction = latestStatus.prediction;
+      if (prediction && !prediction.closed && isPredictionClosed(prediction) && !predictionSubmitting) {
+        prediction.closed = true;
+        renderPrediction(latestStatus.completed && latestStatus.receptionAttending, prediction);
+      }
+    }, 1000);
     els.predictionList.addEventListener('click', async event => {
       if (predictionSubmitting) return;
+      if (isPredictionClosed(latestStatus.prediction)) {
+        renderPrediction(latestStatus.completed && latestStatus.receptionAttending, latestStatus.prediction);
+        return;
+      }
       const optionButton = event.target.closest('[data-prediction-option]');
       if (optionButton) {
         const card = optionButton.closest('[data-prediction-question]');
@@ -1477,7 +1509,11 @@
       if (answers.some(answer => !answer.option)) return;
       predictionSubmitting = true;
       const confirmed = await confirmAnswers(answers.map(answer => ['', answer.option]), 'この内容で投票する');
-      if (!confirmed) { predictionSubmitting = false; return; }
+      if (!confirmed || isPredictionClosed(latestStatus.prediction)) {
+        predictionSubmitting = false;
+        renderPrediction(latestStatus.completed && latestStatus.receptionAttending, latestStatus.prediction);
+        return;
+      }
       els.predictionList.querySelectorAll('button').forEach(button => { button.disabled = true; });
       submit.textContent = '投票しています…';
       try {
@@ -1487,8 +1523,7 @@
         predictionSelections.clear();
         renderPrediction(latestStatus.completed && latestStatus.receptionAttending, latestStatus.prediction);
       } catch (error) {
-        els.predictionList.querySelectorAll('button').forEach(button => { button.disabled = false; });
-        submit.textContent = '回答内容を確認する';
+        renderPrediction(latestStatus.completed && latestStatus.receptionAttending, latestStatus.prediction);
         setPredictionCardStatus(els.predictionList, error.message || '時間をおいて もう一度お試しください', 'error');
       } finally { predictionSubmitting = false; }
     });
@@ -1529,6 +1564,11 @@
     }
 
     const published = Boolean(prediction && prediction.published);
+    const closed = isPredictionClosed(prediction);
+    const instructions = document.getElementById('predictionInstructions');
+    if (instructions) instructions.hidden = closed;
+    const deadline = document.getElementById('predictionDeadline');
+    if (deadline) deadline.textContent = closed ? '回答は締め切りました' : '回答締め切り：2027年1月31日(日)';
     els.predictionSection.querySelector('.prediction-introduction').hidden = published;
     const questions = prediction && Array.isArray(prediction.questions)
       ? prediction.questions
@@ -1591,7 +1631,7 @@
             : predictionSelections.get(question.id) === label;
           button.setAttribute('aria-pressed', String(selected));
           button.classList.toggle('is-selected', selected);
-          button.disabled = Boolean(question.voted);
+          button.disabled = closed || Boolean(question.voted);
           const mark = document.createElement('span');
           mark.className = 'prediction-option-mark';
           mark.setAttribute('aria-hidden', 'true');
@@ -1618,7 +1658,7 @@
     });
 
     const allQuestionsVoted = questions.every(question => Boolean(question.voted));
-    els.predictionSection.querySelector('.prediction-rule').hidden = allQuestionsVoted || published;
+    els.predictionSection.querySelector('.prediction-rule').hidden = !closed && allQuestionsVoted;
     if (allQuestionsVoted || published) {
       const thanks = document.createElement('p');
       thanks.className = 'prediction-complete-message';
@@ -1641,7 +1681,7 @@
       }
       cards.push(thanks);
     }
-    if (!allQuestionsVoted && !published) {
+    if (!allQuestionsVoted && !closed) {
       const submit = document.createElement('button');
       submit.className = 'prediction-submit';
       submit.type = 'button';
@@ -2095,6 +2135,7 @@
           attending: Boolean(result.attending),
           receptionAttending: Boolean(result.receptionAttending) || payload.receptionAttendance === '出席',
           invitationMessage: String(result.invitationMessage || latestStatus.invitationMessage || '').trim(),
+          goshugiPayCompleted: Boolean(result.goshugiPayCompleted),
           prediction: result.prediction || null
         });
         refreshLastPuzzle();
