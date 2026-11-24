@@ -87,8 +87,8 @@ function getLastPuzzle_(guestIdRaw) {
   response.hintCount = getThanksVisitState_(guestId, release, now).hintCount;
   if (published) {
     response.examples = [
-      { name: '白戸祐輔 の場合', code: 'b5w4d9qE → game' },
-      { name: '大貫愛佳 の場合', code: 'y3pBfDk8 → bass' }
+      { name: '白戸祐輔 の場合', code: 'w5w4j9qE → base' },
+      { name: '大貫愛佳 の場合', code: 'y3pByDd8 → ball' }
     ];
     response.question = 'では あなたは？';
   }
